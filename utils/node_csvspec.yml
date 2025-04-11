@@ -1,0 +1,42 @@
+
+# CSV File that specifies what information is to be gleaned from the 
+# infofiles/info*.txt files to go into spreadsheet
+# always printed:
+# longname, shortname, macaddr(last two bytes) firmware version, hwmodel, role, hasWifi
+# 
+
+# These are values to print from info_file, from the "preferences section"
+# The dictionary value becomes the spreadsheet column header
+
+
+# you can change this ordering, and/or edit the value after the ':' which is
+# the actual column name. Do not change the value before the ':'
+fixed_cols:
+  - "Short Name:Short Name"
+  - "macaddr:MacID"
+  - "Long Name:Long Name"
+  - "hwModel:HW Model"
+  - "firmwareVersion:FW Ver"
+  - "role:Role"
+  - "hasWifi:hasWifi"
+  
+
+prefs:
+  lora:
+    txPower: "txPower"
+    txEnabled: "txEnabled"
+    overrideDutyCycle:  "overrideDutyCycle"
+    hopLimit: "hopLimit"
+    region: "region"
+    modemPreset: "modemPreset"
+  bluetooth:
+    enabled: "BT_enabled"
+    mode: "BT_mode"
+  rangeTest:
+    enabled: "RT_enabled"
+    sender: "RT_interval"
+  network:
+    wifiEnabled: "wifiEnabled"
+
+  
+ 
