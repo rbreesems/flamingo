@@ -1,0 +1,12 @@
+
+
+# ignore vscode IDE settings files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+*.code-workspace
+utils/infofiles/*
+
+
+venv/
