@@ -29,6 +29,9 @@ import posixpath
 # If you just want to echo the commands that are being executed add the '-t' (--test) flag
 # In echo mode, the radio is not contacted
 #
+# Docs on settings: https://meshtastic.org/docs/configuration/
+# Docs on Cli: https://meshtastic.org/docs/software/python/cli/
+#
 # In set mode, it will write settings, set a new key for the primary channel.
 # This always writes data returned from --info command to infofiles/<longname>.txt
 # 
@@ -113,15 +116,18 @@ import posixpath
 # "batteryLevel": 101,
 # Wrote info file: info_BReese02.txt
 # 
+# Version 1.9 - rewrote to send multiple settings, retry 3 times to write
+# settings. Also removed reset_nodedb
 # Version 1.8 fixed to work with multiple channels
 #
 #
 
-version = "1.8"
-sleep_time = 15
+version = "1.9"
+sleep_time = 20
 range_test_extra_sleep = 20
 infodir = "infofiles"
 configdir = "configfiles"
+max_retries = 3
 
 config_lookup = {
     "bluetooth.mode" : {"0":"RANDOM_PIN", "1":"FIXED_PIN", "2":"NO_PIN"},
@@ -176,6 +182,7 @@ def runCmd(cmd, echoOnly=False, silent=False, reboot=False):
                 print (line)
         if reboot:
             print(f"Sleeping for {sleep_time} seconds for reboot.")
+            time.sleep(sleep_time)
         return output.stdout
     else:
         return ""
@@ -188,6 +195,18 @@ def doCompareSettings(output, config_opts):
     old_settings = {}
     lines = output.split('\n')
     for line in lines:
+        if re.match("^Owner:", line):
+                words = line.split()
+                if len(words) >= 3:
+                    longname = words[1].strip()
+                    shortname = words[2].strip()
+                    shortname = shortname.replace('(','')
+                    shortname = shortname.replace(')','')
+                    if config_opts is None:
+                        old_settings["user.longname"] = longname
+                        old_settings["user.shortname"] = shortname
+                        continue
+                continue
         words = line.split(':')
         if len(words) ==2:
             key = words[0].strip()
@@ -294,7 +313,7 @@ def printDeviceInfo(output):
                 state = ""
                 continue
         elif state == "deviceMetrics":
-            if re.match("^\"batteryLevel\":", line):
+            if re.match("^\"batteryLevel\":", line) and last_longname == longname:
                 info += f"\n{line}"
                 continue
             if re.match("^\}", line):
@@ -370,7 +389,12 @@ def main():
     if config_opts is None:
         print(f"WARNING: No available settings found in {args.settingsFile} file.")
 
-   
+
+    if args.longname:
+        # add special setting so we can compare like other settings
+        config_opts["user.longname"] = args.longname
+    if args.shortname:
+        config_opts["user.shortname"] = args.shortname
 
     getcmd = meshcmd
     if config_opts:
@@ -394,56 +418,48 @@ def main():
                 doCompareChannels(device_info)
         
     else:
-        # Need to do a get so that compare settings
-        output = runCmd(getcmd,echoOnly=args.test, reboot=(not args.test))
-        
-        old_settings = {}  # current device settings
-        new_settings = {}  # setting that need to be changed
-        if not args.test:
-            old_settings = doCompareSettings(output, None)
-            new_settings = getNewSettings(old_settings, config_opts)
-        
-
-        # create the set command
-        setcmd = meshcmd
-        if args.longname:
-            setcmd += f" --set-owner {args.longname}"
-        if args.shortname:
-            setcmd += f" --set-owner-short {args.shortname}"
-        if setcmd != meshcmd:
-            # set the owqner info
-            runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
+        num_retries = 0
+        while num_retries < max_retries:
+            # Need to do a get so that compare settings
+            output = runCmd(getcmd,echoOnly=args.test)
             
-        if len(new_settings) == 0:
-            print("No settings have changed, skipping set sequence")
-        else:
-            print(f"Beginning set command sequence for changed settings: {new_settings}")
-            for key,value in new_settings.items():
-                setcmd = f"{meshcmd} --set {key} {value}"
+            old_settings = {}  # current device settings
+            new_settings = {}  # setting that need to be changed
+            if not args.test:
+                old_settings = doCompareSettings(output, None)
+                new_settings = getNewSettings(old_settings, config_opts)
+            
+            # create the set command
+            setcmd = meshcmd
+            if len(new_settings) == 0:
+                print("No settings have changed, skipping set sequence")
+                break
+            else:
+                print(f"Beginning set command sequence for changed settings: {new_settings}")
+                setcmd = meshcmd
+                for key,value in new_settings.items():
+                    if key == "user.longname":
+                        setcmd += f" --set-owner {value}"
+                    elif key == "user.shortname":
+                        setcmd += f" --set-owner-short {value}"
+                    else:
+                        setcmd += f" --set {key} {value}"
                 runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
-                
+            
+            # loop back to top to compare and try again
+            num_retries += 1
+            
+       
+        # do channels
         setcmd = meshcmd
         # write each channel
         for cdict in channels:
             setcmd = meshcmd
-            if cdict['index'] == "0":
-                setcmd += f" --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
-            else:
-                setcmd += f" --ch-set name {cdict['name']} --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
+            setcmd += f" --ch-set name {cdict['name']} --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
             print(f"Writing channel index: {cdict['index']}")
             runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
-        setcmd = meshcmd
-        setcmd += " --reset-nodedb"
-        # do set
-        print("Resetting nodedb")
-        runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
-        if len(new_settings) != 0:
-            output = runCmd(getcmd, echoOnly=args.test, reboot=(not args.test))
-            if config_opts:
-                if not args.test:
-                    doCompareSettings(output, config_opts)
         time.sleep(15)  # extra sleep after channel
-        device_info = runCmd(infocmd, echoOnly=args.test, reboot=(not args.test), silent=True)
+        device_info = runCmd(infocmd, echoOnly=args.test, silent=True)
         if channels:
             if not args.test:
                 doCompareChannels(device_info)

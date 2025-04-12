@@ -1,8 +1,8 @@
 
 # Note, cannot rename channel 0
 channels:
-  - {"psk":"base64:9Z0jb0WvHgZy1S45NS2okNU5bM0IRlMh7aYMe8C4g+E=","index":"0"}
-  - {"psk":"base64:7Q5v7yZPn97Js2vZRSoJh0ep10/tVCd29iDUFyaDpLI=","index":"1", "name":"HCRU-1"}
+  - {"psk":"base64:7Q5v7yZPn97Js2vZRSoJh0ep10/tVCd29iDUFyaDpLI=","index":"0", "name":"HCRU-1"}
+  
 
 # security.admin_key is the public_keys of the node that can do
 # remote admin on other nodes. There can be up to 3 keys.
@@ -28,7 +28,6 @@ settings:
   lora.tx_power: "30"
   lora.ignore_mqtt: "True"
   lora.override_duty_cycle: "True"
-  position.gps_enabled: "False"
   position.fixed_position: "False"
   device.rebroadcast_mode: "ALL"
   network.wifi_enabled: "False"
