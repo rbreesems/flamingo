@@ -1,7 +1,5 @@
 
 import argparse
-import subprocess
-import time
 import os
 import re
 import yaml

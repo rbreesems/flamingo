@@ -1,14 +1,9 @@
 import argparse
-import subprocess
-import time
 import os
 import re
-import yaml
-import sys
 import posixpath
 from pathlib import Path
 from dataclasses import dataclass
-import datetime
 
 # Helper program for to parse serial log messages
 
