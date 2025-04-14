@@ -63,6 +63,8 @@ To address these issues, the range test module has been changed to add a dynamic
 
 3. TODO: More range test modifications to reduce channel clogging.
 
+4. TODO: Realtime RSSI visualization.
+
 
 # Utility Software
 
