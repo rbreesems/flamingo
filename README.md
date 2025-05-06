@@ -20,7 +20,7 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 
 # Firmware Modifications
 
-This [repo](https://github.com/meshtastic/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
+This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
 [WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).
 
 The following summarizes our firmware modifications.
