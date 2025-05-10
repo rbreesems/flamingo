@@ -23,7 +23,30 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
 [WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).
 
-The following summarizes our firmware modifications.
+The latest firware branch is `may2025`.  This following summarizes our changes:
+
+- Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31.
+See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
+
+- LCD splash screen displays HCRU firmware version name.
+
+- Range test has been modified to support non-hopping/hopping range test packets.  Default is non-hopping.
+
+- Range test messages sent to phone now have the RX RSSI/SNR for the received packet. RSSI is a negative number that increases in absolute value with increasing distance between TX/RX nodes.
+SNR is a magic number sent by the Gods and you can figure out its relationship to distance.
+
+- Range test should be enabled on all cave nodes as any cave node may have to send/receive range test packets. It is not necessary to set sender delay, it is automatically set to 30 seconds, but the sending is soft-disabled by default.  The sending action must be soft-enabled by an admin command as specified in the next bullet.
+
+- Admin commands are supported for direct channel messages to a node. Admin commands are case insensitive (capitialization shown for empahsis only).  Admin commands are ignored if received on the general channel.
+These admin commands are compatible with voice recognition in the messaging app. The first word of an admin
+command was chosen to not be part of a normal status message.
+
+  - `ADRT on`  -- turn on range test (default delay is 30 seconds)
+  - `ADRT on hop`  -- turn on range test, and enable packet hopping
+  - `ADRT off`  -- turn off range test.
+  - `ADRT delay <15|30|60>`  -- set delay for between packets. Only 15, 30, or 60 is recognized.
+
+- Logging messages to the serial port have been modified for easier parsing. Logging of all communication at Incident Command (IC) during a rescue is of critical importance. Our assumption is that the relay chain extends all the way to IC, with a laptop hooked to the surface node so that serial logging can be done.  The messages output to the serial port during operation were slightly modified so that they could be easily parsed afterwards, and incoming/outgoing messages with timestamps easily summarized. We use Microsoft Code + Serial Monitor plugin for serial monitoring. We used this methodology during testing and it worked well.
 
 ## Hop Limit Extension
 
@@ -41,29 +64,36 @@ There was enough extra bytes in the original Meshtastic packet structure that th
 
 Setting the hop-limit greater than 7 has to be done via the CLI as the phone apps all assume the max hop limit is 7.
 
-## Range Test Packet hopping
+## Using Range Test to set Cave Relay nodes
 
-Our desired methodology for placing radios in the cave is as follows:
+In the master Meshtastic firmware, range test packets have their packet hop_limit forced to zero when sent so that when they arrive at another node, they are not forwarded.
+Our modifications allow range test packets to either be hopping or non-hopping (default).
 
-1. The surface node is configured to send out range test packets.
-2. The comms team leader with the radios has one radio that is being monitored for range test packet reception. The leader advances into the cave until no longer reliably receiving range test packets (so at max range), backs up a bit, then puts down a relay node.
-3. The comms team leader then advances with the relay node forwarding range test packets.  This procedure is repeated until the linear chain is completed.
+There are two methodologies that can be used when setting out relay nodes in a cave, using hopping or non-hopping packets:
 
-We quickly discovered in above ground tests that the unmodified Meshtastic firmware sets range test packets to have a `hop_start` value of 0 so that they are not forwarded after arrival.  This invalidates the above methodology, and would require each relay node to be configured as a range test packet sender when placing the next relay node.  This would slow down radio placement and require extra actions by the comms team leader.
+Using hopping packets: 
 
-The solution was simply to set the `hop_start` field in range test packets to the normal value of the maxium hop limit so that range test packets hop between relay nodes.   This was done in our firmware and it worked during in-cave testing.
+1. In this scenario, the surface node sends out all range test packets and uses hopping packets.
 
-## Other changes
+2. To place a relay node,  move away from the previous relay node (or surface node if this is the first relay) until range test packet arrival become unreliable, 
+then move back into reliable range, place a new relay node, and move on. 
 
-1. Logging of all communication at Incident Command (IC) during a rescue is of critical importance. Our assumption is that the relay chain extends all the way to IC, with a laptop hooked to the surface node so that serial logging can be done.  The messages output to the serial port during operation were slightly modified so that they could be easily parsed afterwards, and incoming/outgoing messages with timestamps easily summarized. We use Microsoft Code + Serial Monitor plugin for serial monitoring. We used this methodology during testing and it worked well.
+3. Arrival of a range test packet at the last relay node verifies end-to-end connectivity.
 
-2. Easy Remote Admin of Range Test - since range test is integral to radio placement, we need easy/simple control of range test packets. The current method of changing range test by writing settings has a problem in that it is cumbersome to setup remote admin just for this capability, and writing settings to the sending (surface node) causes the device to reboot, which halts serial logging.  The person monitoring the surface node may or may not re-enable serial logging, and critical log information could be lost. 
+4. In our test of this, it seemed like the range test packets congested the network, and intefered with sending normal messages back to the surface node.
 
-To address these issues, the range test module has been changed to add a dynamic enable/disable capability for the sender. Configure the sending node as before, but in order for range test packet sending to be enabled, it must receive a 'RT on' message on any channel (direct or general).  To turn RT sending off, just send an 'RT off' message. These simple messages were chosen to be compatible with voice-to-text translation.
+Using non-hopping packets:
 
-3. TODO: More range test modifications to reduce channel clogging.
+1. Use a direct admin message `ADRT on`  to the previous relay node (or surface node if this is the first relay) to enable range test sending.
 
-4. TODO: Realtime RSSI visualization.
+2. Move away from the range test sending node until range test packet arrival become unreliable, 
+then move back into reliable range, and place a new relay node. 
+
+3. Use a direct admin message `ADRT off` to the sending node to turn off range test sending.
+
+4. Send a message to the surface node and get an ack back to verify end-to-end connectivity.
+
+5. Go back to step #1 where the current relay node becomes the previous relay node.
 
 
 # Utility Software
