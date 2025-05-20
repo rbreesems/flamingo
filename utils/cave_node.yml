@@ -33,7 +33,7 @@ settings:
   network.wifi_enabled: "False"
   telemetry.device_update_interval: "900"
   range_test.enabled: "True"
-  range_test.sender: "0"
+  
 
 
 
