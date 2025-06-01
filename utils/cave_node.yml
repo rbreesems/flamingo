@@ -31,7 +31,7 @@ settings:
   position.fixed_position: "False"
   device.rebroadcast_mode: "ALL"
   network.wifi_enabled: "False"
-  telemetry.device_update_interval: "900"
+  telemetry.device_update_interval: "1800"
   range_test.enabled: "True"
   
 

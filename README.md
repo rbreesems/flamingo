@@ -30,14 +30,14 @@ See the section on hop limit modification for a discussion of this change. The m
 
 - LCD splash screen displays HCRU firmware version name.
 
-- Range test has been modified to support non-hopping/hopping range test packets.  Default is non-hopping.
+- Range test has been modified to support non-hopping/hopping range test packets.  Default is non-hopping.  It has also been modified to be enabled even when GPS code is excluded. ALso, range test data is never saved to storage.
 
 - Range test messages sent to phone now have the RX RSSI/SNR for the received packet. RSSI is a negative number that increases in absolute value with increasing distance between TX/RX nodes.
 SNR is a magic number sent by the Gods and you can figure out its relationship to distance.
 
 - Range test should be enabled on all cave nodes as any cave node may have to send/receive range test packets. It is not necessary to set sender delay, it is automatically set to 30 seconds, but the sending is soft-disabled by default.  The sending action must be soft-enabled by an admin command as specified in the next bullet.
 
-- Admin commands are supported for direct channel messages to a node. Admin commands are case insensitive (capitialization shown for empahsis only).  Admin commands are ignored if received on the general channel.
+- Admin commands are supported for direct channel messages to a node. Admin commands are case insensitive (capitialization shown for emphasis only).  Admin commands are ignored if received on the general channel.
 These admin commands are compatible with voice recognition in the messaging app. The first word of an admin
 command was chosen to not be part of a normal status message.
 
@@ -47,6 +47,11 @@ command was chosen to not be part of a normal status message.
   - `ADRT delay <15|30|60>`  -- set delay for between packets. Only 15, 30, or 60 is recognized.
 
 - Logging messages to the serial port have been modified for easier parsing. Logging of all communication at Incident Command (IC) during a rescue is of critical importance. Our assumption is that the relay chain extends all the way to IC, with a laptop hooked to the surface node so that serial logging can be done.  The messages output to the serial port during operation were slightly modified so that they could be easily parsed afterwards, and incoming/outgoing messages with timestamps easily summarized. We use Microsoft Code + Serial Monitor plugin for serial monitoring. We used this methodology during testing and it worked well.
+
+## RS485 Serial link modification
+
+The `slink` branch in the firmware repo contains all of the modifications in the `may2025`. The branch is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
+RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. The software has the baud rate set to 19200, which in our testing can drive 1300 ft of wire (FYI, 57600 can drive 700 ft, 115.2 can drive 100 ft). We have not tested baud rates lower than 19200. Packets sent over TX LORA are also sent over RS485 TX.  Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
 
 ## Hop Limit Extension
 
