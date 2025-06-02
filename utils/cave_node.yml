@@ -33,6 +33,8 @@ settings:
   network.wifi_enabled: "False"
   telemetry.device_update_interval: "1800"
   range_test.enabled: "True"
+  position.gps_mode: "NOT_PRESENT"
+  
   
 
 
