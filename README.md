@@ -62,8 +62,8 @@ This test assumes your 'mesh' only consists of four radios - R1-R4, with R2/R3 h
 The mixed mode test is a direct message from R1 to R4, with the path 
 R1 LORA TX> R2 LORA RX, R2 RS485 TX> R3 RS485 RX, R3 LORA TX > R4 LORA RX (and the reverse path for the ack).
 Program all radios with LORA short/tubo mode and reduce TX power to 1 dbm (to shorten the range). Put R3, R4 in a basement
-with R4 linked to some device that has the meshtastic app (like an iPad),
-and then, carrying R1 and R2 with the phone paired to R1, deploy comm wire connected to R3 (but not R2 yet) out the house and into the woods until you reach a point where sending a message from R1 to R4 consistently fails as it is out of range.  Connect the hard link to R2.  Try sending the message again - R2 should receive the packet, and forward it over the hard
+with R4 linked to some device that has the meshtastic app (like an iPad).
+Then, carrying R1 and R2 with the phone paired to R1, deploy comm wire connected to R3 (but not R2 yet) out the house and into the woods/neighborhood until you reach a point where sending a message from R1 to R4 consistently fails as it is out of range.  Connect the hard link to R2.  Try sending the message again - R2 should receive the packet, and forward it over the hard
 link, and you should get a successful ack back from R4 that the message was delivered. You can verify that the message was
 delivered by checking the device connected to R4 and verify that the message was received.  This can take quite a bit
 of comm wire (300-400 ft at least depending on how well shielded the R3/R4 radios are from the outside).
