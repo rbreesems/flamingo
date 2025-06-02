@@ -50,12 +50,24 @@ command was chosen to not be part of a normal status message.
 
 ## RS485 Serial link modification
 
-The `slink` branch in the firmware repo contains all of the modifications in the `may2025`. The branch is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
+The `slink` branch in the firmware repo contains all of the modifications in the `may2025` branch. This branch is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
 RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. The software has the baud rate set to 19200, which in our testing can drive 1300 ft of wire (FYI, 57600 can drive 700 ft, 115.2 can drive 100 ft). We have not tested baud rates lower than 19200. Packets sent over TX LORA are also sent over RS485 TX.  Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
 
 Our procedure for testing if the hard link works between a pair of radios is as follows. This test assumes that the 
 only two radios in range are the two hard linked radios that are being tested.
 Connect two radios via the hard link, then bluetooth connect to each radio with the phone app, and in the Lora Config section, turn off 'Transmit enabled'.  Then send a direct message to whatever radio is not connected to via phone; if an ack is returned then the message went through the hard link to the destination.  Then, disconnect one of the wires in the hard link, and try sending again - this time the message send will fail with a max retry limit reached as the hard link is not connected.  Connect to each radio again via the phone app, and turn RF transmit back on.  Try sending the direct message again and this time it will succeed even with the hard link broken, as the message will go over RF.
+
+A mixed mode test of RF TX> RS485 TX > RS485 RX > RF RX is more difficult to accomplish outside of a cave environment.
+This test assumes your 'mesh' only consists of four radios - R1-R4, with R2/R3 hard linked.
+The mixed mode test is a direct message from R1 to R4, with the path 
+R1 LORA TX> R2 LORA RX, R2 RS485 TX> R3 RS485 RX, R3 LORA TX > R4 LORA RX (and the reverse path for the ack).
+Program all radios with LORA short/tubo mode and reduce TX power to 1 dbm (to shorten the range). Put R3, R4 in a basement
+with R4 linked to some device that has the meshtastic app (like an iPad),
+and then, carrying R1 and R2 with the phone paired to R1, deploy comm wire connected to R3 (but not R2 yet) out the house and into the woods until you reach a point where sending a message from R1 to R4 consistently fails as it is out of range.  Connect the hard link to R2.  Try sending the message again - R2 should receive the packet, and forward it over the hard
+link, and you should get a successful ack back from R4 that the message was delivered. You can verify that the message was
+delivered by checking the device connected to R4 and verify that the message was received.  This can take quite a bit
+of comm wire (300-400 ft at least depending on how well shielded the R3/R4 radios are from the outside).
+Your neighbors will also give you the evil eye as you drag comm wire down the street.
 
 ## Hop Limit Extension
 
