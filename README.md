@@ -69,6 +69,27 @@ delivered by checking the device connected to R4 and verify that the message was
 of comm wire (300-400 ft at least depending on how well shielded the R3/R4 radios are from the outside).
 Your neighbors will also give you the evil eye as you drag comm wire down the street.
 
+## RS485 Connection
+
+RS485 is a two-wire differential signaling protocol that can support multiple drivers, with driver contention (collision)
+causing no damage to the drivers. For the RAK5802 RS485 module, if we call the two wires A and B, then A must be connected
+to A and B must be connected to B.  This is because of how the RAK5802 is designed; it does not support cross-connected wires.  Traditional comm wire using field phones is connection agnostic, but that is not the
+case with this system - reversing the connection A > B and B > A will cause a comm failure.  Because of this, we have marked the
+ends of our comm wire with Red/Blue tape, and the connectors on the radio are Red/Black - so Red is connected to the Red terminal, and whatever color is not Red is connected to the black terminal. 
+
+One strength of the traditional comm wire + field phones deployment is that the comm wire can be tapped into at any
+point with a field phone.  That can still work with this system, but the problem is that typical comm wire uses black
+for both wires, so there is no distinguishing A from B when tapping in.  The solution is to tap in using one polarity and send a direct message - if an ack is received, then the message succeeded and the polarity is correct. If no ack is received, reverse the direction and try again - it should succeed.  Having a reversed direction will cause no damage to
+the RAK5802 RS485 module.
+
+## RS485 Collision
+
+Just like over-the-air packets, there can be a packet collision if both ends of the hard link attempt to send a packet
+at the same time. RS485 supports multiple-driver connection, and driver contention causes no physical damage.
+However, the packet will be garbled on reception - the firmware uses a 16-bit header and a 32-bit CRC wrapper around each meshtastic packet
+sent over the RS485 link, so a garbled packet is detected and discarded.  If we assume an average text message is about 50 chars or less (so packet size is about 100 bytes with header bytes), it will take about 0.05 seconds to transmit at 19200 bits/second.  This gives 20 TX slots in one second for a packet.  If we assume a packet every 15 seconds, this is 300 TX slots, giving a collision probability of less than 1%.  IF there is a collision, the packet is lost, but that is why there is
+retransmit logic in the Meshtastic stack.
+
 ## Hop Limit Extension
 
 The packet header was modified to provide 8-bit fields for both `hop_limit` and `hop_start`.  This means an upper limit of 255 hops, but our firmware has set the maxium limit to 31 hops as probably this is the maxinum number of radios any sane individual would want to bring into a cave (however, this is easily changed to a higher number up to 255 if desired)
