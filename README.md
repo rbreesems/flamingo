@@ -51,7 +51,16 @@ command was chosen to not be part of a normal status message.
 ## RS485 Serial link modification
 
 The `slink` branch in the firmware repo contains all of the modifications in the `may2025` branch. This branch is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
-RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. The software has the baud rate set to 19200, which in our testing can drive 1300 ft of wire (FYI, 57600 can drive 700 ft, 115.2 can drive 100 ft). We have not tested baud rates lower than 19200. Packets sent over TX LORA are also sent over RS485 TX.  Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
+RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. 
+
+Baud rate vs range testing yielded:
+
+  - 115200 can drive 100 ft
+  - 57600 can drive 700 ft
+  - 19200 can drive 1400 ft
+  - 9600 can drive 2000 ft 
+
+Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
 
 Our procedure for testing if the hard link works between a pair of radios is as follows. This test assumes that the 
 only two radios in range are the two hard linked radios that are being tested.
