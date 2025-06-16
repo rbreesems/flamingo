@@ -58,7 +58,9 @@ Baud rate vs range testing yielded:
   - 115200 can drive 100 ft
   - 57600 can drive 700 ft
   - 19200 can drive 1400 ft
-  - 9600 can drive 2000 ft 
+  - 9600 can drive 2400 ft 
+  - 4800 can drive ?? ft (not tested yet)
+  - 1200 can drive ?? ft (not tested yet)
 
 Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
 
@@ -77,6 +79,8 @@ link, and you should get a successful ack back from R4 that the message was deli
 delivered by checking the device connected to R4 and verify that the message was received.  This can take quite a bit
 of comm wire (300-400 ft at least depending on how well shielded the R3/R4 radios are from the outside).
 Your neighbors will also give you the evil eye as you drag comm wire down the street.
+
+Actually a suggestion from the Vangelis hive mind is that R1/R2 should be set to a different LORA mode (or frequency band) than R3/R4, this would allow testing in the same room. This should work and would be much easier!
 
 ## RS485 Connection
 
