@@ -55,11 +55,11 @@ Baud rate vs range testing yielded:
   - 9600 can drive 2000 ft 
   - 4600 can drive 3300 ft 
  
- Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
+ Any packet received over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
 
  The `slink` firmware changes hijacks the existing 'serial module' and changes it to be the RS-485 driver (sorry/not sorry serial module users!!!)
 
- In the `tested_firmware` any slink firmware builds marked with a baud rate will always use that baud rate and will not change even if the baud rate is changed for the serial module via the settings in the phone app. The slink firmware without a baud rate will use the baud rate specified via the settings in the phone app.  All slink firmware builds has the serial module always enabled, it cannot be disabled. The `echo`, `timeout`, `mode`, `GPIO` settings are all hardcoded in the firmware and will not be changed via the phone app. 
+ In the `tested_firmware` directory any `slink` firmware builds marked with a baud rate will always use that baud rate and will not change even if the baud rate is changed for the serial module via the settings in the phone app. The slink firmware without a baud rate will use the baud rate specified via the settings in the phone app.  All slink firmware builds has the serial module always enabled, it cannot be disabled. The `echo`, `timeout`, `mode`, `GPIO` settings are all hardcoded in the firmware and will not be changed via the phone app. 
 
 ## Hop Limit Modification
 
