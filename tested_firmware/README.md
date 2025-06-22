@@ -9,7 +9,9 @@ This directory contains the firmware file be shared with other Cave Meshers.  Al
 
 - `rak4631-firmware-2-5-06-2025-slink-9600.uf2` - Same as other `slink` firmware but uses 9600 baud.
 
+- `rak4631-firmware-2-5-06-2025-slink-4600.uf2` - Same as other `slink` firmware but uses 4600 baud.
 
+- `rak4631-firmware-2-5-06-2025-slink.uf2` - Same as other `slink` firmware baud rate must be set from the Serial settings.
 
 ## Firmware Modifications
 
@@ -51,8 +53,13 @@ Baud rate vs range testing yielded:
   - 57600 can drive 700 ft
   - 19200 can drive 1400 ft
   - 9600 can drive 2000 ft 
+  - 4600 can drive 3300 ft 
  
  Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
+
+ The `slink` firmware changes hijacks the existing 'serial module' and changes it to be the RS-485 driver (sorry/not sorry serial module users!!!)
+
+ In the `tested_firmware` any slink firmware builds marked with a baud rate will always use that baud rate and will not change even if the baud rate is changed for the serial module via the settings in the phone app. The slink firmware without a baud rate will use the baud rate specified via the settings in the phone app.  All slink firmware builds has the serial module always enabled, it cannot be disabled. The `echo`, `timeout`, `mode`, `GPIO` settings are all hardcoded in the firmware and will not be changed via the phone app. 
 
 ## Hop Limit Modification
 
