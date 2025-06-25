@@ -23,7 +23,7 @@ settings:
   bluetooth.fixed_pin: "911911"
   device.role : "CLIENT"
   lora.hop_limit: "31"
-  lora.modem_preset: "LONG_FAST"
+  lora.modem_preset: "MEDIUM_SLOW"
   lora.sx126x_rx_boosted_gain: "True"
   lora.tx_power: "30"
   lora.tx_enabled: "True"
@@ -35,6 +35,8 @@ settings:
   telemetry.device_update_interval: "1800"
   range_test.enabled: "True"
   position.gps_mode: "NOT_PRESENT"
+  serial.baud: "BAUD_4800"
+  
   
   
 

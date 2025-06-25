@@ -123,7 +123,15 @@ then move back into reliable range, and place a new relay node.
 
 5. Go back to step #1 where the current relay node becomes the previous relay node.
 
+## A Note on Node discovery
 
+If Node B has never met Node A:
+
+1. Secondary operator (Op-A) pairs phone to Node A over BLE
+2. Op-A sends message to the broadcast channel
+3. Node B should discover Node A
+4. Op-B clicks "Request User Info" from Node A
+5. Node A sends telem to Node B and is logged in DB
 
 ## A Note on V2.5 vs V2.6 firmware
 

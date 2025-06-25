@@ -149,7 +149,23 @@ config_lookup = {
                            "5":"SHORT_SLOW",
                            "6":"SHORT_FAST",
                            "8":"SHORT_TURBO",  # for some reason, this jumps to 8. Not sure what '7' is.
-                           }
+                           },
+    "serial.baud" : { "1": "BAUD_110",
+                      "2": "BAUD_300",
+                      "3": "BAUD_600",
+                      "4": "BAUD_1200",
+                      "5": "BAUD_2400",
+                      "6": "BAUD_4800",
+                      "7": "BAUD_9600",
+                      "8": "BAUD_19200",
+                      "9": "BAUD_38400",
+                      "10": "BAUD_57600",
+                      "11": "BAUD_115200",
+                      "12": "BAUD_230400",
+                      "13": "BAUD_460800",
+                      "13": "BAUD_576000",
+                      "13": "BAUD_921600",
+        }
 }
 
 longname = ""
