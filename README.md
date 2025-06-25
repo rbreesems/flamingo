@@ -59,7 +59,7 @@ Baud rate vs range testing yielded:
   - 57600 can drive 700 ft
   - 19200 can drive 1400 ft
   - 9600 can drive 2400 ft 
-  - 4800 can drive 3300 ft 
+  - 4800 can drive 3300 ft (1 km) (do not know max range yet, suspect 4000 ft)
   - 1200 can drive ?? ft (not tested yet)
 
 Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
@@ -81,6 +81,8 @@ of comm wire (300-400 ft at least depending on how well shielded the R3/R4 radio
 Your neighbors will also give you the evil eye as you drag comm wire down the street.
 
 Actually a suggestion from the Vangelis hive mind is that R1/R2 should be set to a different LORA mode (or frequency band) than R3/R4, this would allow testing in the same room. This should work and would be much easier!
+
+The image below: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire")) shows three bridge nodes and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  The bridge nodes have their LORA TX disabled during testing.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.
 
 ## RS485 Connection
 
