@@ -12,6 +12,8 @@ This directory contains the firmware file be shared with other Cave Meshers.  Al
 - `rak4631-firmware-2-5-06-2025-slink-4600.uf2` - Same as other `slink` firmware but uses 4600 baud.
 
 - `rak4631-firmware-2-5-06-2025-slink.uf2` - Same as other `slink` firmware baud rate must be set from the Serial settings.
+- `tdeck-firmware-2-5-06-2025-1.bin` - Same as `rak4631-firmware-hopmod-2-5-06-2025-1.uf2`  firmware but compiled for Tdeck, `not tested`.
+- `rak4631-firmware-hopmod-2-5-06-2025-1-active-buzzer-io3-range-test-rssi.uf2` - see buzzer section for description.
 
 ## Firmware Modifications
 
@@ -144,6 +146,23 @@ Here is my simple interpretation of the router algorithm -- for the case we are 
 In our linear chain case, each node will see two neighbors (behind/ahead). For a packet traveling from start to end, a node gets a packet from the `behind` neighbor. The node rebroadcasts it.  The `ahead` neighbor receives the packet, and rebroadcasts it. The `behind` neighbor receives this rebroadcast packet, but because it has been recently seen, the packet is discarded.  The hop limit value in our linear chain case has no effect on network congestion.  If packets only enter from either the start or end of the chain, then network congestion is only affected by how fast new packets are introduced into the chain.
 
 End-to-end reliability will drop as the chain gets longer. It serves us best to be conservative in relay node placement - one or two weak links in the chain can kill end-to-end reliability. With 99% node reliability, a chain of 10 gives us 90% end-to-end reliabilty. We should be able to achieve 99% reliability with conservative node placement and given that nodes will retransmit if an acknowledgement is not received for a packet (MAX_RETRANSMIT is 5)
+
+
+## Buzzer Haptic for RSSI
+
+The `rak4631-firmware-hopmod-2-5-06-2025-1-active-buzzer-io3-range-test-rssi.uf2` firmware is based on the `may2025-buzzer` branch that uses an active buzzer to indicate different RSSI ranges when a range test packet is received. The ranges are:
+
+1. One beep: RSSI greater than or equal to -90
+2. Two beeps:  RSSI less than -90  greater then or equal to -110
+3. Three beeps  RSSI less than -110.
+
+This is used during relay placement so that you don't have to keep your eyes on the screen to see RSSI values for range test packets. This does not use the RAK PWM buzzer settings in the phone app.  The buzzer is only installed on the radio that you want to use as a relay placement listener.
+
+The buzzer we used was purchased from Amazon (search for Active Buzzer Module, 5V Piezoelectric Alarm, DIYables store) - it is a small 3-pin (Vcc/Gnd/IO) breadboard.  We have stuffed it successfully into a WisMesh Pocket radio, it just barely fits. It runs fine on 3.3V.
+
+The `may2025-buzzer` branch could easily be modified to support a passive buzzer.
+
+
 
 
 
