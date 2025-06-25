@@ -82,7 +82,7 @@ Your neighbors will also give you the evil eye as you drag comm wire down the st
 
 Actually a suggestion from the Vangelis hive mind is that R1/R2 should be set to a different LORA mode (or frequency band) than R3/R4, this would allow testing in the same room. This should work and would be much easier!
 
-The image below: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire")) shows three bridge nodes and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  The bridge nodes have their LORA TX disabled during testing.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.
+The image below: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire")) shows three bridge nodes and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  The bridge nodes have their LORA TX disabled during testing, this forces packets over the wire.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.
 
 ## RS485 Connection
 
