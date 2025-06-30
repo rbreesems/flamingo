@@ -194,7 +194,7 @@ The goal was to reach `The Big Fall Room` which is about 1 km into the cave, and
 
 We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to the crawl that lead to `Lil India`. Total distance into the cave was about 1200m. 
 
- - Two wired segments were deployed (900 ft from entrance to just before the pump room) and another wired segment (800 ft) that went through the breakdown leading to `Grand Central`.   There were wireless relay nodes between the two wired segments and after the second wired segment.
+ - Two wired segments were deployed (900 ft from entrance to just before the pump room) and another wired segment (800 ft) that went through the breakdown leading to `Grand Central`.   There were wireless relay nodes between the two wired segments and after the second wired segment.  The wired segments were using 4800 baud as we thought that might have to connect all four spools together (1 km) but that proved unnecessary.  We could have used as high as 19200 baud since each bridge node was only driving one spool (~900 ft).
 
  The team still had two comm spools (each 800 ft) and a pair of bridge nodes when they reached the crawl to `Lil India` but we were about out of time and had accomplished our goals.  The remaining time was spent replacing some of wired connection #2 with wireless nodes for experimentation purposes.
 
