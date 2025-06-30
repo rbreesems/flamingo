@@ -193,11 +193,11 @@ Guffey Cave is the site of the all-day cave rescue scenario that is the capstone
 
 The goal was to reach `The Big Fall Room` which is about 1 km into the cave, and which generally students are able to reach with wired comms during the scenario.  We also wanted to test our new listener node that had an active buzzer installed that beeped based on RSSI value, useful during wireless node placement.
 
-We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to the crawl that lead to `Lil India`. The total distance into the cave was about 1200m. 
+We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to the crawl that lead to `Little India`. The total distance into the cave was about 1200m. 
 
  - Two wired segments were deployed (900 ft/275m from entrance to just before the pump room) and another wired segment (240m ft) that went through the breakdown leading to `Grand Central`.   There were wireless relay nodes between the two wired segments and after the second wired segment.  The wired segments were using 4800 baud as we thought that might have to connect all four spools together (1 km) but that proved unnecessary.  We could have used as high as 19200 baud since each bridge node was only driving one spool (~900 ft/275m).
 
- The team still had two comm spools (each 800 ft/240m) and a pair of bridge nodes when they reached the crawl to `Lil India` but we were about out of time and had accomplished our goals.  The remaining time was spent replacing some of wired connection #2 with wireless nodes for experimentation purposes.
+ The team still had two comm spools (each 800 ft/240m) and a pair of bridge nodes when they reached the crawl to `Little India` but we were about out of time and had accomplished our goals.  The remaining time was spent replacing some of wired connection #2 with wireless nodes for experimentation purposes.
 
  Total deployed radios were 4 bridge (RS485/wireless) nodes, and about 12 wireless nodes.
 
