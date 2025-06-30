@@ -166,8 +166,42 @@ The `utils` subdirectory has the following python scripts:
 
 # Testing
 
-Will let J. Moon fill this out.
+
+## Tumbling Rock Cave Preserve / Alabama /US   April 4, 2025
+
+First deployment of radios with our firmware that had the modified packet header to support higher hop limits.  Deployed approximately 10 wireless radios in the cave and verified that we had a hop count greater than 7.   Reached the `handprint` wall'. 
+
+## Tumbling Rock Cave Preserve / Alabama /US   June 6, 2025
+
+Goals:
+
+- Repeat previous test that reached the handprint wall using only wireless radios and use the new range test tool that prints out RSSI values to check node placement, RSSI values – `Accomplished`.
+
+- Replace stub antennas with new longer, higher gain antennas, record RSSI values. `Accomplished`, new antennas are better, by about 5-10% in some cases.
+
+- Test different radio modes to determine if giving up some distance for faster signaling is worth it. `Accomplished`, it is worth it, less latency, did not affect the chain reliability. We are now using Medium/Slow as our default radio setting.
+
+- Deploy one more or more hard-linked RS485 paired radios (bridge nodes) to test a mixed wired/wireless system and push deeper into the cave. Accomplished, deployed one hard linked radio pair using a comm spool (about 700 ft), then deployed the last wireless radio after that and reached past totem gallery. Total radio hops at this point was 11, there were 12 radios deployed.
+
+After deploying the last radio, we still had two comm spools and a pair of bridge nodes, and could have pushed deeper, but it was about 20:30 at that point and everyone was burnt, so Jamie called it. Exited the cave at 21:30. The testing of the antennas and the radio modes took a long time as each radio had to be visited/handled to accomplish the task.
 
 
+## Guffey Cave / Alabama /US   June 27, 2025
+
+Guffey Cave is the site of the all-day cave rescue scenario that is the capstone of Huntsville Cave Rescue Unit's four-day cave rescue class that is held each year in late July/early August.  We wanted to test deployment of the mesh in preparation for using it as an instructor channel during the scenrio this year.
+
+The goal was to reach `The Big Fall Room` which is about 1 km into the cave, and which generally students are able to reach with wired comms during the scenario.  We also wanted to test our new listener node that had an active buzzer installed installed that beeped based on RSSI value, useful during wireless node placement.
+
+We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to the crawl that lead to `Lil India`. Total distance into the cave was about 1200m. 
+
+ - Two wired segments were deployed (900 ft from entrance to just before the pump room) and another wired segment (800 ft) that went through the breakdown leading to `Grand Central`.   There were wireless relay nodes between the two wired segments and after the second wired segment.
+
+ The team still had two comm spools (each 800 ft) and a pair of bridge nodes when they reached the crawl to `Lil India` but we were about out of time and had accomplished our goals.  The remaining time was spent replacing some of wired connection #2 with wireless nodes for experimentation purposes.
+
+ Total deployed radios was 4 bridge (RS485/wireless) nodes, and about 12 wireless nodes.
+
+ ## Guffey Cave / Alabama /US   August 3, 2025 (PLANNED)
+
+The goal is to repeat the mesh deployment of that was done on June 27 and have the mesh for instructor use during the cave rescue scenario. This will the first official use of the mesh in a Huntsville Cave Rescue Unit event. 
 
 
