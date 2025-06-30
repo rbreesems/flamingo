@@ -202,6 +202,6 @@ We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to 
 
  ## Guffey Cave / Alabama /US   August 3, 2025 (PLANNED)
 
-The goal is to repeat the mesh deployment of that was done on June 27 and have the mesh for instructor use during the cave rescue scenario. This will the first official use of the mesh in a Huntsville Cave Rescue Unit event. 
+The goal is to repeat the mesh deployment of that was done on June 27 and have the mesh for instructor use during the cave rescue scenario. We also hope to have our 3D printed enclosures for the bridge nodes ready for this test. This will the first official use of the mesh in a Huntsville Cave Rescue Unit event. 
 
 
