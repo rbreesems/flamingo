@@ -189,20 +189,20 @@ After deploying the last radio, we still had two comm spools and a pair of bridg
 
 ## Guffey Cave / Alabama /US   June 27, 2025
 
-Guffey Cave is the site of the all-day cave rescue scenario that is the capstone of Huntsville Cave Rescue Unit's four-day cave rescue class that is held each year in late July/early August.  We wanted to test deployment of the mesh in preparation for using it as an instructor channel during the scenrio this year.
+Guffey Cave is the site of the all-day cave rescue scenario that is the capstone of Huntsville Cave Rescue Unit's four-day cave rescue class that is held each year in late July/early August.  We wanted to test deployment of the mesh in preparation for using it as an instructor channel during the scenario this year.
 
-The goal was to reach `The Big Fall Room` which is about 1 km into the cave, and which generally students are able to reach with wired comms during the scenario.  We also wanted to test our new listener node that had an active buzzer installed installed that beeped based on RSSI value, useful during wireless node placement.
+The goal was to reach `The Big Fall Room` which is about 1 km into the cave, and which generally students are able to reach with wired comms during the scenario.  We also wanted to test our new listener node that had an active buzzer installed that beeped based on RSSI value, useful during wireless node placement.
 
-We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to the crawl that lead to `Lil India`. Total distance into the cave was about 1200m. 
+We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to the crawl that lead to `Lil India`. The total distance into the cave was about 1200m. 
 
- - Two wired segments were deployed (900 ft from entrance to just before the pump room) and another wired segment (800 ft) that went through the breakdown leading to `Grand Central`.   There were wireless relay nodes between the two wired segments and after the second wired segment.  The wired segments were using 4800 baud as we thought that might have to connect all four spools together (1 km) but that proved unnecessary.  We could have used as high as 19200 baud since each bridge node was only driving one spool (~900 ft).
+ - Two wired segments were deployed (900 ft/275m from entrance to just before the pump room) and another wired segment (240m ft) that went through the breakdown leading to `Grand Central`.   There were wireless relay nodes between the two wired segments and after the second wired segment.  The wired segments were using 4800 baud as we thought that might have to connect all four spools together (1 km) but that proved unnecessary.  We could have used as high as 19200 baud since each bridge node was only driving one spool (~900 ft/275m).
 
- The team still had two comm spools (each 800 ft) and a pair of bridge nodes when they reached the crawl to `Lil India` but we were about out of time and had accomplished our goals.  The remaining time was spent replacing some of wired connection #2 with wireless nodes for experimentation purposes.
+ The team still had two comm spools (each 800 ft/240m) and a pair of bridge nodes when they reached the crawl to `Lil India` but we were about out of time and had accomplished our goals.  The remaining time was spent replacing some of wired connection #2 with wireless nodes for experimentation purposes.
 
- Total deployed radios was 4 bridge (RS485/wireless) nodes, and about 12 wireless nodes.
+ Total deployed radios were 4 bridge (RS485/wireless) nodes, and about 12 wireless nodes.
 
  ## Guffey Cave / Alabama /US   August 3, 2025 (PLANNED)
 
-The goal is to repeat the mesh deployment of that was done on June 27 and have the mesh for instructor use during the cave rescue scenario. We also hope to have our 3D printed enclosures for the bridge nodes ready for this test. This will the first official use of the mesh in a Huntsville Cave Rescue Unit event. 
+The goal is to repeat the mesh deployment that was done on June 27 and use the mesh for instructor comms during the cave rescue scenario. We also hope to have our 3D printed enclosures for the bridge nodes ready for this test. This will the first official use of the mesh in a Huntsville Cave Rescue Unit event. 
 
 
