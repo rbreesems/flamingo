@@ -62,7 +62,7 @@ Baud rate vs range testing yielded:
   - 4800 can drive 3300 ft (1 km) (do not know max range yet, suspect 4000 ft)
   - 1200 can drive ?? ft (not tested yet)
 
-Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
+Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX. Any packet received over LORA RX that is rebroadcast by the router is also sent over RS485 TX.
 
 Our procedure for testing if the hard link works between a pair of radios is as follows. This test assumes that the 
 only two radios in range are the two hard linked radios that are being tested.
@@ -185,6 +185,7 @@ Goals:
 
 After deploying the last radio, we still had two comm spools and a pair of bridge nodes, and could have pushed deeper, but it was about 20:30 at that point and everyone was burnt, so Jamie called it. Exited the cave at 21:30. The testing of the antennas and the radio modes took a long time as each radio had to be visited/handled to accomplish the task.
 
+[Unedited Youtube Video](https://www.youtube.com/watch?v=4BVUCpGBc3U&ab_channel=Chris%27Corner) of the Tumbling Rock test.
 
 ## Guffey Cave / Alabama /US   June 27, 2025
 
