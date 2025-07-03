@@ -62,7 +62,7 @@ Baud rate vs range testing yielded:
   - 4800 can drive 3300 ft (1 km) (do not know max range yet, suspect 4000 ft)
   - 1200 can drive ?? ft (not tested yet)
 
-Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX. Any packet received over LORA RX that is rebroadcast by the router is also sent over RS485 TX.
+Any packet receieved over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX. Any packet received over LORA RX that is rebroadcast by the router is also sent over RS485 TX.  Packet flow on the RS485 serial link is bidrectional.
 
 Our procedure for testing if the hard link works between a pair of radios is as follows. This test assumes that the 
 only two radios in range are the two hard linked radios that are being tested.
@@ -86,7 +86,7 @@ The image below: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes d
 
 ## RS485 Connection
 
-RS485 is a two-wire differential signaling protocol that can support multiple drivers, with driver contention (collision)
+RS485 is a two-wire differential bidirectional signaling protocol that can support multiple drivers, with driver contention (collision)
 causing no damage to the drivers. For the RAK5802 RS485 module, if we call the two wires A and B, then A must be connected
 to A and B must be connected to B.  This is because of how the RAK5802 is designed; it does not support cross-connected wires.  Traditional comm wire using field phones is connection agnostic, but that is not the
 case with this system - reversing the connection A > B and B > A will cause a comm failure.  Because of this, we have marked the
