@@ -166,6 +166,7 @@ The `utils` subdirectory has the following python scripts:
 
 # Testing
 
+The [Huntsville Grotto Presentation/July 7, 2005/Jamie Moon](./doc/25-07-02_HSV_Grotto_Program_FLAMINGO_Cave_Radios.pdf) contains a lot more details on the two Tumbling Rock tests and Guffey Cave test that are described below.
 
 ## Tumbling Rock Cave Preserve / Alabama /US   April 4, 2025
 
