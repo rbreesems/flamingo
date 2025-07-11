@@ -55,7 +55,8 @@ Baud rate vs range testing yielded:
   - 57600 can drive 700 ft
   - 19200 can drive 1400 ft
   - 9600 can drive 2000 ft 
-  - 4600 can drive 3300 ft 
+  - 4800 can drive 4700 ft (1.4 km) 
+  - 2400 can drive 5500 ft (1.6 km, do not know max distance,  suspect it is approximately 3 km - 9800 ft )
  
  Any packet received over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX.
 
