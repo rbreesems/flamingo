@@ -8,5 +8,6 @@
 *.code-workspace
 utils/infofiles/*
 utils/logs/*
+tested_firmware/archived/*
 
 venv/

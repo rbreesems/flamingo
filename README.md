@@ -23,7 +23,7 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
 [WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).
 
-The latest firware branch is `may2025`.  This following summarizes our changes:
+The branch is `may2025` contains all of our modifications (other branches should not be used)  This following summarizes our changes:
 
 - Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31.
 See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
@@ -35,7 +35,7 @@ See the section on hop limit modification for a discussion of this change. The m
 - Range test messages sent to phone now have the RX RSSI/SNR for the received packet. RSSI is a negative number that increases in absolute value with increasing distance between TX/RX nodes.
 SNR is a magic number sent by the Gods and you can figure out its relationship to distance.
 
-- Range test should be enabled on all cave nodes as any cave node may have to send/receive range test packets. It is not necessary to set sender delay, it is automatically set to 30 seconds, but the sending is soft-disabled by default.  The sending action must be soft-enabled by an admin command as specified in the next bullet.
+- Range test should be enabled on all cave nodes as any cave node may have to send/receive range test packets. Range test must enabled and the sender delay must be set in order for the remote range test admin commands to work (set this via the CLI or app). Even if sender delay is non-zero, the sending action must be soft-enabled by an admin command as specified in the next bullet.
 
 - Admin commands are supported for direct channel messages to a node. Admin commands are case insensitive (capitialization shown for emphasis only).  Admin commands are ignored if received on the general channel.
 These admin commands are compatible with voice recognition in the messaging app. The first word of an admin
@@ -47,6 +47,33 @@ command was chosen to not be part of a normal status message.
   - `ADRT delay <15|30|60>`  -- set delay for between packets. Only 15, 30, or 60 is recognized.
 
 - Logging messages to the serial port have been modified for easier parsing. Logging of all communication at Incident Command (IC) during a rescue is of critical importance. Our assumption is that the relay chain extends all the way to IC, with a laptop hooked to the surface node so that serial logging can be done.  The messages output to the serial port during operation were slightly modified so that they could be easily parsed afterwards, and incoming/outgoing messages with timestamps easily summarized. We use Microsoft Code + Serial Monitor plugin for serial monitoring. We used this methodology during testing and it worked well.
+
+- Support for serial link via the RAK5802 RS485 module - see the detailed section below.
+
+- Support for a buzzer haptic for RSSI - see the detailed section below.
+
+The `firmware/variants/rak4631/platformio.ini` file contains different targets for thes various capabilities. All targets contain the hop limit modifications.
+
+1. `env:rak4631` - just contains hop limit modifications
+2. `env:rak4631_slink` - enables serial link modifications
+3. `env:rak4631_buzzer` - enables buzzer modifications ( no serial link)
+
+See the `tested_firmware` directory for pre-built firmware, all built from the `may2025` branch.
+
+## Buzzer Haptic for RSSI
+
+The buzzer modifications use an active buzzer to indicate different RSSI ranges when a range test packet is received. The ranges are:
+
+1. One beep: RSSI greater than or equal to -90
+2. Two beeps:  RSSI less than -90  greater then or equal to -110
+3. Three beeps  RSSI less than -110.
+
+This is used during relay placement so that you don't have to keep your eyes on the screen to see RSSI values for range test packets. This does not use the RAK PWM buzzer settings in the phone app.  The buzzer is only installed on the radio that you want to use as a relay placement listener.
+
+The buzzer we used was purchased from Amazon (search for Active Buzzer Module, 5V Piezoelectric Alarm, DIYables store) - it is a small 3-pin (Vcc/Gnd/IO) breadboard.  We have stuffed it successfully into a WisMesh Pocket radio, it just barely fits. It runs fine on 3.3V.  This particular active buzzer is an active low enable.
+
+These modifications could easily be modified to support a passive buzzer.
+
 
 ## RS485 Serial link modification
 
@@ -121,6 +148,8 @@ There was enough extra bytes in the original Meshtastic packet structure that th
 
 Setting the hop-limit greater than 7 has to be done via the CLI as the phone apps all assume the max hop limit is 7.
 
+
+
 ## Using Range Test to set Cave Relay nodes
 
 In the master Meshtastic firmware, range test packets have their packet hop_limit forced to zero when sent so that when they arrive at another node, they are not forwarded.
@@ -152,6 +181,19 @@ then move back into reliable range, and place a new relay node.
 
 5. Go back to step #1 where the current relay node becomes the previous relay node.
 
+
+## A Note on V2.5 vs V2.6 firmware
+
+Version 2.6 firmware does not seem to have anything really needed for our cave radios, but if personal radios are being switched back and forth between stock firmware and our firmware, our cave radios all needed to be on Version 2.6.  This is because moving between V2.5 and V2.6 wipes settings, and things like longName/shortName have to be reprogrammed.
+
+
+## Router Algorithm/Network Congestion/Reliability
+
+Here is my simple interpretation of the router algorithm -- for the case we are interested in, general broadcast packets, a node forwards packets that it has not seen before.  Each packet has a randomized packet number, and it keeps track of 'recently seen' packets.  If a packet arrives that the node has recently seen, that packet is discarded.
+
+In our linear chain case, each node will see two neighbors (behind/ahead). For a packet traveling from start to end, a node gets a packet from the `behind` neighbor. The node rebroadcasts it.  The `ahead` neighbor receives the packet, and rebroadcasts it. The `behind` neighbor receives this rebroadcast packet, but because it has been recently seen, the packet is discarded.  The hop limit value in our linear chain case has no effect on network congestion.  If packets only enter from either the start or end of the chain, then network congestion is only affected by how fast new packets are introduced into the chain.
+
+End-to-end reliability will drop as the chain gets longer. It serves us best to be conservative in relay node placement - one or two weak links in the chain can kill end-to-end reliability. With 99% node reliability, a chain of 10 gives us 90% end-to-end reliabilty. We should be able to achieve 99% reliability with conservative node placement and given that nodes will retransmit if an acknowledgement is not received for a packet (MAX_RETRANSMIT is 5)
 
 # Utility Software
 
