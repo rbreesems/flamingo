@@ -78,6 +78,8 @@ def parseOneLogFile(fpath, surface_node):
             txhost = ""
             if host == surface_node:
                 outmsg = cwords[6].split('=')[1]
+                if re.match("^#.*", outmsg) or re.match("^P#.*", outmsg) or re.match("^`#.*", outmsg):
+                    continue
             else:
                 inmsg = cwords[6].split('=')[1]
                 txhost = host
@@ -88,7 +90,7 @@ def parseOneLogFile(fpath, surface_node):
             entry = LogEntry(tstamp, txhost, inmsg, outmsg, num_hops)
             if host == surface_node:
                 if re.search(".*PhoneApi msg:.*",line):
-                    print(f"{entry.tstamp} \t\t\t\t\tOutgoing:  {entry.outmsg}")
+                    print(f"{entry.tstamp} \t\t\t\t\tOutgoing ({surface_node}):  {entry.outmsg}")
             else:
                 print(f"{entry.tstamp} Incoming:  {entry.inmsg} \t host: {entry.txhost}  numhops: {entry.num_hops}")
 
