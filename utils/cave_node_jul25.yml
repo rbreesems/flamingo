@@ -29,6 +29,7 @@ settings:
   lora.tx_enabled: "True"
   lora.ignore_mqtt: "True"
   lora.override_duty_cycle: "True"
+  lora.channel_num: "10"
   position.fixed_position: "False"
   device.rebroadcast_mode: "ALL"
   network.wifi_enabled: "False"
