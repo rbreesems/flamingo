@@ -14,7 +14,7 @@ Version display: HCRU 07/25.0
 Version display: HCRU 07/25.1
 Added Alert Bell emoji receive as toggle for ADRT on/off - allows remote range test to be toggled on/off via emoji
 
-1. rak4631-firmware-2-5-07-2025-1.u2
+Same rak4631 versions as above except filename has 07-2025-1.
 
 ## Pre-built firmware for T-deck
 
