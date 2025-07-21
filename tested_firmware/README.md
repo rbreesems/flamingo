@@ -18,7 +18,8 @@ Added Alert Bell emoji receive as toggle for ADRT on/off - allows remote range t
 
 ## Pre-built firmware for T-deck
 
-Still trying to get this to work, ignore any T-deck firmware for now.
+The ZIP archive with `t-deck` in the filename has firmware for the T-deck. Download, unzip, and read the `README` in that directory for more instructions. Currently, the T-deck support is limited to only the packet header changes so that a T-deck can send/receive messages on the HCRU mesh.
+
 
 
 

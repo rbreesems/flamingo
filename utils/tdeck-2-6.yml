@@ -28,19 +28,20 @@ settings:
   lora.tx_power: "30"
   lora.tx_enabled: "True"
   lora.ignore_mqtt: "True"
-  lora.override_duty_cycle: "True"
   lora.channel_num: "10"
+  lora.override_duty_cycle: "True"
   position.fixed_position: "False"
   device.rebroadcast_mode: "ALL"
   network.wifi_enabled: "False"
   telemetry.device_update_interval: "1800"
-  range_test.enabled: "True"
-  range_test.sender: "15"
+  range_test.enabled: "False"
+  range_test.sender: "0"
   position.gps_mode: "NOT_PRESENT"
   serial.baud: "BAUD_19200"
   power.is_power_saving: "False"
-
-
+  
+  
+  
   
 
 
