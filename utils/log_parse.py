@@ -6,6 +6,8 @@ from pathlib import Path
 from dataclasses import dataclass
 
 # Helper program for to parse serial log messages
+# This parsing compatible with greater than HCRU 7/25.2 that
+# fixed problem with logging of long messages
 
 
 def filterColorCode(s):
@@ -64,35 +66,53 @@ def parseOneLogFile(fpath, surface_node):
     ifile = open(fpath,'r')
     lines = ifile.readlines()
     ifile.close()
+    state = 'default'
     for line in lines:
         line = line.rstrip()
         line = filterColorCode(line)
         #print(line)
-        if re.search(".*TextModule msg.*",line) or re.search(".*PhoneApi msg.*",line):
-            words = line.split()
-            tstamp = words[2]
-            cwords = line.split(',')
-            host = cwords[2].split('=')[1]
-            outmsg = ""
-            inmsg = ""
-            txhost = ""
-            if host == surface_node:
-                outmsg = cwords[6].split('=')[1]
-                if re.match("^#.*", outmsg) or re.match("^P#.*", outmsg) or re.match("^`#.*", outmsg):
+        if state == 'default':
+            if re.search(".*TextModule msg.*",line) or re.search(".*PhoneApi msg.*",line):
+                
+                words = line.split()
+                tstamp = words[2]
+                cwords = line.split(',')
+                if len(cwords) < 2:
                     continue
-            else:
-                inmsg = cwords[6].split('=')[1]
-                txhost = host
+                host = cwords[2].split('=')[1]
+                msg = ""
+                txhost = ""
+                if host != surface_node:
+                    txhost = host
 
-            hop_start = int(cwords[5].split('=')[1])
-            hop_limit = int(cwords[4].split('=')[1])
-            num_hops = hop_start - hop_limit
-            entry = LogEntry(tstamp, txhost, inmsg, outmsg, num_hops)
-            if host == surface_node:
-                if re.search(".*PhoneApi msg:.*",line):
-                    print(f"{entry.tstamp} \t\t\t\t\tOutgoing ({surface_node}):  {entry.outmsg}")
+                if re.search(".*PhoneApi msg.*",line):
+                    phoneApiMessage = True
+                else:
+                    phoneApiMessage = False
+
+                hop_start = int(cwords[5].split('=')[1])
+                hop_limit = int(cwords[4].split('=')[1])
+                num_hops = hop_start - hop_limit
+                state = 'message'
+                continue
+        if state == 'message':
+            if re.match(".*z=.*",line):
+                msg = msg+line.split("z=",1)[1]
+                continue
+            elif msg != "":
+                state = 'default'
+                if host == surface_node:
+                    if re.match("^#.*", msg) or re.match("^P#.*", msg) or re.match("^`#.*", msg):
+                        continue
+                    if phoneApiMessage:
+                        entry = LogEntry(tstamp, txhost, "", msg, num_hops)
+                        print(f"{entry.tstamp} \t\t\t\t\tOutgoing ({surface_node}):  {entry.outmsg}")
+                else:
+                    entry = LogEntry(tstamp, txhost, msg, "", num_hops)
+                    print(f"{entry.tstamp} Incoming:  {entry.inmsg} \t host: {entry.txhost}  numhops: {entry.num_hops}")
             else:
-                print(f"{entry.tstamp} Incoming:  {entry.inmsg} \t host: {entry.txhost}  numhops: {entry.num_hops}")
+                state = 'default'
+
 
 
 def main():
