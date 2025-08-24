@@ -23,7 +23,7 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
 [WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).
 
-The branch `may2025` contains our modifications (other branches should not be used).  The following summarizes our changes:
+The branches `may2025` (firmware 2.5) `hopmod_2_6_11` (firmware 2.6) contains our modifications (other branches should not be used).  The following summarizes our changes:
 
 - Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31.
 See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
@@ -184,7 +184,7 @@ then move back into reliable range, and place a new relay node.
 
 ## A Note on V2.5 vs V2.6 firmware
 
-Version 2.6 firmware does not seem to have anything really needed for our cave radios, but if personal radios are being switched back and forth between stock firmware and our firmware, our cave radios all needed to be on Version 2.6.  This is because moving between V2.5 and V2.6 wipes settings, and things like longName/shortName have to be reprogrammed.
+We have ported our changes to Version 2.6 firmware even though it does not seem to have anything really needed for our cave radios, just to stay semi-current with Meshtastic (even though this is a fast moving target).  If you update a V2.5 radio to V2.6 firmware, be aware that this wipes settings, and things like longName/shortName and all other have to be reprogrammed.
 
 
 ## Router Algorithm/Network Congestion/Reliability

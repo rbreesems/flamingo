@@ -17,6 +17,9 @@ Added Alert Bell emoji receive as toggle for ADRT on/off - allows remote range t
 Version display: `HCRU 07/25.2`
 Fixed logging of long messages (problem discovered durng August 3/2025 mock scenario). Only have firmware for base nodes, serial link and buzzer nodes do not need this fix.
 
+Version display: `HCRU 09/25.1` -- all changes ported to 2.6.11 Meshtastic. Base filename is `rak4631-firmware-2-6-09-2025-1`, `slink`, `active-buzzer` variations are provided. Note that when updating your 2.5 firmware to 2.6, all settings are lost and have to be reprogrammed (this is because of the 2.6 version update, not our changes)
+
+
 ## Pre-built firmware for T-deck
 
 The ZIP archive with `t-deck` in the filename has firmware for the T-deck. Download, unzip, and read the `README` in that directory for more instructions. Currently, the T-deck support is limited to only the packet header changes so that a T-deck can send/receive messages on the HCRU mesh.
