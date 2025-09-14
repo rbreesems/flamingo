@@ -19,6 +19,8 @@ Fixed logging of long messages (problem discovered durng August 3/2025 mock scen
 
 Version display: `HCRU 09/25.1` -- all changes ported to 2.6.11 Meshtastic. Base filename is `rak4631-firmware-2-6-09-2025-1`, `slink`, `active-buzzer` variations are provided. Note that when updating your 2.5 firmware to 2.6, all settings are lost and have to be reprogrammed (this is because of the 2.6 version update, not our changes)
 
+WARNING-WARNING-WARNING - Sept 2025 - do not use the 2.6 firmware versions if you have WisMesh 19007 base board. For some reason, the wireless does not work (our bridge nodes use a WisMesh 19007 base board and the wired link works, but the wireless does not). The 2.6 firmware does work on WisMesh pockets, we are debugging...
+
 
 ## Pre-built firmware for T-deck
 
