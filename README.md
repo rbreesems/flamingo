@@ -253,3 +253,9 @@ Since the two wired segments were relatively short, one about 300 feet and the o
 The mesh proved its worth almost immediately when a mistake was made in the placement of two patients - this was discovered and fixed via text messages.  Throughout the day, dynamic adjustments were made to HCRU unit member placement in the cave via text message coordination over the mesh.
 
 HCRU leadership was thrilled with the mesh performance and want to have more mesh usage in future events.
+
+## HCRU/Chattanooga Cave Rescue/Jackson County Rescue Mock/ Tumbling Rock Cave / Alabama /US   Sept 27, 2025
+
+HCRU is hosting a joint mock scenario with Chattanooga Cave Rescue/TN and Jackson County Rescue on Sept 27/2025 at Tumbling Rock cave preserve. About 50 cavers will be in attendance, and we are planning on deploying a mesh using 40+ radios between dedicated mesh and rescuer radios. Details on mesh performance will be posted here after the mock. We are planning on using at least three wired segments in the deployment, and intend to deploy deeper into the cave than our previous tests at Tumbling Rock.
+
+
