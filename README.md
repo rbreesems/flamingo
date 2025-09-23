@@ -52,11 +52,17 @@ command was chosen to not be part of a normal status message.
 
 - Support for a buzzer haptic for RSSI - see the detailed section below.
 
+- Support for a heartbeat LED (blinks every two seconds) - useful for locating nodes that have been placed in the cave.
+
 The `firmware/variants/rak4631/platformio.ini` file contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
 1. `env:rak4631` - just contains hop limit/admin modifications
 2. `env:rak4631_slink` - `env:rak4631` + enables serial link modifications
 3. `env:rak4631_buzzer` - `env:rak4631` + enables buzzer modifications
+4. `env:rak4631_cavenode` - `env:rak4631` + enables buzzer modifications + blinky heartbeat led
+5. `env:rak4631_slink_hb` - `env:rak4631` + enables serial link modifications + blinky heartbeat led
+
+For targets that support the buzzer and heartbeat LED the pin usage can be changed via compile time defines.
 
 See the `tested_firmware` directory for pre-built firmware, all built from the `may2025` branch.
 
@@ -77,7 +83,7 @@ These modifications could easily be modified to support a passive buzzer.
 
 ## RS485 Serial link modification
 
-The `slink` branch in the firmware repo contains all of the modifications in the `may2025` branch. This branch is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
+The `slink` targets in the `platformio.ini` enable the serial link code. This code is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
 RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. 
 
 Baud rate vs range testing yielded:
