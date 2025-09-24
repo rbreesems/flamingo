@@ -60,7 +60,7 @@ The `firmware/variants/rak4631/platformio.ini` file contains different targets f
 2. `env:rak4631_slink` - `env:rak4631` + enables serial link modifications
 3. `env:rak4631_buzzer` - `env:rak4631` + enables buzzer modifications
 4. `env:rak4631_cavenode` - `env:rak4631` + enables buzzer modifications + blinky heartbeat led
-5. `env:rak4631_slink_hb` - `env:rak4631` + enables serial link modifications + blinky heartbeat led
+5. `env:rak4631_slink_hb` - `env:rak4631` + enables serial link modifications + blinky heartbeat led (DO NOT USE - still experimental)
 
 For targets that support the buzzer and heartbeat LED the pin usage can be changed via compile time defines.
 
