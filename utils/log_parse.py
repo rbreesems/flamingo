@@ -2,6 +2,8 @@ import argparse
 import os
 import re
 import posixpath
+import yaml
+import sys
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -47,7 +49,7 @@ def filterColorCode(s):
     return "".join(newS)
 
 
-version = "1.1"
+version = "1.2"
 infodir = "infofiles"
 @dataclass
 class LogEntry:
@@ -58,11 +60,42 @@ class LogEntry:
     outmsg: str
     num_hops: int = 0
     
+def isOutgoing(host, yml_opts):
+    outgoing = yml_opts.get('outgoing',None)
+    if outgoing is None:
+        return False
+    new_host = outgoing.get(host, None)
+    if new_host is None:
+        return False
+    return True
+    
+def getOutgoingName(host, yml_opts):
+    outgoing = yml_opts.get('outgoing',None)
+    if outgoing is None:
+        return host
+    return outgoing.get(host, None)
 
-def parseOneLogFile(fpath, surface_node):
+def getIncomingName(host, yml_opts):
+    incoming = yml_opts.get('incoming',None)
+    if incoming is None:
+        return host
+    new_host = incoming.get(host, None)
+    if new_host is None:
+        return host
+    return new_host
+
+def translate_host(host, yml_opts):
+
+    new_host = getOutgoingName(host, yml_opts)
+    if new_host is not None:
+        return 
+
+
+def parseOneLogFile(fpath, yml_opts):
     global log_data
     global prefs_dict
 
+    
     ifile = open(fpath,'r')
     lines = ifile.readlines()
     ifile.close()
@@ -72,6 +105,8 @@ def parseOneLogFile(fpath, surface_node):
         line = filterColorCode(line)
         #print(line)
         if state == 'default':
+            if 'Routing sniffing' in line:
+                continue
             if re.search(".*TextModule msg.*",line) or re.search(".*PhoneApi msg.*",line):
                 
                 words = line.split()
@@ -80,16 +115,18 @@ def parseOneLogFile(fpath, surface_node):
                 if len(cwords) < 2:
                     continue
                 host = cwords[2].split('=')[1]
+                if host == 'reesetdeck':
+                    host = host
                 msg = ""
                 txhost = ""
-                if host != surface_node:
-                    txhost = host
-
+                if not isOutgoing(host, yml_opts):
+                    txhost = getIncomingName(host, yml_opts)
                 if re.search(".*PhoneApi msg.*",line):
                     phoneApiMessage = True
                 else:
                     phoneApiMessage = False
-
+                if len(cwords) < 5:
+                    cwords  = cwords
                 hop_start = int(cwords[5].split('=')[1])
                 hop_limit = int(cwords[4].split('=')[1])
                 num_hops = hop_start - hop_limit
@@ -101,13 +138,14 @@ def parseOneLogFile(fpath, surface_node):
                 continue
             elif msg != "":
                 state = 'default'
-                if host == surface_node:
+                if isOutgoing(host, yml_opts):
                     if re.match("^#.*", msg) or re.match("^P#.*", msg) or re.match("^`#.*", msg):
                         continue
-                    if phoneApiMessage:
-                        entry = LogEntry(tstamp, txhost, "", msg, num_hops)
-                        print(f"{entry.tstamp} \t\t\t\t\tOutgoing ({surface_node}):  {entry.outmsg}")
+                    
+                    entry = LogEntry(tstamp, txhost, "", msg, num_hops)
+                    print(f"{entry.tstamp} \t\t\t\t\tOutgoing ({getOutgoingName(host, yml_opts)}):  {entry.outmsg}")
                 else:
+                    txhost = getIncomingName(host, yml_opts)
                     entry = LogEntry(tstamp, txhost, msg, "", num_hops)
                     print(f"{entry.tstamp} Incoming:  {entry.inmsg} \t host: {entry.txhost}  numhops: {entry.num_hops}")
             else:
@@ -119,18 +157,27 @@ def main():
     
     global prefs_dict
     parser = argparse.ArgumentParser(description=f"Parse serial logs from cave testing, Version {version}.")
-    parser.add_argument('logdir',type=str, help="Log directory containing log files, all files will parsed.")
-    parser.add_argument('surface_node',type=str, help="Long name of surface node (outgoing messages).")
-
+    parser.add_argument('argumentsFile',type=str, help="YAML file containing all arguments.")
     args = parser.parse_args()
+
+    try:
+        with open(args.argumentsFile, 'r') as file:
+            yml_opts = yaml.safe_load(file) # Use safe_load to prevent arbitrary code execution
+    except Exception as e:
+        print("ERROR: Unexpected error parsing yml file: %s, %s/%s" % (args.argumentsFile, sys.exc_info()[0], e))
+        exit(-1)
+    logdir = yml_opts.get('logdir',None)
+    if logdir is None:
+         print("ERROR: Expecting 'logdir' value in yml arguments file")
+         return
     
-    if not posixpath.isdir(args.logdir):
-         print("ERROR: first argument has to specify directory containing log files")
+    if not posixpath.isdir(logdir):
+         print(f"ERROR: value for 'logdir' of {logdir} is not a directory ")
          return
     count = 0
-    for entry in sorted(Path(args.logdir).iterdir(), key=os.path.getmtime):
+    for entry in sorted(Path(logdir).iterdir(), key=os.path.getmtime):
         if entry.is_file():
-            parseOneLogFile(posixpath.join(args.logdir,entry.name), args.surface_node)
+            parseOneLogFile(posixpath.join(logdir,entry.name), yml_opts)
             
 
     return

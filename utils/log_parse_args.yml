@@ -1,0 +1,27 @@
+#
+# Logging Methodoloy 
+#  Visual Code running on laptop with IC radio connected via USB cable
+#  Visual Code has Serial Monitor plugin running and capturing all output 
+#  the IC radio
+# Values
+# log_dir - directory containing logs to be parsed, all comm log files are parsed,
+#           oldest to newest
+#
+# incoming: dictionary that translates incoming radio names to names to be output in parsed log
+# outgoing: dictionary that translates outgoing radio names to names to be output in parsed log
+#
+
+logdir: 'D:/meshtastic/logs/trock_mock_logs'
+
+incoming:
+  Listener1 : breese-comms
+  HCRU-A30:  jerinM-comms
+  HCRU-A28:  philipB-comms
+  UCOmmand-WP08: sykesR-IRT2
+  Search-WP09: davidP-IRT2
+
+
+outgoing:
+  reesetdeck: IncidentCommandAlt
+  IncidentCommand: IncidentCommand
+
