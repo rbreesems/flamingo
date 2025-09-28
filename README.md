@@ -262,6 +262,30 @@ HCRU leadership was thrilled with the mesh performance and want to have more mes
 
 ## HCRU/Chattanooga Cave Rescue/Jackson County Rescue Mock/ Tumbling Rock Cave / Alabama /US   Sept 27, 2025
 
-HCRU is hosting a joint mock scenario with Chattanooga Cave Rescue/TN and Jackson County Rescue on Sept 27/2025 at Tumbling Rock cave preserve. About 50 cavers will be in attendance, and we are planning on deploying a mesh using 40+ radios between dedicated mesh and rescuer radios. Details on mesh performance will be posted here after the mock. We are planning on using at least three wired segments in the deployment, and intend to deploy deeper into the cave than our previous tests at Tumbling Rock.
+HCRU hosted a joint mock scenario with Chattanooga Cave Rescue/TN, Jackson County Rescue, and two members from Blacksburg Va Rescue Squad on Sept 27/2025 at Tumbling Rock cave preserve. About 50 cavers were in attendance.  The initial teams entered at about 9:00 am and the patient exited at 5:00 pm.  The scenario had two patients (one ambulatory and one requiring a litter) who were located in a vertical section about one kilometer into the cave. A mesh was established in the cave, using approximately 23 cave radios, three different wired segments (900 ft/800 ft/ 800 ft) using six bridge nodes, and 10 other mesh radios for rescuers. 
+
+The Good:
+
+- Comms was established to the patient location (which was 100 ft above the floor in a vertical section)
+- Wired bridges worked very well
+- The blinky LED added to the 2nd Gen cave node worked well for finding placed nodes during retrieval
+
+The Bad:
+
+- I was not conservative enough in inital placement of the wireless nodes, leading to comms failure to IC once we were about 5 or 6 wireless nodes past the first wired link.  Our two Blacksburg members (Philip B and Jerin M) went back to identify weak spots, and then eventually called for more mesh nodes which we sent back with a third member (after we had laid the second wired link). We need to have a better methodology for confirming solid comms back to IC - Philip B says that they use a pingBot for that, will check that out.
+
+- The comms shared channel was chaotic - we need to use a different shared channel for comms status/link status back to IC with the shared channel for general rescuers.
+
+- Rescuer radios need to be placed on client mute while the mesh is being deployed/debugged as if you are trying to debug a weak link then other Client radios can mess up your debugging (Philip B suggested this initially and I ignored him, and regretted it later). Once the mesh is established with solid comms then rescuers could change to CLIENT mode.
+
+- Need to give radios meaningful names (change the long name) as they are being handed out to rescuers in ordered to avoid questions like "Who is HA28" on the comms channel during rescue. This is a protocol change, easy to implement.
+
+Overall, leadership of the squads agreed that the mesh radio usage was a success. A backup plan was in-place to use wired+field phones if the mesh failed to perform, but fortunately was not needed.
+
+I will add a detailed map later of the node placement in the cave.  Below is a photo of all of the radios used in the mock -
+the orange capped nodes are the 2nd gen cave mesh nodes, the nodes to the far left are the 2nd gen bridge nodes, the clunky squarish nodes in the middle are the prototype bridge nodes and pile in the middle are rescuer radios (WisMesh pockets and a Tdeck). We used 6 of the 8 available bridge nodes and still had two bridge nodes and a 750 ft wire spool when we reached the patient.
+
+![alt text](./doc/all_radios_in_trock_mock_sep25.jpg)
+
 
 
