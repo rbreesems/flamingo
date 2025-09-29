@@ -12,6 +12,7 @@
 # you can change this ordering, and/or edit the value after the ':' which is
 # the actual column name. Do not change the value before the ':'
 fixed_cols:
+  - "id: Node id"
   - "Short Name:Short Name"
   - "macaddr:MacID"
   - "Long Name:Long Name"

@@ -36,8 +36,9 @@ settings:
   network.wifi_enabled: "False"
   telemetry.device_update_interval: "1800"
   range_test.enabled: "True"
+  range_test.sender: "15"
   position.gps_mode: "NOT_PRESENT"
-  serial.baud: "BAUD_4800"
+  serial.baud: "BAUD_9600"
   
   
   
