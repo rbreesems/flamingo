@@ -110,6 +110,7 @@ def parseOneInfoFile(fpath):
                     mwords = v.split(":")
                     mac = mwords[len(mwords)-2]+mwords[len(mwords)-1]
                     node_dict["global_macaddr"] = mac
+                    node_dict["global_id"] = "%x" % (int(nodeNum.replace(',','')))
                     state = "null"
                     continue
         if state == "prefs":
@@ -179,6 +180,7 @@ def main():
             yml_opts = yaml.safe_load(file) # Use safe_load to prevent arbitrary code execution
     except Exception as e:
         print("ERROR: Unexpected error parsing yml file: %s, %s/%s" % (args.configFile, sys.exc_info()[0], e))
+        exit(-1)
 
     fixed_cols = yml_opts.get('fixed_cols',None)
     if fixed_cols is None:

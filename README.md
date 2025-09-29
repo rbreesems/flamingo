@@ -283,9 +283,12 @@ The Bad:
 Overall, leadership of the squads agreed that the mesh radio usage was a success. A backup plan was in-place to use wired+field phones if the mesh failed to perform, but fortunately was not needed.
 
 I will add a detailed map later of the node placement in the cave.  Below is a photo of all of the radios used in the mock -
-the orange capped nodes are the 2nd gen cave mesh nodes, the nodes to the far left are the 2nd gen bridge nodes, the clunky squarish nodes in the middle are the prototype bridge nodes and pile in the middle are rescuer radios (WisMesh pockets and a Tdeck). We used 6 of the 8 available bridge nodes and still had two bridge nodes and a 750 ft wire spool when we reached the patient.
+the orange capped nodes are the 2nd gen cave mesh nodes, the nodes to the far left are the 2nd gen bridge nodes, the clunky squarish nodes in the middle are the prototype bridge nodes and pile in the middle are rescuer radios (WisMesh pockets and a Tdeck). We used 6 of the 8 available bridge nodes and still had two bridge nodes and a 750 ft wire spool when we reached the patient. FYI, Chris Cargal and Becky Williams designed/made the 3D-printed enclosures for the 2nd gen bridge nodes, while Jamie Moon designed/made the 3D-printed enclosuers for the 2nd gen cave nodes.
 
-![alt text](./doc/all_radios_in_trock_mock_sep25.jpg)
+![All mesh radios](./doc/all_radios_in_trock_mock_sep25.jpg)
+
+This  [map of node locations/Chris Cargal](./doc/TR_mock_Nodes_20250927.pdf) was made by Chris Cargal.  Node locations were recorded by Chris as we picked as the patient was being carried out. Blue lines are the wired segment, red dots are wireless nodes. One of the red nodes after the end of last wired segement is a rescuer radio 100 ft up from the cave floor where the paties was location
+
 
 
 
