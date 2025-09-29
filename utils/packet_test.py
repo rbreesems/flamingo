@@ -65,7 +65,8 @@ def main():
                '--sendtext',
                args.msg,
                '--dest',
-                args.id
+                args.id,
+                '--ack',
                ]
         packet_count += 1
         print(f"Sending packet: {packet_count}")
@@ -75,6 +76,8 @@ def main():
             print(line)
             if 'received an ack' in line.lower():
                 success_count += 1
+            elif 'received an nak' in line.lower():
+                continue
         print(f"Success rate is {success_count}/{packet_count}")
         time.sleep(delay)
 
