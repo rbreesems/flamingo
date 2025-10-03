@@ -5,6 +5,7 @@ import yaml
 import sys
 import posixpath
 import time
+import random
 import subprocess
 
 
@@ -51,11 +52,13 @@ def main():
     parser.add_argument('-i','--id',type=str, help="target node id", default=None)
     parser.add_argument('-c', '--count',type=int, help="packet count", default=1)
     parser.add_argument('-m', '--msg',type=str, help="msg to send", default="Hello from packet test")
-    parser.add_argument('-d', '--delay',type=int, help="delay in seconds between packets", default=15)
+    parser.add_argument('-d', '--delay',type=int, help="delay in seconds between packets", default=20)
     parser.add_argument('-s', '--silent',action='store_true',help="", default=False)
+    parser.add_argument('-p', '--port',type=str,help="port number", default='')
 
     args = parser.parse_args()
     delay = args.delay
+    delay = random.randint(delay-delay/2,delay+delay/2)
     count = args.count
 
     success_count = 0
@@ -68,6 +71,9 @@ def main():
                 args.id,
                 '--ack',
                ]
+        if args.port != '':
+            cmdargs.append('--port')
+            cmdargs.append(args.port)
         packet_count += 1
         print(f"Sending packet: {packet_count}")
         output = runProgramCaptureOutput(cmdargs)

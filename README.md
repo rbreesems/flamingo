@@ -272,7 +272,7 @@ The Good:
 
 The Bad:
 
-- I was not conservative enough in inital placement of the wireless nodes, leading to comms failure to IC once we were about 5 or 6 wireless nodes past the first wired link.  Our two Blacksburg members (Philip B and Jerin M) went back to identify weak spots, and then eventually called for more mesh nodes which we sent back with a third member (after we had laid the second wired link). We need to have a better methodology for confirming solid comms back to IC - Philip B says that they use a pingBot for that, will check that out.
+- I was not conservative enough in inital placement of the wireless nodes, leading to comms failure to IC once we were about 5 or 6 wireless nodes past the first wired link.  Our two Blacksburg members (Philip B and Jerin M) went back to identify weak spots, and then eventually called for more mesh nodes which we sent back with a third member (after we had laid the second wired link). See the discussion below for the root cause of this problem.
 
 - The comms shared channel was chaotic - we need to use a different shared channel for comms status/link status back to IC with the shared channel for general rescuers.
 
@@ -295,8 +295,18 @@ Photos of the 2nd Gen cave node and bridge node are below.
 
 ![Bridge node/2nd Gen](./doc/bridgenode_2ndgen.jpg)
 
+### So why did the mesh used in the Tumbling Rock Mock have initial reliablity problems?
 
+The reason that the cave node placement in the Tumbling Rock mesh looks somewhat haphazard, is because after initial
+node placement, there was unreliable comms back to IC, which had to be fixed by going back and patching up weak links
+by placing more nodes.
 
+Some extensive testing after the mock revealed the root cause. In our past tests in Tumbling Rock, the 1st gen cave nodes (external antenna) and WisMesh Pockets (external antenna) had similar range, and we used a Pocket as the listener node for placing the cave nodes.
 
+For the mock, we just did the same thing - used a Pocket as a listener node to check the RSSi value of the range test packets being used to place the 2nd gen cave nodes (internal antenna).  However, extensive testing after the mock has revealed that the 2nd Gen cave nodes have about 20% less range than the pockets, due to the internal antenna config.  Thus, cave nodes were being placed out of their reliable range (essentially we were using an apple to place oranges).  The 2nd gen cave nodes were ready just-in-time for the mock, and basic functionaly testing was done on them but not a lot of range testing.  It was just assumed that the 2nd gen cave node range would be the same as the 1st gen.
+
+Anyway, lesson learned - always use the same type of radio to listen for range test packets as the radios being used to build the mesh!
+
+Automated packet testing after the mock also showed the effect of SNR on packet loss - once SNR goes negative, it all over with - packet loss becomes unacceptable (RSSi can still be in the 'ok' range even if SNR is negative).  Currently the buzzer code only watches RSSi value but it is going to be modified to also be sensitive to SNR.
 
 
