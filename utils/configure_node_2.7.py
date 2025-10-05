@@ -4,11 +4,13 @@ import time
 import os
 import re
 import yaml
+import json
 import sys
 import posixpath
 
 
 # Helper program for CLI argument programming of cave mesh nodes
+# This version is compatible with firmware above 2.7.0
 # Modify config_opt to add more options, only a few are there now
 # Usage:
 #  python config.py --help 
@@ -35,94 +37,16 @@ import posixpath
 # In set mode, it will write settings, set a new key for the primary channel.
 # This always writes data returned from --info command to infofiles/<longname>.txt
 # 
-# 
-# Sample output (read)
-# D:\meshtastic\cli>python config.py cave_node.yml --port COM5
-# Running command: meshtastic --port COM5 --get bluetooth.mode --get device.role --get lora.hop_limit --get lora.sx126x_rx_boosted_gain --get lora.ignore_mqtt --get lora.override_duty_cycle --get position.gps_enabled --get position.fixed_position --get device.rebroadcast_mode
-# Connected to radio
-# bluetooth.mode: 2
-# device.role: 0
-# lora.hop_limit: 10
-# lora.sx126x_rx_boosted_gain: True
-# lora.ignore_mqtt: True
-# lora.override_duty_cycle: True
-# position.gps_enabled: False
-# position.fixed_position: False
-# device.rebroadcast_mode: 2
-# Completed getting preferences
-# 
-# Running command: meshtastic --port COM5 --info
-# Found channel 0
-# Node info:
-# "id": "!aef88d2f",
-# "longName": "BobReese",
-# "shortName": "BR02",
-# "batteryLevel": 101,
-#
-# sample output (set)
-# 
-# D:\meshtastic\cli>python config.py --port COM5 cave_node.yml --set
-# Running command: meshtastic --port COM5 --get bluetooth.mode --get device.role --get lora.hop_limit --get lora.sx126x_rx_boosted_gain --get lora.ignore_mqtt --get lora.override_duty_cycle --get position.gps_enabled --get position.fixed_position --get device.rebroadcast_mode
-# Connected to radio
-# bluetooth.mode: 2
-# device.role: 0
-# lora.hop_limit: 10
-# lora.sx126x_rx_boosted_gain: True
-# lora.ignore_mqtt: True
-# lora.override_duty_cycle: True
-# position.gps_enabled: False
-# position.fixed_position: False
-# device.rebroadcast_mode: 2
-# Completed getting preferences
-# 
-# Beginning set command sequence for changed settings: {'lora.hop_limit': '3', 'lora.override_duty_cycle': 'false'}
-# Running command: meshtastic --port COM5 --set lora.hop_limit 3
-# Connected to radio
-# Set lora.hop_limit to 3
-# Writing modified preferences to device
-# 
-# Wrote a setting, sleeping for 10 seconds for reboot
-# Running command: meshtastic --port COM5 --set lora.override_duty_cycle false
-# Connected to radio
-# Set lora.override_duty_cycle to false
-# Writing modified preferences to device
-# 
-# Wrote a setting, sleeping for 10 seconds for reboot
-# Finished, settings, writing channel
-# Running command: meshtastic --port COM5 --ch-set psk base64:9Z0jb0WvHgZy1S45NS2okNU5bM0IRlMh7aYMe8C4g+E= --ch-index 0 --reset-nodedb
-# Connected to radio
-# Writing modified channels to device
-# 
-# Sleeping for 10 seconds for reboot so can compare
-# Running command: meshtastic --port COM5 --get bluetooth.mode --get device.role --get lora.hop_limit --get lora.sx126x_rx_boosted_gain --get lora.ignore_mqtt --get lora.override_duty_cycle --get position.gps_enabled --get position.fixed_position --get device.rebroadcast_mode
-# Connected to radio
-# bluetooth.mode: 2
-# device.role: 0
-# lora.hop_limit: 3
-# lora.sx126x_rx_boosted_gain: True
-# lora.ignore_mqtt: True
-# lora.override_duty_cycle: False
-# position.gps_enabled: False
-# position.fixed_position: False
-# device.rebroadcast_mode: 2
-# Completed getting preferences
-# 
-# Running command: meshtastic --port COM5 --info
-# Found channel 0
-# Node info:
-# "id": "!aef88d2f",
-# "longName": "BReese02",
-# "shortName": "BR02",
-# "batteryLevel": 101,
-# Wrote info file: info_BReese02.txt
+# Version 2.0 - for FW > 2.7  Handles a change in output structure, Owner is no longer on the get list. 
+#             - writes admin keys, channels as needed etc.
 # 
 # Version 1.9 - rewrote to send multiple settings, retry 3 times to write
 # settings. Also removed reset_nodedb
 # Version 1.8 fixed to work with multiple channels
 #
-#
 
-version = "1.9"
+version = "2.0"
+firmware_versions = (2.7, 3.0) # Low, high firmware limits (Major.Minor) for this version of the configurator
 sleep_time = 20
 range_test_extra_sleep = 20
 infodir = "infofiles"
@@ -131,14 +55,14 @@ max_retries = 3
 
 config_lookup = {
     "bluetooth.mode" : {"0":"RANDOM_PIN", "1":"FIXED_PIN", "2":"NO_PIN"},
-    "position.gps_mode" : {"0":"DISABLED", "1":"ENABLED", "2":"NOT_PRESENT"}, # for 2.6 firmware only
+    "position.gps_mode" : {"0":"DISABLED", "1":"ENABLED", "2":"NOT_PRESENT"}, # for 2.6+ firmware only
     "device.role" : {"0":"CLIENT",
                      "1":"CLIENT_MUTE", 
                      "2":"ROUTER", 
                      "3":"REPEATER",
                      "4":"TRACKER", 
                      "5":"SENSOR",
-                     "11": "ROUTER_LATE"},
+                     "11": "ROUTER_LATE"}, # There's new versions of this coming too ... 
     "lora.region" : { 
         "0" : "UNSET",
         "1": "US",
@@ -163,7 +87,7 @@ config_lookup = {
         "20": "PH_868",
         "21": "PH_915",
         "22": "NP_865",
-        "23": "LORA_24",
+        "23": "LORA_24", # and this is nowhere near complete. 
     },
 
     "device.rebroadcast_mode" : {"0":"ALL", "1":"ALL_SKIP_DECODING","2":"LOCAL_ONLY","3":"KNOWN_ONLY","4":"NONE","5":"CORE_PORTNUMS_ONLY"},
@@ -213,7 +137,6 @@ def runProgramCaptureOutput(args):
     return proc
 
 def runCmd(cmd, echoOnly=False, silent=False, reboot=False):
-
     print(f"Running command: {cmd}")
     if not echoOnly:
         args = cmd.split()
@@ -256,14 +179,24 @@ def doCompareSettings(output, config_opts):
             if config_opts is None:
                 old_settings[key] = value
                 continue
-            if key == 'security.admin_key':
-                continue # cannot compare this
-            if key in config_lookup:
+            if key in config_lookup: # this is a global proto equiv.
                 vdict = config_lookup[key]
                 if value in vdict:
                     value = vdict[value]
             if key in config_opts and value != config_opts[key]:
                 print (f"Mismatch for {key}, expected: {config_opts[key]}, got {value}")
+        if len(words) > 2:
+            # key, value = line.split(':',maxsplit=1)
+            # This is awfully clunky. but at the very least log it. any : in text strings will fail ablove .. .
+            #print(f"len words > 2, old_settings line ={line}")
+            yaml_data = yaml.safe_load(line)
+            assert len(yaml_data) == 1 , "a line should not have more than one key, look at your data: {yaml_data}"
+            # get first (only) key
+            key = next(iter(yaml_data))
+            value = yaml_data[key]
+            if config_opts is None:
+                old_settings[key] = value
+                continue
     return old_settings
 
 def getNewSettings(old_settings, config_opts):
@@ -282,6 +215,15 @@ def getNewSettings(old_settings, config_opts):
             vdict = config_lookup[key]
             if old_value in vdict:
                 old_value = vdict[old_value]
+        if key == "security.admin_key": # this is an array, we don't care about order
+            added_keys = []
+            for i in value:
+                if i not in old_value:
+                    print(f"adding {i}")
+                    added_keys.append(i)
+            if len(added_keys) != 0:
+                new_settings[key] = added_keys
+            continue
         if value != old_value:
             # we have a difference, save this
             new_settings[key] = value
@@ -289,27 +231,35 @@ def getNewSettings(old_settings, config_opts):
 
 
 
-def doCompareChannels(output):
+def doCompareChannels(info_output: str, desired_channels:dict = {}):
     """
-    Does a check that there are two channels, and that the second one is called 'admin'
+    Checks that the current channel config matches the desired one.
+    Returns : True on match, or no desired. False otherwise
     """
-    foundChannels = False
-    found0 = False
-    lines = output.split('\n')
-    for line in lines:
-        if re.match("^Channels:.*", line):
-            foundChannels = True
-            continue
-        if foundChannels:
-            line = line.strip()
-            if re.search(".*Index 0:.*",line):
-                print("Found channel 0")
-                found0 = True
-                continue
+    for i, line in enumerate(info_output.splitlines()):
+        if line.startswith("Channels:"):
+            existing_channels = []
+            for j in range(8): ## max channels + 1
+                channel_line = info_output.splitlines()[i+j+1]
+                if channel_line.strip() != "": # Breaks on an empty line.
+                    channel = {}
+                    channel_json = "{" + channel_line.split("{", maxsplit=1 )[1]
+                    channel_data = json.loads(channel_json)
+                    channel['psk'] = f"base64:{channel_data['psk']}"
+                    channel['index'] = f"{j}"
+                    channel['name'] = channel_data['name']
+                    existing_channels.append(channel)
+                else:
+                    break
 
-    if not found0:
-        print("Did not find channel 0 (primary channel)")
-    
+    match = existing_channels == desired_channels or desired_channels == {}
+    print(" Channels match.") if match else print(". Channel mismatch.")
+    # print("existing channel setup:")
+    # print(existing_channels)
+    # print("desired channels:")
+    # print(channels)
+    return(existing_channels == desired_channels or desired_channels == {})
+
 def printDeviceInfo(output):
     """
     Print out the small bit of device info that we are interested in.
@@ -374,11 +324,26 @@ def printDeviceInfo(output):
         except Exception as e:
             print("ERROR: Unexpected error writing file: %s, %s/%s" % (fname, sys.exc_info()[0], e))
 
+def checkFirmwareVersion(info_output):
+        for line in info_output.splitlines()[:5]:
+            if line.startswith("Metadata"):
+                json_str = line.split(':', maxsplit=1 )[-1]
+                metadata = json.loads(json_str)
+                FW_version = metadata['firmwareVersion']
+                print(f"Firmware: {FW_version}")
+
+                major, minor, build, hash = FW_version.split(".")
+                float_FW = float(f"{major}.{minor}")
+                if firmware_versions[0] <= float_FW <= firmware_versions[1]:
+                    print("firmware acceptable")
+                else:
+                    raise RuntimeWarning ("This is not the correct configurator for FW version FW_version."\
+                                          " The output formats are different. Use the correct configurator version.")
 
 
 def main():
 
-    parser = argparse.ArgumentParser(description=f"Mesh config for cave-comm devices, Version {version}.")
+    parser = argparse.ArgumentParser(description=f"Mesh node configurator for cave-comm devices, Version {version}.")
     parser.add_argument('settingsFile',type=str, help="YAML file containing settings, argument is required.")
     parser.add_argument('-ln', '--longname', dest='longname', type=str,
                         default=None,
@@ -442,8 +407,10 @@ def main():
     getcmd = meshcmd
     if config_opts:
         for key in config_opts.keys():
-            if key == 'security.admin_key':
-                    continue
+            if key == "user.longname":
+                continue
+            if key == "user.shortname":
+                continue
             getcmd += f" --get {key}"
 
     infocmd = f"{meshcmd} --info"
@@ -464,8 +431,13 @@ def main():
         num_retries = 0
         while num_retries < max_retries:
             # Need to do a get so that compare settings
-            output = runCmd(getcmd,echoOnly=args.test)
-            
+            info_out = runCmd("meshtastic --info",echoOnly=args.test) # user info is on line 3
+            checkFirmwareVersion(info_out)
+
+            output = "\n".join(info_out.splitlines()[:5])
+            output += "\n"
+            output += runCmd(getcmd,echoOnly=args.test)
+
             old_settings = {}  # current device settings
             new_settings = {}  # setting that need to be changed
             if not args.test:
@@ -493,23 +465,42 @@ def main():
                         setcmd += f" --set-owner {value}"
                     elif key == "user.shortname":
                         setcmd += f" --set-owner-short {value}"
+                    elif key == "security.admin_key":
+                        continue # need to be done separately - too big.
                     else:
                         setcmd += f" --set {key} {value}"
                 runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
             
+
+            # Set admin keys.
+            admin_key = "security.admin_key"
+            if new_settings.get(admin_key) is not None:
+                admin_key_cmd = meshcmd
+                print(f"Beginning set admin keys sequence for changed settings: {new_settings}")
+                if len(old_settings.get(admin_key)) + len(new_settings.get(admin_key)) > 3 : # Too many keys - clear the list and use the config one.
+                    admin_key_cmd += f" --set {admin_key} 0"
+                    runCmd(admin_key_cmd, echoOnly=args.test, reboot=(not args.test))
+                admin_key_cmd = meshcmd
+                for key,value in new_settings.items():
+                    if key == "security.admin_key":
+                        for i in value:
+                            admin_key_cmd += f" --set {key} {i}"
+                        runCmd(admin_key_cmd, echoOnly=args.test, reboot=(not args.test))
             # loop back to top to compare and try again
             num_retries += 1
-            
-       
-        # do channels
-        setcmd = meshcmd
-        # write each channel
-        for cdict in channels:
+
+        # Write channels if needed.
+        if not doCompareChannels(info_out, channels):
             setcmd = meshcmd
-            setcmd += f" --ch-set name {cdict['name']} --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
-            print(f"Writing channel index: {cdict['index']}")
-            runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
-        time.sleep(15)  # extra sleep after channel
+            # write each channel
+            for cdict in channels:
+                setcmd = meshcmd
+                setcmd += f" --ch-set name {cdict['name']} --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
+                print(f"Writing channel index: {cdict['index']}")
+                runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
+            time.sleep(15)  # extra sleep after channel
+        else:
+            print("Channels are already programmed correctly.")
         device_info = runCmd(infocmd, echoOnly=args.test, silent=True)
         if channels:
             if not args.test:
