@@ -15,7 +15,7 @@ Fixed logging of long messages (problem discovered during August 3/2025 mock sce
 
 Version display: `HCRU 09/25.1` -- all changes ported to 2.6.11 Meshtastic, found in `fw_6` directory. Base filename is `rak4631-firmware-2-6-09-2025-1`, `slink`, `active-buzzer` variations are provided. Note that when updating your 2.5 firmware to 2.6, all settings are lost and have to be reprogrammed (this is because of the 2.6 version update, not our changes)
 
-Version display: `FLAMINGO 11.25`, firmware based on 2.7.9 Meshtastic, in fw2_7 directory
+Version display: `FLAMINGO 11.25`, firmware based on 2.7.9 Meshtastic, in `fw2_7` directory
 
 This software has the updated SNR moving average display for range test packets.
 
