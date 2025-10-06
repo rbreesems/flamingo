@@ -52,19 +52,32 @@ command was chosen to not be part of a normal status message.
 
 - Support for a buzzer haptic for RSSI - see the detailed section below.
 
-- Support for a heartbeat LED (blinks every two seconds) - useful for locating nodes that have been placed in the cave.
+- Support for a heartbeat LED (blinks every two seconds) - useful for locating nodes that have been placed in the cave. NOT SUPPORTED ON BRIDGE NODES (nodes with the RS485 interface).
 
-The `firmware/variants/rak4631/platformio.ini` file contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
+The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
 1. `env:rak4631` - just contains hop limit/admin modifications
 2. `env:rak4631_slink` - `env:rak4631` + enables serial link modifications
 3. `env:rak4631_buzzer` - `env:rak4631` + enables buzzer modifications
 4. `env:rak4631_cavenode` - `env:rak4631` + enables buzzer modifications + blinky heartbeat led
-5. `env:rak4631_slink_hb` - `env:rak4631` + enables serial link modifications + blinky heartbeat led (DO NOT USE - still experimental)
+5. `env:rak4631_slink_hb` - `env:rak4631` + enables serial link modifications + blinky heartbeat led (DO NOT USE - SEE BELOW)
+
+The above targets are based on the `may2025` (2.5 firmware) and `hopmod_2.6.11` (2.6 firmware) branches.
+
+The `firmware/variants/rak4631/platformio.ini` file in the `hopmod_2.7.9` branch (2.7 firmware) has the following targets (in this branch, all Flamingo code changes are protected by a `#ifdef FLAMINGO`/`#endif` section).
+
+1. `env:rak4631` - this target compiles to standard Meshtastic firmware
+2. `env:rak4631_flamingo` - has `-D FLAMINGO` compile flag, just contains hop limit/admin modifications, suitable for a generic rak4631 device like a WisMesh Pocket
+3. `env:rak4631_slink` - `env:rak4631_flamingo` + enables serial link modifications
+4. `env:rak4631_buzzer` - `env:rak4631_flamingo` + enables buzzer modifications - assumes active buzzer.
+5. `env:rak4631_cavegen2` - `env:rak4631_flamingo` + enables buzzer modifications + blinky heartbeat led, intended for our 2nd gen cave node
+
 
 For targets that support the buzzer and heartbeat LED the pin usage can be changed via compile time defines.
 
-See the `tested_firmware` directory for pre-built firmware, all built from the `may2025` branch.
+The `tested_firmware` directory for pre-built firmware, in sub-directories labeled as `fw2_5`, `fw2_6`, and `fw2_7`.  Going forward, new features will be added to 2.7 firmware builds and will not be backported to 2.5/2.6.
+
+On the Bridge Nodes, aka serial link nodes (RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module) we have discovered that IO1 and IO2 appear to be shorted to each other on the RAK5802 RS485 board.  According to the RAK5802 documentation, IO1 is a low-true signal used to disable the RS485 interface, so our code always keeps it in the high state (we never disable the RS485 interface). We tried using IO2 for the blink LED, but found that RS485 operation became erratic with blink enabled. We then discovered that IO2 was always high, the same state as IO1, and it is suspicious that IO1 and IO2 are directly across from each other on the RAK19007 I/O connector. The conclusion is that IO1 and IO2 are shorted, and that blinking IO2 periodically enables/disables the RS485 interface, causing erratic operation. Unfortunately, there is no other easily accessible general purpose IO pin for use as the blinky LED using the RAK19007 base board. So on our bridge node builds, we just tie the blink LED to IO2 and accept that it will always be on when power is applied (does not appear to affect power usage that much, only a 7% overnight drop on an 18650 battery). So, our serial link firmware builds do not include the blink module for this reason.
 
 ## Buzzer Haptic for RSSI
 
@@ -74,7 +87,9 @@ The buzzer modifications use an active buzzer to indicate different RSSI ranges 
 2. Two beeps:  RSSI less than -90  greater than or equal to -110
 3. Three beeps  RSSI less than -110.
 
-This is used during relay placement so that you don't have to keep your eyes on the screen to see RSSI values for range test packets. This does not use the RAK PWM buzzer settings in the phone app.  The buzzer is only installed on the radio that you want to use as a relay placement listener.
+The 2.7+ firmware builds have extended this to also use a running SNR (signal-to-noise ratio) average based on the last three packets - if the average SNR falls below 1.0, then three beeps is used regardless of RSSI. We have found SNR to be a good predictor packet loss. SNR tends to bounce around when moving so once beeps are sounded based on SNR, need to pause and wait for SNR to steady out to determine if SNR is unacceptable or not.
+
+This buzzer is used during relay placement so that you don't have to keep your eyes on the screen to see RSSI values for range test packets. This does not use the RAK PWM buzzer settings in the phone app.  The buzzer is only installed on the radio that you want to use as a relay placement listener.
 
 The buzzer we used was purchased from Amazon (search for Active Buzzer Module, 5V Piezoelectric Alarm, DIYables store) - it is a small 3-pin (Vcc/Gnd/IO) breadboard.  We have stuffed it successfully into a WisMesh Pocket radio, it just barely fits. It runs fine on 3.3V.  This particular active buzzer is an active low enable.
 
@@ -85,6 +100,8 @@ These modifications could easily be modified to support a passive buzzer.
 
 The `slink` targets in the `platformio.ini` enable the serial link code. This code is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
 RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. 
+
+Our terminology for radio that has the RS485 interface is `bridge node`, as it allows bridging between the wireless/wired worlds.
 
 Baud rate vs range testing yielded:
 
@@ -101,19 +118,7 @@ Our procedure for testing if the hard link works between a pair of radios is as 
 only two radios in range are the two hard linked radios that are being tested.
 Connect two radios via the hard link, then bluetooth connect to each radio with the phone app, and in the Lora Config section, turn off 'Transmit enabled'.  Then send a direct message to whatever radio is not connected to via phone; if an ack is returned then the message went through the hard link to the destination.  Then, disconnect one of the wires in the hard link, and try sending again - this time the message send will fail with a max retry limit reached as the hard link is not connected.  Connect to each radio again via the phone app, and turn RF transmit back on.  Try sending the direct message again and this time it will succeed even with the hard link broken, as the message will go over RF.
 
-A mixed mode test of RF TX> RS485 TX > RS485 RX > RF RX is more difficult to accomplish outside of a cave environment.
-This test assumes your 'mesh' only consists of four radios - R1-R4, with R2/R3 hard linked.
-The mixed mode test is a direct message from R1 to R4, with the path 
-R1 LORA TX> R2 LORA RX, R2 RS485 TX> R3 RS485 RX, R3 LORA TX > R4 LORA RX (and the reverse path for the ack).
-Program all radios with LORA short/tubo mode and reduce TX power to 1 dbm (to shorten the range). Put R3, R4 in a basement
-with R4 linked to some device that has the meshtastic app (like an iPad).
-Then, carrying R1 and R2 with the phone paired to R1, deploy comm wire connected to R3 (but not R2 yet) out the house and into the woods/neighborhood until you reach a point where sending a message from R1 to R4 consistently fails as it is out of range.  Connect the hard link to R2.  Try sending the message again - R2 should receive the packet, and forward it over the hard
-link, and you should get a successful ack back from R4 that the message was delivered. You can verify that the message was
-delivered by checking the device connected to R4 and verify that the message was received.  This can take quite a bit
-of comm wire (300-400 ft at least depending on how well shielded the R3/R4 radios are from the outside).
-Your neighbors will also give you the evil eye as you drag comm wire down the street.
-
-Actually a suggestion from the Vangelis hive mind is that R1/R2 should be set to a different LORA mode (or frequency band) than R3/R4, this would allow testing in the same room. This should work and would be much easier!
+To test RF RX (radio 1)> RS485 TX (radio 1) > RS485 RX (radio 2) > RF TX (radio 2) > RF RX (radio 3), just turn on a third radio in the room, connect your phone to the bridge node that has LORA TX disabled (radio 1), and target radio 3 with a direct message.  The packet will be sent by radio 1 over the wire to the bridge node with LORA TX enabled (radio 2), and which will then send the packet to radio 3 via RF -  you should receive an ACK back from this direct message.
 
 The image below: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire") shows three bridge nodes @4800 baud and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  You could also place two more bridge nodes in this system, one each spool connection. The bridge nodes have their LORA TX disabled during testing, this forces packets over the wire.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.  While this may look like a 'multi-hop wire' connection it is not - this just a multi-driver RS485 topology (which RS485 supports). Any packet sent by a bridge node over the wire arrives at all connected bridge nodes and counts as one hop. Just think of the wire as being 'air' if that helps.  There will be packet collision on the wire, just like there is packet collision over the air - there is no arbitration mechanism for who is allowed access to the wire. RS485 supports driver contention without damage to the drivers, the packets just get garbled and retries/random backoff are necessary to get packets through (just like via air TX).  It is assumed that cave rescuers will have individual radios with them, and if a rescuer is in range of a bridge node, packets from the rescuer will jump on the wire, and packets arriving at the bridge node will be sent over the air and arrive at the rescuer radio.
 
@@ -163,7 +168,7 @@ Our modifications allow range test packets to either be hopping or non-hopping (
 
 There are two methodologies that can be used when setting out relay nodes in a cave, using hopping or non-hopping packets:
 
-Using hopping packets: 
+Using hopping packets (NOT PREFERRED, tends to clog the mesh): 
 
 1. In this scenario, the surface node sends out all range test packets and uses hopping packets.
 
