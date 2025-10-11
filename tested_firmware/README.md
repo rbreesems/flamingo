@@ -23,6 +23,7 @@ This software has the updated SNR moving average display for range test packets.
 2. `rak4631-firmware-wismesh-pocket-active-buzzer-io3.uf2`  - #1 + buzzer, built for Wismesh Pocket
 3. `rak4631-firmware-bridgenode.uf2` - #1 + serial RS485 link - set the baud rate via the CLI
 4. `rak4631-firmware-cavegen2-active-buzzer-io2-blink-led-io1.uf2` - has buzzer, blink module - built for our 2nd generation cave nodes.
+5. `wismeshtag-firmware.uf2` - has hop modifications, remote commands
 
 
 ## Pre-built firmware for T-deck (fw2_6 directory)
