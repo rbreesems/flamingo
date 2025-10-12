@@ -23,12 +23,12 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
 [WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).
 
-The branches `may2025` (firmware 2.5) `hopmod_2_6_11` (firmware 2.6) contains our modifications (other branches should not be used).  The following summarizes our changes:
+The branches `may2025` (firmware 2.5),  `hopmod_2_6_11` (firmware 2.6), `hopmod_2_7.9` (firmware 2.7) contains our modifications (other branches should not be used).  The following summarizes our changes:
 
 - Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31.
 See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
 
-- LCD splash screen displays HCRU firmware version name.
+- LCD splash screen displays Flamingo firmware version name.
 
 - Range test has been modified to support non-hopping/hopping range test packets.  Default is non-hopping.  It has also been modified to be enabled even when GPS code is excluded. Also, range test data is never saved to storage.
 
@@ -54,6 +54,8 @@ command was chosen to not be part of a normal status message.
 
 - Support for a heartbeat LED (blinks every two seconds) - useful for locating nodes that have been placed in the cave. NOT SUPPORTED ON BRIDGE NODES (nodes with the RS485 interface).
 
+- The  `hopmod_2_7.9` branch has some additional changes - SNR average is printed out in the range test packets, buzzer will have 3 beeps if SNR average is less than 1.0, and TraceRoute support has been extended to 19 hops and made more reliable (see the detail section on hop latency testing/TraceRoute).  In the other branches, TraceRoute returns inaccurate results past 8 hops.
+
 The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
 1. `env:rak4631` - just contains hop limit/admin modifications
@@ -67,7 +69,7 @@ The above targets are based on the `may2025` (2.5 firmware) and `hopmod_2.6.11` 
 The `firmware/variants/rak4631/platformio.ini` file in the `hopmod_2.7.9` branch (2.7 firmware) has the following targets (in this branch, all Flamingo code changes are protected by a `#ifdef FLAMINGO`/`#endif` section).
 
 1. `env:rak4631` - this target compiles to standard Meshtastic firmware
-2. `env:rak4631_flamingo` - has `-D FLAMINGO` compile flag, just contains hop limit/admin modifications, suitable for a generic rak4631 device like a WisMesh Pocket
+2. `env:rak4631_flamingo` - has `-D FLAMINGO` compile flag, just contains hop limit/admin/trace route modifications, suitable for a generic rak4631 device like a WisMesh Pocket
 3. `env:rak4631_slink` - `env:rak4631_flamingo` + enables serial link modifications
 4. `env:rak4631_buzzer` - `env:rak4631_flamingo` + enables buzzer modifications - assumes active buzzer.
 5. `env:rak4631_cavegen2` - `env:rak4631_flamingo` + enables buzzer modifications + blinky heartbeat led, intended for our 2nd gen cave node
@@ -78,6 +80,10 @@ For targets that support the buzzer and heartbeat LED the pin usage can be chang
 The `tested_firmware` directory for pre-built firmware, in sub-directories labeled as `fw2_5`, `fw2_6`, and `fw2_7`.  Going forward, new features will be added to 2.7 firmware builds and will not be backported to 2.5/2.6.
 
 On the Bridge Nodes, aka serial link nodes (RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module) we have discovered that IO1 and IO2 appear to be shorted to each other on the RAK5802 RS485 board.  According to the RAK5802 documentation, IO1 is a low-true signal used to disable the RS485 interface, so our code always keeps it in the high state (we never disable the RS485 interface). We tried using IO2 for the blink LED, but found that RS485 operation became erratic with blink enabled. We then discovered that IO2 was always high, the same state as IO1, and it is suspicious that IO1 and IO2 are directly across from each other on the RAK19007 I/O connector. The conclusion is that IO1 and IO2 are shorted, and that blinking IO2 periodically enables/disables the RS485 interface, causing erratic operation. Unfortunately, there is no other easily accessible general purpose IO pin for use as the blinky LED using the RAK19007 base board. So on our bridge node builds, we just tie the blink LED to IO2 and accept that it will always be on when power is applied (does not appear to affect power usage that much, only a 7% overnight drop on an 18650 battery). So, our serial link firmware builds do not include the blink module for this reason.
+
+## What LORA speed mode to use for cave nodes?
+
+In our cave testing, we used MEDIUM/SLOW for our mocks/testing through October 2025. However, after the September Tumbling Rock cave rescue mock, we did some detailed hop latency/range testing (see the dedicated section on this). This resulted in a decision to use SHORT/FAST going forward in order to reduce latency over a large number of hops and to keep TX contention low. The distance that wireless nodes can practically reach in a cave means that the range difference between MEDIUM and SHORT modes is not that significant, and that we would rather have lower latency/less contention.  Wired segments with bridge nodes can be used to cover long distances with wireless nodes used to bridge gaps or reach vertically if needed.
 
 ## Buzzer Haptic for RSSI
 
@@ -193,9 +199,9 @@ then move back into reliable range, and place a new relay node.
 5. Go back to step #1 where the current relay node becomes the previous relay node.
 
 
-## A Note on V2.5 vs V2.6 firmware
+## A Note on V2.5 vs V2.6 firmware vs V2.7 firmware
 
-We have ported our changes to Version 2.6 firmware even though it does not seem to have anything really needed for our cave radios, just to stay semi-current with Meshtastic (even though this is a fast moving target).  If you update a V2.5 radio to V2.6 firmware, be aware that this wipes settings, and things like longName/shortName and all other have to be reprogrammed.
+We have ported our changes to Version 2.6 firmware even though it does not seem to have anything really needed for our cave radios, just to stay semi-current with Meshtastic (even though this is a fast moving target).  If you update a V2.5 radio to V2.6 firmware, be aware that this wipes settings, and things like longName/shortName and all other have to be reprogrammed. We have moved our nodes to the V2.7 firmware (`hopmod_2.7.9` branch) in order to try to stay current with Meshtastic firmware and new features have been added to that branch. We may or may not backport to the previous branches, depends on time.
 
 
 ## Router Algorithm/Network Congestion/Reliability
@@ -308,10 +314,39 @@ by placing more nodes.
 
 Some extensive testing after the mock revealed the root cause. In our past tests in Tumbling Rock, the 1st gen cave nodes (external antenna) and WisMesh Pockets (external antenna) had similar range, and we used a Pocket as the listener node for placing the cave nodes.
 
-For the mock, we just did the same thing - used a Pocket as a listener node to check the RSSi value of the range test packets being used to place the 2nd gen cave nodes (internal antenna).  However, extensive testing after the mock has revealed that the 2nd Gen cave nodes have about 20% less range than the pockets, due to the internal antenna config.  Thus, cave nodes were being placed out of their reliable range (essentially we were using an apple to place oranges).  The 2nd gen cave nodes were ready just-in-time for the mock, and basic functionaly testing was done on them but not a lot of range testing.  It was just assumed that the 2nd gen cave node range would be the same as the 1st gen.
+For the mock, we just did the same thing - used a Pocket as a listener node to check the RSSi value of the range test packets being used to place the 2nd gen cave nodes (internal antenna).  However, extensive testing after the mock has revealed that the 2nd Gen cave nodes have about 25% less range than the pockets, due to the internal antenna config.  Thus, cave nodes were being placed out of their reliable range (essentially we were using an apple to place oranges).  The 2nd gen cave nodes were ready just-in-time for the mock, and basic functionaly testing was done on them but not a lot of range testing.  It was just assumed that the 2nd gen cave node range would be the same as the 1st gen.
 
 Anyway, lesson learned - always use the same type of radio to listen for range test packets as the radios being used to build the mesh!
 
 Automated packet testing after the mock also showed the effect of SNR on packet loss - once SNR goes negative, it all over with - packet loss becomes unacceptable (RSSi can still be in the 'ok' range even if SNR is negative).  Currently the buzzer code only watches RSSi value but it is going to be modified to also be sensitive to SNR.
 
+## Hop Latency/Range Testing - October 2025
+
+After the September Tumbling Rock Mock, other than the initial wireless mesh reliability problems due to poor node mesh placement, we also noted:
+
+- Message latency was very long - up to 2 minutes for a round trip to Incident Command and back. The long latency caused confusion/uncertainty between rescuers and IC.
+
+- TraceRoute was unreliable for debugging problem points in the mesh
+
+Because of these problems, extensive range and hop latency testing was performed. As noted earlier, we discovered that the 2nd generation cave nodes have about 25% less range than the WisMesh pockets, due to the internal antenna.
+
+We noted from the message log from the Tumbling Rock mock that some of our messages had a hop count of 16 - so we set up a testing environment to record the latency of large hop counts. The photo below shows 19 cave nodes that were used to test a 17 hop latency for both broadcast messages and trace routes. The nodes were loaded with a version of the Flamingo firmware that used the magic number in the header to indicate what node forwarded a packet, and nodes only accepted packets from their immediate neighbors.
+
+![17-hop chain](./doc/hop_chain.jpg)
+
+Data on hop latency over 17 hops is shown below. Note that for the MEDIUM/SLOW mode used in the mock, a minimum of 90 seconds round trip latency is expected (not counting the human reaction time to read a message and respond or extra delay due to collisons/retries).  A SHORT/FAST mode will have a round trip time of about a minute, which is more tolerable. 
+
+![Hop Latency over 17 hops](./doc/hop_latency.png)
+
+LORA Mode vs Range is shown below (distances are normalized to the the longest distance in a test). It was interesting that the internal antenna configuartion of the 2nd Gen Cave nodes tended to reduce the range differences between modes.  The WisMesh pockets showed a greater range difference between modes, but not enough to rule out using SHORT/FAST as the default mode.  Also, the faster packet transmission time should reduce the number of packet collisions, reducing retries and thus reducing latency.
+
+![LORA Mode vs Distance](./doc/range_vs_mode.png)
+
+A TraceRoute will have a round trip time that is double the latency shown in the hop latency table, because the trace route packet has to reach the target and then return.  The Trace Route packet in the Flamingo 2.7 firmware was modified to support a maximum of 19 hops (trace route data for this fits in one packet) - 19 hops was tested and confirmed as working as shown in the photo below. The 2.5/2.6 Flamingo firmware versions only support 8 hops.
+
+![Trace Route 19 hops](./doc/trace_route_19hops_a.png)
+
+Testing of trace route during the hop latency tests indicated that trace route was very unreliable over a large number of hops. In the 17-hop artificial environment, trace route could be 100% killed every time by starting a trace route at one end, and while the TR was in-flight, send a broadcast message from the other end of the chain (a sniffer node was used to watch packet progress). When the packets passed each other, the TR packet would die (blackhole) a couple of hops later. However, simultaneously starting broadcast packets at each end caused no problems, both broadcast packets would successfully transit the entire chain. Debugging revealed that a trace route packet is treated as a direct message, which means that it is handled by the `NextHopRouter` code instead of the simpler `FloodingRouter` code. The `NextHopRouter` code tries to be smarter about how/where to forward a packet but seemed to get confused in this long chain case in the presence of extra traffic. A simple change was made to the code to handle trace route packet forwarding in the same way as broadcast packets, with the `FloodingRouter`, and this fixed the reliability problems (this change is in the 2.7 Flamingo code). In the worst case, this just means that there are more trace route packets than necessary running around the mesh during an active trace route, the extra packets die off in a standard fashion just the same as broadcast packets.  This may not be the best fix but it works for us.
+
+The end result of these changes is that in our next mock, comms between rescuers and Incident Command should be faster and more reliable. Trace Routes done by the Comm team to debug weak links should be much more reliable.
 
