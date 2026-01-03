@@ -10,8 +10,8 @@ def send_email(recipient: str, msg_text: str, subject: str = "Meshtastic Message
         python send_email.py friend@example.com "Hello from Meshtastic"
         python send_email.py 1234567890 "Test SMS" --subject "Subject"
     """
-    sender = "me@gmail.com"
-    app_password = "1234 5678 9012 3456"  # 16-char app password
+    sender = "mike082013@gmail.com"
+    app_password = "iwfa fxfy huca avkh"  # 16-char app password
 
     msg = MIMEText(msg_text)
     msg["Subject"] = subject
