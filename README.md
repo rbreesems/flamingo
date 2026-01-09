@@ -23,39 +23,39 @@ Ongoing testing has shown that Flamingo can be set up more quickly than existing
 If you are new to radios or Meshtastic, take a look at the specs below, otherwise jump ahead for a deeper dive on what we've been doing.
 
 ## Overview
-• Allows sending and receiving text messages from deep within cave among teammembers and out to Incident Command
-  o Direct message or use dedicated private channels
-  o Any technician with smartphone can connect easily
-  o All messages are AES128 encrypted
-• Faster deployment and cleanup compared to wire and phones
-  o Cover up to 2,000ft of comms in 1hr of setup time using RF only
-  o Cover over 5,000ft (1.6km) of comms per section of phone wire
-• Seamlessly compatible with existing comms wire (hybrid nodes)
-  o Hybrid nodes can be daisy-chained along wire
-• Virtually unlimited chain length (up to 255 nodes)
+- Allows sending and receiving text messages from deep within cave among teammembers and out to Incident Command
+- Direct message or use dedicated private channels
+  - Any technician with smartphone can connect easily
+  - All messages are AES128 encrypted
+- Faster deployment and cleanup compared to wire and phones
+  - Cover up to 2,000ft of comms in 1hr of setup time using RF only
+  - Cover over 5,000ft (1.6km) of comms per section of phone wire
+- Seamlessly compatible with existing comms wire (hybrid nodes)
+  - Hybrid nodes can be daisy-chained along wire
+- Virtually unlimited chain length (up to 255 nodes)
 
 ## Operability
-• Works with Android or iPhone using free Meshtastic application
-• Self-organizing mesh network optimized for long chains
-  o No special configuration needed
-• Utilizes modified Meshtastic software
-  o Supported by community developers
-• Utilizes swappable 18650 Li-ion batteries
-• Compatible with CalTopo and ATAK
+- Works with Android or iPhone using free Meshtastic application
+- Self-organizing mesh network optimized for long chains
+  - No special configuration needed
+- Utilizes modified Meshtastic software
+  - Supported by community developers
+- Utilizes swappable 18650 Li-ion batteries
+- Compatible with CalTopo and ATAK
 
-## Kit Specifications
-• Battery life:
-  o Estimated 10+ days per charge
-• Range (Radio):
-  o 130-320ft (40-100m) between nodes
-• Range (Wired):
-  o Over 5,000ft of comms wire between nodes
-• Ingress:
-  o Water resistant (estimated IP55 for Cavenode V2)
-• Weight/Volume:
-  o <6oz (160g) per radio
-  o <8lbs per field kit
-  o Fits in 10L backpack
+## Current Kit Specifications
+- Battery life:
+  - Estimated 10+ days per charge
+- Range (Radio):
+  - 130-320ft (40-100m) between nodes
+- Range (Wired):
+  - Over 5,000ft of comms wire between nodes
+- Ingress:
+  - Water resistant (estimated IP55 for Cavenode V2)
+- Weight/Volume:
+  - <6oz (160g) per radio
+  - <8lbs per field kit
+  - 12 Cavenodes or 8+ Hybrid nodes fit in 10L hard case
 
 # Project Background
 
