@@ -48,9 +48,10 @@ def runCmd(cmd, echoOnly=False, silent=False, reboot=False, sleep_time=20):
     
 def main():
     
-    parser = argparse.ArgumentParser(description=f"Send automated packets, record success rat, Version {version}.")
+    parser = argparse.ArgumentParser(description=f"Send automated packets, either bcast or direct (if direct, record success rate), Version {version}.")
     parser.add_argument('-i','--id',type=str, help="target node id", default=None)
     parser.add_argument('-c', '--count',type=int, help="packet count", default=1)
+    parser.add_argument('-b', '--bcast',action='store_true',help="if used, send bcast message, no ack check", default=False)
     parser.add_argument('-m', '--msg',type=str, help="msg to send", default="Hello from packet test")
     parser.add_argument('-d', '--delay',type=int, help="delay in seconds between packets", default=20)
     parser.add_argument('-s', '--silent',action='store_true',help="", default=False)
@@ -66,11 +67,15 @@ def main():
     while (packet_count < count):
         cmdargs = ['meshtastic',
                '--sendtext',
-               args.msg,
-               '--dest',
-                args.id,
-                '--ack',
-               ]
+               f"#{packet_count}: {args.msg}",
+                ]
+        if args.bcast:
+                cmdargs.append('--ch-index')
+                cmdargs.append('0')
+        else:
+                cmdargs.append('--dest')
+                cmdargs.append(args.id)
+                cmdargs.append('--ack')
         if args.port != '':
             cmdargs.append('--port')
             cmdargs.append(args.port)
@@ -80,12 +85,17 @@ def main():
         lines = output.stdout.split('\n')
         for line in lines:
             print(line)
-            if 'received an ack' in line.lower():
-                success_count += 1
-            elif 'received an nak' in line.lower():
-                continue
-        print(f"Success rate is {success_count}/{packet_count}")
+            if not args.bcast:
+                if 'received an ack' in line.lower():
+                    success_count += 1
+                elif 'received an nak' in line.lower():
+                    continue
+        
+        if not args.bcast:
+            print(f"Success rate is {success_count}/{packet_count}")
         time.sleep(delay)
+    print(f"Finished sending {packet_count} packets")
+
 
 
 if __name__ == "__main__":
