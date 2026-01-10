@@ -8,7 +8,56 @@ With tongue-in-cheek, if flamingo must stand for something, then:
 
 AKA -> Using Meshtastic radios for underground (cave) communication
 
-# Background
+# Summary
+The goal of Flamingo is to provide a reliable cave communication system that is:
+- Versatile
+- Affordable
+- Efficient
+
+Building off of the wealth of knowledge within Meshtastic, Flamingo is optimized for a cave (i.e. chain) topology while maintaining the ease and flexibility of the self-organizing mesh. Our hybrid nodes allow users to run wireless or wired communications to suit their needs or to better accommodate complex cave terrain. 
+
+One of our top priorities is keeping the radios cheap to allow this technology to get into the hands of rescue organizations or exploration teams. We can currently produce radios for about 50 USD each and well under 700 USD for a field kit.
+
+Ongoing testing has shown that Flamingo can be set up more quickly than existing military phone communication systems and we are continuing to get that time lower and improve network strength.
+
+If you are new to radios or Meshtastic, take a look at the specs below, otherwise jump ahead for a deeper dive on what we've been doing.
+
+## Overview
+- Allows sending and receiving text messages from deep within cave among teammembers and out to Incident Command
+- Direct message or use dedicated private channels
+  - Any technician with smartphone can connect easily
+  - All messages are AES128 encrypted
+- Faster deployment and cleanup compared to wire and phones
+  - Cover up to 2,000ft of comms in 1hr of setup time using RF only
+  - Cover over 5,000ft (1.6km) of comms per section of phone wire
+- Seamlessly compatible with existing comms wire (hybrid nodes)
+  - Hybrid nodes can be daisy-chained along wire
+- Virtually unlimited chain length (up to 255 nodes)
+
+## Operability
+- Works with Android or iPhone using free Meshtastic application
+- Self-organizing mesh network optimized for long chains
+  - No special configuration needed
+- Utilizes modified Meshtastic software
+  - Supported by community developers
+- Utilizes swappable 18650 Li-ion batteries
+- Compatible with CalTopo and ATAK
+
+## Current Kit Specifications
+- Battery life:
+  - Estimated 10+ days per charge
+- Range (Radio):
+  - 130-320ft (40-100m) between nodes
+- Range (Wired):
+  - Over 5,000ft of comms wire between nodes
+- Ingress:
+  - Water resistant (estimated IP55 for Cavenode V2)
+- Weight/Volume:
+  - <6oz (160g) per radio
+  - <8lbs per field kit
+  - 12 Cavenodes or 8+ Hybrid nodes fit in 10L hard case
+
+# Project Background
 
 We are members of the Huntsville Cave Rescue Unit [HCRU](https://www.hcru.org/) and one of our members (J. Moon) saw the Vangelis work and thought this could be useful in a cave rescue situation.  We use wired comms for cave rescues, but the problem is that the decades-old field phones that are used have no readily-available replacements, so a more modern approach is needed.
 
