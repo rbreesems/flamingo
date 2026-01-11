@@ -70,7 +70,7 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 # Firmware Modifications
 
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
-[WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).  Dane Evans has a [Flamingo Repo](https://github.com/DaneEvans/Meshtastic-firmware) that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as it progresses, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release.
+[WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).  Dane Evans has a [Flamingo Repo](https://github.com/DaneEvans/Flamingo-Firmware) that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as it progresses, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release.
 
 In the rbreesems repo, the branches `may2025` (firmware 2.5),  `hopmod_2_6_11` (firmware 2.6), `hopmod_2_7.9` (firmware 2.7) contains our modifications (other branches should not be used).  The following summarizes our changes:
 
