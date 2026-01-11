@@ -82,7 +82,7 @@ See the section on hop limit modification for a discussion of this change. The m
 - Range test has been modified to support non-hopping/hopping range test packets.  Default is non-hopping.  It has also been modified to be enabled even when GPS code is excluded. Also, range test data is never saved to storage.
 
 - Range test messages sent to phone now have the RX RSSI/SNR for the received packet. RSSI is a negative number that increases in absolute value with increasing distance between TX/RX nodes.
-SNR is a magic number sent by the Gods and you can figure out its relationship to distance.
+SNR (Signal to Noise ratio) is a magic number sent by the Gods and you can figure out its relationship to distance. Actually, we have found that SNR is the best indicator (> 3.0 dB) of packets being received reliably for long hop chains.
 
 - Range test should be enabled on all cave nodes as any cave node may have to send/receive range test packets. Range test must enabled and the sender delay must be set in order for the remote range test admin commands to work (set this via the CLI or app). Even if sender delay is non-zero, the sending action must be soft-enabled by an admin command as specified in the next bullet.
 
