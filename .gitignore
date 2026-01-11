@@ -8,6 +8,8 @@
 *.code-workspace
 utils/infofiles/*
 utils/logs/*
+tested_firmware/heltec-v3/*
+utils/nodes.csv
 tested_firmware/archived/*
 
 venv/
