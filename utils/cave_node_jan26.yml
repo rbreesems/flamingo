@@ -1,0 +1,48 @@
+
+# Note, cannot rename channel 0
+channels:
+  - {"psk":"base64:7Q5v7yZPn97Js2vZRSoJh0ep10/tVCd29iDUFyaDpLI=","index":"0", "name":"HCRU-1"}
+  - {"psk":"base64:s8eUToApNV9H+SToJppF4YVL5W+nTzEVB2WpQUOfdW8=","index":"1", "name":"HCRU-2"}
+
+
+# security.admin_key is the public_keys of the node that can do
+# remote admin on other nodes. There can be up to 3 keys.
+# Get this key by:
+#  meshtastic --get security.public_key
+# 
+# Currently, even though the docs say that you can, you cannot set the
+# security.admin_key via the CLI.  A reddit post claimed this and I 
+# confirmed. You have to manually copy the key into the Security Config
+# section of the controlled node into either the 'Primary', 'Secondary'
+# or 'Tertiary' admin key sections. Then it will
+# security.admin_key: "base64:15U7rwVGwABOR/j1FAP4bKvBTDdeg7moAAT3TPKXkC0="
+# 
+# 2.5 firmware does not actually support position.gps_mode
+# 
+settings:
+  bluetooth.mode : "FIXED_PIN"
+  bluetooth.fixed_pin: "911911"
+  device.role : "CLIENT"
+  lora.channel_num: "10"
+  lora.hop_limit: "31"
+  lora.modem_preset: "SHORT_FAST"
+  lora.region: "US"
+  lora.sx126x_rx_boosted_gain: "True"
+  lora.tx_power: "30"
+  lora.tx_enabled: "True"
+  lora.ignore_mqtt: "True"
+  lora.override_duty_cycle: "True"
+  position.fixed_position: "False"
+  device.rebroadcast_mode: "ALL"
+  network.wifi_enabled: "False"
+  telemetry.device_update_interval: "1800"
+  range_test.enabled: "True"
+  range_test.sender: "15"
+  position.gps_mode: "NOT_PRESENT"
+  serial.baud: "BAUD_9600"
+  
+  
+  
+
+
+
