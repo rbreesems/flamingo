@@ -13,3 +13,4 @@ utils/nodes.csv
 tested_firmware/archived/*
 
 venv/
+utils/configurator/infofiles

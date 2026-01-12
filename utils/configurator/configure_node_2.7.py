@@ -365,7 +365,9 @@ def main():
                         help='do range test')
     parser.add_argument('-ec', '--export-config',action='store_true',
                         help='export config to configfiles/node_<longname>.yml')
-    
+    parser.add_argument('-e', '--erase',action='store_true',
+                        help='factory reset node before starting.')
+
     
     args = parser.parse_args()
 
@@ -374,6 +376,12 @@ def main():
         meshcmd = f"meshtastic --port {args.port}"
     else:
        meshcmd = "meshtastic"
+
+    if args.erase:
+            print("Factory resetting, then sleeping 20")
+            cmd = f"{meshcmd} --factory-reset"
+            time.sleep(20)  # sleep extra time after text
+
 
     if args.rangetest:
         count = 1
