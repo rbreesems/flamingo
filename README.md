@@ -1,4 +1,4 @@
-# flamingo
+# Flamingo
 Repo for sharing utilities for in-cave communication project using Meshtastic-based radios.  This is an extension of (but not affiliated with) the work done by the [Vangelis](https://github.com/semper-ad-fundum/vangelis) project.
 
 With tongue-in-cheek, if flamingo must stand for something, then:
@@ -72,7 +72,7 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
 [WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).  Dane Evans has a [Flamingo Repo](https://github.com/DaneEvans/Flamingo-Firmware) that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as it progresses, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release.
 
-In the rbreesems repo, the branches `may2025` (firmware 2.5),  `hopmod_2_6_11` (firmware 2.6), `hopmod_2_7.9` (firmware 2.7) contains our modifications (other branches should not be used).  The following summarizes our changes:
+In the rbreesems repo, the branches `may2025` (firmware 2.5),  `hopmod_2.6.11` (firmware 2.6), `hopmod_2.7.9` (firmware 2.7.9), `hopmod_2.7.15` contains our modifications (other branches should not be used).  The following summarizes our changes:
 
 - Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31.
 See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
@@ -103,7 +103,9 @@ command was chosen to not be part of a normal status message.
 
 - Support for a heartbeat LED (blinks every two seconds) - useful for locating nodes that have been placed in the cave. NOT SUPPORTED ON BRIDGE NODES (nodes with the RS485 interface).
 
-- The  `hopmod_2_7.9` branch has some additional changes - SNR average is printed out in the range test packets, buzzer will have 3 beeps if SNR average is less than 1.0, and TraceRoute support has been extended to 19 hops and made more reliable (see the detail section on hop latency testing/TraceRoute).  In the other branches, TraceRoute returns inaccurate results past 8 hops.
+- The  `hopmod_2.7.9` branch has some additional changes - SNR average is printed out in the range test packets, buzzer will have 3 beeps if SNR average is less than 1.0, and TraceRoute support has been extended to 19 hops and made more reliable (see the detail section on hop latency testing/TraceRoute).  In the other branches, TraceRoute returns inaccurate results past 8 hops.
+
+- The `hopmod_2.7.15` branch had additional changes over `hopmod_2.7.9`. These changes added retries for channel messages (configured for two retransmits on failure, stock firmware has none), and retries direct messages even if there is no known neighbor (stock firmware only retries if there is a known neighbor). See the section that discusses retry behavior for the rationale for these changes. The SNR threshold for three beeps on rangetest packets was changed from 1.0 to 3.0.
 
 The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
@@ -115,7 +117,7 @@ The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains diffe
 
 The above targets are based on the `may2025` (2.5 firmware) and `hopmod_2.6.11` (2.6 firmware) branches.
 
-The `firmware/variants/rak4631/platformio.ini` file in the `hopmod_2.7.9` branch (2.7 firmware) has the following targets (in this branch, all Flamingo code changes are protected by a `#ifdef FLAMINGO`/`#endif` section).
+The `firmware/variants/rak4631/platformio.ini` file in the `hopmod_2.7.9` and `hopmod_2.7.15` branches (2.7 firmware) has the following targets (in these branches, all Flamingo code changes are protected by a `#ifdef FLAMINGO`/`#endif` section).
 
 1. `env:rak4631` - this target compiles to standard Meshtastic firmware
 2. `env:rak4631_flamingo` - has `-D FLAMINGO` compile flag, just contains hop limit/admin/trace route modifications, suitable for a generic rak4631 device like a WisMesh Pocket
@@ -126,7 +128,7 @@ The `firmware/variants/rak4631/platformio.ini` file in the `hopmod_2.7.9` branch
 
 For targets that support the buzzer and heartbeat LED the pin usage can be changed via compile time defines.
 
-The `tested_firmware` directory for pre-built firmware, in sub-directories labeled as `fw2_5`, `fw2_6`, and `fw2_7`.  Going forward, new features will be added to 2.7 firmware builds and will not be backported to 2.5/2.6.  The `beta_firmware` directory has firmware that is the process of being tested, but not fully vetted.
+The `tested_firmware` directory for pre-built firmware, in sub-directories labeled as `fw2_5`, `fw2_6`, and `fw2_7`.  Going forward, new features will be added to 2.7 firmware builds and will not be backported to 2.5/2.6.  The `beta_firmware` directory has firmware that is the process of being tested, but not fully vetted inside of a cave. As of January 2026, the 2.7.15 firmware updates reside in the `beta_firmware` directory, and all `2.7.15` firmware files are configured for two retransmits.
 
 On the Bridge Nodes, aka serial link nodes (RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module) we have discovered that IO1 and IO2 appear to be shorted to each other on the RAK5802 RS485 board.  According to the RAK5802 documentation, IO1 is a low-true signal used to disable the RS485 interface, so our code always keeps it in the high state (we never disable the RS485 interface). We tried using IO2 for the blink LED, but found that RS485 operation became erratic with blink enabled. We then discovered that IO2 was always high, the same state as IO1, and it is suspicious that IO1 and IO2 are directly across from each other on the RAK19007 I/O connector. The conclusion is that IO1 and IO2 are shorted, and that blinking IO2 periodically enables/disables the RS485 interface, causing erratic operation. Unfortunately, there is no other easily accessible general purpose IO pin for use as the blinky LED using the RAK19007 base board. So on our bridge node builds, we just tie the blink LED to IO2 and accept that it will always be on when power is applied (does not appear to affect power usage that much, only a 7% overnight drop on an 18650 battery). So, our serial link firmware builds do not include the blink module for this reason.
 
@@ -142,7 +144,7 @@ The buzzer modifications use an active buzzer to indicate different RSSI ranges 
 2. Two beeps:  RSSI less than -90  greater than or equal to -110
 3. Three beeps  RSSI less than -110.
 
-The 2.7+ firmware builds have extended this to also use a running SNR (signal-to-noise ratio) average based on the last three packets - if the average SNR falls below 1.0, then three beeps is used regardless of RSSI. We have found SNR to be a good predictor packet loss. SNR tends to bounce around when moving so once beeps are sounded based on SNR, need to pause and wait for SNR to steady out to determine if SNR is unacceptable or not.
+The 2.7+ firmware builds have extended this to also use a running SNR (signal-to-noise ratio) average based on the last three packets - if the average SNR falls below a set threshold, then three beeps is used regardless of RSSI. We have found SNR to be a good predictor packet loss. SNR tends to bounce around when moving so once beeps are sounded based on SNR, need to pause and wait for SNR to steady out to determine if SNR is unacceptable or not. The `hopmod_2.7.9` branch uses a value of 1.0 for the SNR threshold, while the `hopmod_2.7.15` branch uses a value of 3.0 (after more testing, we felt that a higher threshold was needed).
 
 This buzzer is used during relay placement so that you don't have to keep your eyes on the screen to see RSSI values for range test packets. This does not use the RAK PWM buzzer settings in the phone app.  The buzzer is only installed on the radio that you want to use as a relay placement listener.
 
@@ -167,7 +169,7 @@ Baud rate vs range testing yielded:
   - 4800 can drive 4700 ft (1.4 km) 
   - 2400 can drive 5500 ft (1.6 km, do not know max distance,  suspect it is approximately 3 km - 9800 ft )
 
-Any packet received over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is never echoed back over RS485 TX. Any packet received over LORA RX that is rebroadcast by the router is also sent over RS485 TX.  Packet flow on the RS485 serial link is bidirectional.
+Any packet received over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is delivered to the firmware stack in the same manner as a packet received by LORA RX. Any packet received over LORA RX that is rebroadcast by the router is also sent over RS485 TX.  Packet flow on the RS485 serial link is bidirectional, but does not support full duplex (simulataneous TX and RX).
 
 Our procedure for testing if the hard link works between a pair of radios is as follows. This test assumes that the 
 only two radios in range are the two hard linked radios that are being tested.
@@ -195,8 +197,7 @@ the RAK5802 RS485 module.
 Just like over-the-air packets, there can be a packet collision if both ends of the hard link attempt to send a packet
 at the same time. RS485 supports multiple-driver connection, and driver contention causes no physical damage.
 However, the packet will be garbled on reception - the firmware uses a 16-bit header and a 32-bit CRC wrapper around each Meshtastic packet
-sent over the RS485 link, so a garbled packet is detected and discarded.  If we assume an average text message is about 50 chars or less (so packet size is about 100 bytes with header bytes), it will take about 0.05 seconds to transmit at 19200 bits/second.  This gives 20 TX slots in one second for a packet.  If we assume a packet every 15 seconds, this is 300 TX slots, giving a collision probability of less than 1%.  IF there is a collision, the packet is lost, but that is why there is
-retransmit logic in the Meshtastic stack.
+sent over the RS485 link, so a garbled packet is detected and discarded.  If we assume an average text message is about 50 chars or less (so packet size is about 100 bytes with header bytes), it will take about 0.05 seconds to transmit at 19200 bits/second.  This gives 20 TX slots in one second for a packet.  If we assume a packet every 15 seconds, this is 300 TX slots, giving a collision probability of less than 1%.  IF there is a collision, the packet is lost. However, the retry logic present in our `hopmod_2.7.15` branch will perform retransmit if needed (our firmware builds configure for two retransmits).
 
 ## Hop Limit Extension
 
@@ -248,18 +249,33 @@ then move back into reliable range, and place a new relay node.
 5. Go back to step #1 where the current relay node becomes the previous relay node.
 
 
+We now use SNR (signal to noise ratio) to determine if packet arrival is reliable, and aim for an average SNR > 3.0 dB at the placement point (the new range test packet displays an average SNR over the last three packets)
+
+
 ## A Note on V2.5 vs V2.6 firmware vs V2.7 firmware
 
-We have ported our changes to Version 2.6 firmware even though it does not seem to have anything really needed for our cave radios, just to stay semi-current with Meshtastic (even though this is a fast moving target).  If you update a V2.5 radio to V2.6 firmware, be aware that this wipes settings, and things like longName/shortName and all other have to be reprogrammed. We have moved our nodes to the V2.7 firmware (`hopmod_2.7.9` branch) in order to try to stay current with Meshtastic firmware and new features have been added to that branch. We may or may not backport to the previous branches, depends on time.
+We have ported our changes to Version 2.6 firmware even though it does not seem to have anything really needed for our cave radios, just to stay semi-current with Meshtastic (even though this is a fast moving target).  If you update a V2.5 radio to V2.6 firmware, be aware that this wipes settings, and things like longName/shortName and all other have to be reprogrammed. We have moved our nodes to the V2.7 firmware (`hopmod_2.7.9`, `hopmod_2.7.15` branches) in order to try to stay current with Meshtastic firmware and new features have been added to that branch. We may or may not backport to the previous branches, depends on time.  The retry logic in the `hopmod_2.7.15` branch has not been back ported to the `hopmod_2.7.9` branch. We moved to the Meshtastic 2.7.15 release because it has more reliable Bluetooth connections over the 2.7.9 release.
 
 
-## Router Algorithm/Network Congestion/Reliability
+## Router Algorithm/Reliability/Rebroadcasts vs Retries
 
-Here is my simple interpretation of the router algorithm -- for the case we are interested in, general broadcast packets, a node forwards packets that it has not seen before.  Each packet has a randomized packet number, and it keeps track of 'recently seen' packets.  If a packet arrives that the node has recently seen, then that packet is discarded.
+ The following comments assume Meshtastic firmware 2.7. A user can send a message on a `channel`, and the message will be seen on all phones attached to radios that have that channel key. Or, a user can send a direct message, and only the phone attached to the radio that the message is targeted for will see that message. The firmware code that is used for channel messages is the `Flooding Router`, while the `NextHopRouter` code is used for direct messages.
 
-In our linear chain case, each node will see two neighbors (behind/ahead). For a packet traveling from start to end, a node gets a packet from the `behind` neighbor. The node rebroadcasts it.  The `ahead` neighbor receives the packet, and rebroadcasts it. The `behind` neighbor receives this rebroadcast packet, but because it has been recently seen, the packet is discarded.  The hop limit value in our linear chain case has no effect on network congestion.  If packets only enter from either the start or end of the chain, then network congestion is only affected by how fast new packets are introduced into the chain.
+ When a channel message or direct message is sent, the initial packet is assigned a unique ID that is kept with that packet as it is relayed around the mesh.  A channel message will have a destination of 0 which means that is meant for all nodes, while a direct message has the node-id of the destination radio.  
 
-End-to-end reliability will drop as the chain gets longer. It serves us best to be conservative in relay node placement - one or two weak links in the chain can kill end-to-end reliability. With 99% node reliability, a chain of 10 gives us 90% end-to-end reliability. We should be able to achieve 99% reliability with conservative node placement and given that nodes will retransmit if an acknowledgement is not received for a packet (MAX_RETRANSMIT is 5)
+ `Rebroadcast` vs `Retry` - when a packet is received by a radio, the packet ID is entered on a recently seen packet list so that node can check if it has seen that packet before, and then the packet is rebroadcast depending on the node's role (CLIENT/ROUTER will rebroadcast, CLIENT MUTE will not). If the packet is rebroadcast, then it is also possibly scheduled for one or more `retries` in case the rebroadcast fails to be acknowledged.  This acknowledge of a rebroadcast packet is an implicit acknowledge in that the node listens for another node rebroadcasting the packet, and if the node hears this packet echo, then it knows the packet was received by some neighbor and it cancels any retries for that packet.
+
+ Consider the case of a chain of nodes A>B>C>D>E, where each node is only in range of its neighbors.  Let us examine the operation of internal nodes B/C/D, and assume all will be rebroadcasters. When a packet arrives at node C that was sent by Node B, Node C will rebroadcast, and both B and D will hear that packet. However, node B will ignore it as that packet is on its recently seen list, but node D will rebroadcast that packet as it is the first time that Node D hears this packet.  Node C will hear Node D's rebroadcast, and will cancel any retries it has scheduled for that packet.
+
+ In Meshtastic stock firmware 2.7 and greater, retries are only used for direct message packets (not channel packets), and a retry is scheduled for a packet only if that node has a `known neighbor` (ie, that node heard a neighbor rebroadcast a packet). Meshtastic will keep track of multiple neighbors in a mesh, and the assumption is that in a mesh, most nodes will have multiple known neighbors. In the stock firmware, only one retry is scheduled for a packet.  On the retry, if the node fails to hear the packet echo, it assumes the neighbors have moved out of range, and it clears its neighbor info. In a chain of nodes that is our common topology, if the single retry by Node C of a packet is not echoed by node D, then the next time a direct message arrives at node C, no retries will be scheduled at all until node C hears its packet rebroadcast echoed by neighbor (ie, Node C is even less likely to successfully deliver a packet the next time because it has no retries).
+
+ Our firmware modifications to the 2.7.15 code removes this requirement of a known neighbor for retries for direct messages to make retries more predictable, and also add retries for channel messages (which is the mode we most commonly use). The figure below shows testing of the new retry logic over a chain of 8 nodes (6 hops from Node 1 to Node 8) that were forced to accept packets only from their neighbors (Node 3 only accepted from nodes 2,4; node 5 from nodes 4 and 6, etc).  Channel messages were sent from node 1 to node 8 via an automated script, and log parsing at node 8 checked how many messages successfully arrived. Nodes could also be configured to randomly drop some percentage of packets. Three configurations were tested, one where node #4 had 50% packet loss,  one where all nodes had 10% packet loss, one where no packet loss was forced (for a long duration test). In the first two configurations, tests were done with retries of 0, 1, and 2. As expected, success rate increased with the number of retries, with the first retry having the biggest impact.  
+
+ ![Retry Testing for Channel Packets](./doc/flooding_router_testing.png)
+
+The negative impact of retries for channel packets is that when a packet reaches the end of a chain, the last node will always perform its scheduled retries because it will not hear any neighbors echoing its packet. This wastes some power and ties up the local airwaves for a few seconds, but we view that the extra reliabilty provided by retries is worth this cost.
+
+End-to-end reliability drops and latency increases as the number of hops end-to-end increases. It serves us best to be conservative in relay node placement - one or two weak links in the chain can kill end-to-end reliability. With 99% node reliability and no retries, a chain of 10 hops gives us 90% end-to-end reliability (.99 exp 10 = .90). We should be able to achieve >95% reliablity over long hop chains with conservative node placement and given that our base configuration uses two retries. However, even with retries, hop max length should be kept in high teens at most. Wired segments (see the RS485 section) can be used to increase reliability and decrease latency over a long hop chain.
 
 # Utility Software
 
@@ -398,4 +414,12 @@ A TraceRoute will have a round trip time that is double the latency shown in the
 Testing of trace route during the hop latency tests indicated that trace route was very unreliable over a large number of hops. In the 17-hop artificial environment, trace route could be 100% killed every time by starting a trace route at one end, and while the TR was in-flight, send a broadcast message from the other end of the chain (a sniffer node was used to watch packet progress). When the packets passed each other, the TR packet would die (blackhole) a couple of hops later. However, simultaneously starting broadcast packets at each end caused no problems, both broadcast packets would successfully transit the entire chain. Debugging revealed that a trace route packet is treated as a direct message, which means that it is handled by the `NextHopRouter` code instead of the simpler `FloodingRouter` code. The `NextHopRouter` code tries to be smarter about how/where to forward a packet but seemed to get confused in this long chain case in the presence of extra traffic. A simple change was made to the code to handle trace route packet forwarding in the same way as broadcast packets, with the `FloodingRouter`, and this fixed the reliability problems (this change is in the 2.7 Flamingo code). In the worst case, this just means that there are more trace route packets than necessary running around the mesh during an active trace route, the extra packets die off in a standard fashion just the same as broadcast packets.  This may not be the best fix but it works for us.
 
 The end result of these changes is that in our next mock, comms between rescuers and Incident Command should be faster and more reliable. Trace Routes done by the Comm team to debug weak links should be much more reliable.
+
+## Traceroute/External Antenna on Cave Nodes Testing, December 2025
+
+A trip was made to Tumbling Rock in December 2025 to test the fixes to trace route and to use second generation cave nodes that were converted to an external antenna configuration (the cave nodes used in the September mock had internal antennas). During node placement, we ensured that the same type of radio was used to listen for range test packets as those used to implement the relay chain during radio placment so as to avoid the mistakes made during the September mock. Seven radios were placed (no wired segments) using SNR as the placement criteria and SHORT/FAST as the LORA mode.  The placment went smoothly, and the chain functioned as expected. The new trace route code was tested, and it functioned as expected except for one case where the Android App log showed a repeated segment of the log (we will keep an eye on this going forward).
+
+## Firmware 2.7.15 testing, January 2026
+
+A trip is scheduled to Tumbling Rock cave near the end of January to test the 2.7.15 firmware with retries implemented for channel packets.  The primary goal is to replicate the end point reached in the September mock (the Christmas tree).  We will use the same number of wired segments and whatever number of wireless nodes is required to meet that goal. We expect to place much fewer radios than the September mock and to complete the setup in half the time.
 

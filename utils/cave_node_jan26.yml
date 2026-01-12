@@ -2,7 +2,7 @@
 # Note, cannot rename channel 0
 channels:
   - {"psk":"base64:7Q5v7yZPn97Js2vZRSoJh0ep10/tVCd29iDUFyaDpLI=","index":"0", "name":"HCRU-1"}
-  - {"psk":"base64:s8eUToApNV9H+SToJppF4YVL5W+nTzEVB2WpQUOfdW8=","index":"1", "name":"HCRU-2"}
+  - {"psk":"base64:s8eUToApNV9H+SToJppF4YVL5W+nTzEVB2WpQUOfdW8=","index":"1", "name":"HCRU-ADMIN"}
 
 
 # security.admin_key is the public_keys of the node that can do
