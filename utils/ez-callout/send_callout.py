@@ -11,8 +11,8 @@ def send_email(recipient: str, msg_text: str, subject: str = "Meshtastic Message
     """
     Send an email or VZW SMS.
     """
-    sender = "mike082013@gmail.com"
-    app_password = "iwfa fxfy huca avkh "  # 16-char app password
+    sender = "name@gmail.com"
+    app_password = "xxxx xxxx xxxx xxxx"  # 16-char app password
 
 
     # Append timestamp below message
