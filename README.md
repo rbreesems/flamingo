@@ -22,6 +22,8 @@ Ongoing testing has shown that Flamingo can be set up more quickly than existing
 
 If you are new to radios or Meshtastic, take a look at the specs below, otherwise jump ahead for a deeper dive on what we've been doing.
 
+![Current hybrid (foreground) and cave node (back right) radios](./img/v2_cave_nodes.jpg)
+
 ## Overview
 - Allows sending and receiving text messages from deep within cave among teammembers and out to Incident Command
 - Direct message or use dedicated private channels
@@ -420,6 +422,10 @@ The end result of these changes is that in our next mock, comms between rescuers
 A trip was made to Tumbling Rock in December 2025 to test the fixes to trace route and to use second generation cave nodes that were converted to an external antenna configuration (the cave nodes used in the September mock had internal antennas). During node placement, we ensured that the same type of radio was used to listen for range test packets as those used to implement the relay chain during radio placment so as to avoid the mistakes made during the September mock. Seven radios were placed (no wired segments) using SNR as the placement criteria and SHORT/FAST as the LORA mode.  The placment went smoothly, and the chain functioned as expected. The new trace route code was tested, and it functioned as expected except for one case where the Android App log showed a repeated segment of the log (we will keep an eye on this going forward).
 
 ## Firmware 2.7.15 testing, January 2026
+
+After updating the system to 2.7.15 and implementing an improved retransmission scheme, the original batch of TacMesh radios were taken oout for an above-ground test. One hybrid radio (with antenna stowed) was planted and the remaining 7 TacMesh nodes were strung off of a trail near the C&O Canal in Washington, DC. All radios were set to minimum transmission power of 1dBm (~1mW) to reduce distance. Average spacing ended up around 160m per segment. Since this was a solo test, messages were only able to be sent one way but multiple Traceroutes returned successfully with seemingly lower latency than LONG_FAST or MEDIUM_SLOW modes. 
+
+As an additional test, the final node was connected to a Raspberry Pi running the experimental "ez-callout" script. Although the Pi was not connected to WAN, the script successfully detected messages when the hybrid node was asked to run a hopping range test down the line.
 
 A trip is scheduled to Tumbling Rock cave near the end of January to test the 2.7.15 firmware with retries implemented for channel packets.  The primary goal is to replicate the end point reached in the September mock (the Christmas tree).  We will use the same number of wired segments and whatever number of wireless nodes is required to meet that goal. We expect to place much fewer radios than the September mock and to complete the setup in half the time.
 
