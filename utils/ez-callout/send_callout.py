@@ -5,13 +5,13 @@ import re
 import argparse
 
 # -----------------------------
-# Core callable function
+# Send automated callout
 # -----------------------------
 def send_email(recipient: str, msg_text: str, subject: str = "Meshtastic Message"):
     """
     Send an email or VZW SMS.
     """
-    sender = "john.doe@email.com"
+    sender = "name@gmail.com"
     app_password = "xxxx xxxx xxxx xxxx"  # 16-char app password
 
 
@@ -34,7 +34,7 @@ def send_email(recipient: str, msg_text: str, subject: str = "Meshtastic Message
 
 
 # -----------------------------
-# Helper function to clean recipient
+# Detect phone number and convert to VZW email-SMS service
 # -----------------------------
 def format_recipient(recipient_input: str) -> str:
     """
@@ -48,7 +48,7 @@ def format_recipient(recipient_input: str) -> str:
 
 
 # -----------------------------
-# CLI interface (optional)
+# CLI interface
 # -----------------------------
 def main():
     parser = argparse.ArgumentParser(description="Send an email via Gmail App Password")

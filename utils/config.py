@@ -534,6 +534,7 @@ def main():
         else:
             print("Unable to write config file as longname not detected in output")
 
+    print("Operation Complete")
 
 if __name__ == "__main__":
     main()

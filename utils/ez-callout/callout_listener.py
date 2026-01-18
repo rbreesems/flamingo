@@ -4,14 +4,26 @@ from pubsub import pub
 from datetime import datetime
 import time
 import sys
-from send_callout import send_email
+from send_callout import send_email, format_recipient
 import re
 
-def handle_message(msg, timestamp, callout_true):
+# ------------
+# 1. Plug in radio to device over USB-CALLOUT
+# 2. Run "python callout_listener.py recipient@email.com"
+# ------------
+
+if len(sys.argv) != 2:
+    print(f"Usage: {sys.argv[0]} recipient@example.com")
+    sys.exit(1)
+
+RECIPIENT_EMAIL = sys.argv[1]
+RECIPIENT_EMAIL = format_recipient(RECIPIENT_EMAIL)
+
+def handle_message(msg, timestamp, callout_true, recipient_email):
     display_msg = f"[{timestamp}] {msg}"
     print(display_msg, flush=True)
     if callout_true==1:
-        send_email("recipient@mail.com", msg, subject="**TEST** RESCUE CALLOUT")
+        send_email(recipient_email, msg, subject="**TEST** RESCUE CALLOUT")
 
 def on_receive(packet, interface):
     callout_true=0
@@ -37,11 +49,12 @@ def on_receive(packet, interface):
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg = f"[{long_name}] {text}"
+
     if text.lower().startswith("callout"):
-        print("Sending callout alert...")
+        print(f"Sending callout alert to {RECIPIENT_EMAIL}...")
         callout_true=1
 
-    handle_message(msg, timestamp, callout_true)
+    handle_message(msg, timestamp, callout_true, RECIPIENT_EMAIL)
 
 def on_connection(interface, topic=pub.AUTO_TOPIC):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
