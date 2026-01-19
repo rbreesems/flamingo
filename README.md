@@ -72,7 +72,7 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 # Firmware Modifications
 
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
-[WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).  Dane Evans has a [Flamingo Repo](https://github.com/DaneEvans/Flamingo-Firmware) that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as it progresses, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release.
+[WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).  Dane Evans has a [Flamingo Repo](https://github.com/DaneEvans/Flamingo-Firmware) that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as it progresses, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release (the `flamingo` branch in that repo has our changes integrated into the latest Meshtastic `main` ).
 
 In the rbreesems repo, the branches `may2025` (firmware 2.5),  `hopmod_2.6.11` (firmware 2.6), `hopmod_2.7.9` (firmware 2.7.9), `hopmod_2.7.15`, `hopmod_2.7.16`,  contains our modifications (other branches should not be used).  The following summarizes our changes:
 
@@ -203,7 +203,7 @@ sent over the RS485 link, so a garbled packet is detected and discarded.  If we 
 
 Prior to branch `hopmod_2.7.15`, no attempt was made to avoid RS485 collisions. However, the `hopmod_2.7.15` (an later) has two critical improvements to the RS485 serial code:
  - the RX code was changed to not read the UART input buffer until it was quiescent (no new bytes) for at least one serial module polling period (50 ms) to avoid reading a partial packet.
- - the TX code was changed to only send a packet if the UART input buffer was quiescent/empty to avoid corrupting an incoming packet. If the TX packet could not be sent immediately, it was added to the TX queue and then sent at the next polling opportunity whem the UART input buffer was quiescent/empty. The TX queue has a max size of 8 packets.
+ - the TX code was changed to only send a packet if the UART input buffer was quiescent/empty to avoid corrupting an incoming packet. If the TX packet could not be sent immediately, it was added to the TX queue and then sent at the next polling opportunity whe the UART input buffer was quiescent/empty. The TX queue has a max size of 8 packets.
 
 The image below:
 
