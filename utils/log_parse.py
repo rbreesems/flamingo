@@ -114,7 +114,11 @@ def parseOneLogFile(fpath, yml_opts):
                 cwords = line.split(',')
                 if len(cwords) < 2:
                     continue
-                host = cwords[2].split('=')[1]
+                host = ""
+                for word in cwords:
+                    if 'ln=' in word:
+                        host = cwords[2].split('=')[1]
+                        break
                 if host == 'reesetdeck':
                     host = host
                 msg = ""
@@ -125,12 +129,24 @@ def parseOneLogFile(fpath, yml_opts):
                     phoneApiMessage = True
                 else:
                     phoneApiMessage = False
-                if len(cwords) < 5:
+                if len(cwords) < 6:
+                    print(f"DEBUG: {line} ")
                     cwords  = cwords
-                hop_start = int(cwords[5].split('=')[1])
-                hop_limit = int(cwords[4].split('=')[1])
-                num_hops = hop_start - hop_limit
-                state = 'message'
+                try:
+                    hop_limit = 0
+                    hop_start = 0
+                    for word in cwords:
+                        if 'hop_start=' in word:
+                            hop_start = int(word.split('=')[1])
+                        if 'hop_limit=' in word:
+                            hop_limit = int(word.split('=')[1])
+                    num_hops = hop_start - hop_limit
+                    state = 'message'
+                except Exception as e:
+                    print(cwords)
+                    print(f"ERROR: {line}, exception {e} ")
+                    
+                
                 continue
         if state == 'message':
             if re.match(".*z=.*",line):

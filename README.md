@@ -74,7 +74,7 @@ Meshtastic guidance is that 3 is typically a sufficient value for maximum hops f
 This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
 [WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).  Dane Evans has a [Flamingo Repo](https://github.com/DaneEvans/Flamingo-Firmware) that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as it progresses, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release.
 
-In the rbreesems repo, the branches `may2025` (firmware 2.5),  `hopmod_2.6.11` (firmware 2.6), `hopmod_2.7.9` (firmware 2.7.9), `hopmod_2.7.15` contains our modifications (other branches should not be used).  The following summarizes our changes:
+In the rbreesems repo, the branches `may2025` (firmware 2.5),  `hopmod_2.6.11` (firmware 2.6), `hopmod_2.7.9` (firmware 2.7.9), `hopmod_2.7.15`, `hopmod_2.7.16`,  contains our modifications (other branches should not be used).  The following summarizes our changes:
 
 - Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31.
 See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
@@ -107,7 +107,7 @@ command was chosen to not be part of a normal status message.
 
 - The  `hopmod_2.7.9` branch has some additional changes - SNR average is printed out in the range test packets, buzzer will have 3 beeps if SNR average is less than 1.0, and TraceRoute support has been extended to 19 hops and made more reliable (see the detail section on hop latency testing/TraceRoute).  In the other branches, TraceRoute returns inaccurate results past 8 hops.
 
-- The `hopmod_2.7.15` branch had additional changes over `hopmod_2.7.9`. These changes added retries for channel messages (configured for two retransmits on failure, stock firmware has none), and retries direct messages even if there is no known neighbor (stock firmware only retries if there is a known neighbor). See the section that discusses retry behavior for the rationale for these changes. The SNR threshold for three beeps on rangetest packets was changed from 1.0 to 3.0.
+- The `hopmod_2.7.15`, `hopmod_2.7.16` branches have additional changes over `hopmod_2.7.9`. These changes added retries for channel messages (configured for two retransmits on failure, stock firmware has none), and retries direct messages even if there is no known neighbor (stock firmware only retries if there is a known neighbor). See the section that discusses retry behavior for the rationale for these changes. The SNR threshold for three beeps on rangetest packets was changed from 1.0 to 3.0. There is also a critical update to the RS485 serial link code that adds a TX queue and improved RX handling, see the section on RS485 collision testing. If you use the RS485 link, then you should use `hopmod_2.7.15` or higher.
 
 The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
@@ -194,12 +194,30 @@ point with a field phone.  That can still work with this system, but the problem
 for both wires, so there is no distinguishing A from B when tapping in.  The solution is to tap in using one polarity and send a direct message - if an ack is received, then the message succeeded and the polarity is correct. If no ack is received, reverse the direction and try again - it should succeed.  Having a reversed direction will cause no damage to
 the RAK5802 RS485 module.
 
-## RS485 Collision
+## RS485 Collision/Need for a TX queue
 
 Just like over-the-air packets, there can be a packet collision if both ends of the hard link attempt to send a packet
 at the same time. RS485 supports multiple-driver connection, and driver contention causes no physical damage.
 However, the packet will be garbled on reception - the firmware uses a 16-bit header and a 32-bit CRC wrapper around each Meshtastic packet
-sent over the RS485 link, so a garbled packet is detected and discarded.  If we assume an average text message is about 50 chars or less (so packet size is about 100 bytes with header bytes), it will take about 0.05 seconds to transmit at 19200 bits/second.  This gives 20 TX slots in one second for a packet.  If we assume a packet every 15 seconds, this is 300 TX slots, giving a collision probability of less than 1%.  IF there is a collision, the packet is lost. However, the retry logic present in our `hopmod_2.7.15` branch will perform retransmit if needed (our firmware builds configure for two retransmits).
+sent over the RS485 link, so a garbled packet is detected and discarded.  If we assume an average text message is about 50 chars or less (so packet size is about 100 bytes with header bytes), it will take about 0.05 seconds to transmit at 19200 bits/second.  This gives 20 TX slots in one second for a packet.  If we assume a packet every 15 seconds, this is 300 TX slots, giving a collision probability of less than 1%.  IF there is a collision, the packet is lost. 
+
+Prior to branch `hopmod_2.7.15`, no attempt was made to avoid RS485 collisions. However, the `hopmod_2.7.15` (an later) has two critical improvements to the RS485 serial code:
+ - the RX code was changed to not read the UART input buffer until it was quiescent (no new bytes) for at least one serial module polling period (50 ms) to avoid reading a partial packet.
+ - the TX code was changed to only send a packet if the UART input buffer was quiescent/empty to avoid corrupting an incoming packet. If the TX packet could not be sent immediately, it was added to the TX queue and then sent at the next polling opportunity whem the UART input buffer was quiescent/empty. The TX queue has a max size of 8 packets.
+
+The image below:
+
+![Alt text](./doc/rs485_collision_testing.jpg?raw=true "RS485 Collision Testing")
+
+shows the test setup for measuring the effectiveness of the above changes. Four bridge nodes were tied to the same RS485 pair, with three nodes sending channel messages at 20 second intervals using the Python Meshtastic CLI. The fourth node (monitor node) was logged, with the log parsed after the test completed to check how many of the channel messages the fourth node received.  All nodes has their LORA TX disabled, the only possible communication was via the RS485 link. The baud rate was 9600 baud. The goal was to create enough traffic on the RS485 link to force collisions if no RX busy checking was done.
+
+The results are shown below:
+
+ ![Alt text](./doc/collision_testing_results.png?raw=true "RS485 Collision Testing Results").
+
+The base test was each node sending 100 channel messages for a total of 300 messages.  `Without TX queue` and `With TX queue` showed similar success rates of 98% messages delivered as measured by the messages received by the monitor node. However, `Without TX queue` and `With TX queue` had dramatically different total packets required as seen by the monitor node. The `Without TX queue` discarded over 50% of its RX packets due to a bad CRC check while the `With TX queue` case only discarded about 10% of its packets. The  `Without TX queue` had a high message success rate due to retries getting the messages through. Clearly the RX/TX changes in the `hopmod_2.7.15` branch make a significant difference in the number of packets required to successfully deliver a set of messages in moderate to heavy traffic.  The most packets seen in the TX queue for the `With TX queue`  case was 3, and this was only one time, the most common case was 1, with occassionally 2 packets.  
+
+A seperate test was done with direct messages to investigate the root cause of `failed CRC on RX`. A test was made with only two nodes on the RS485 wire, with a Direct Message sent from one node to the other, with no chance of collison. The sender node occassionaly had a `failed CRC on RX error` immediately after transmitting a packet.  The best guess is noise on the UART RX input during RS485 TX, even though the RS485 board has a pullup on the UART RX to avoid this.  This noise is harmless in that the errant bytes are discarded at the next polling period after the TX, but it does mask true CRC errors due to collision and causes extra processing by the serial module.
 
 ## Hop Limit Extension
 
