@@ -8,14 +8,14 @@ Documentation=https://github.com/rbreesems/flamingo
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/flamingo/utils/ez-callout
-Environment="PATH=/home/pi/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 # Load credentials from environment variables or local .callout_config.json
 # Set CALLOUT_SENDER and CALLOUT_APP_PASSWORD here if preferred
 # EnvironmentFile=/home/pi/.callout_env
 
 # Replace 'recipient@example.com' with your actual emergency contact email or phone
-ExecStart=/home/pi/.venv/bin/python callout_listener.py recipient@example.com
+ExecStart=/usr/bin/python3 /home/pi/flamingo/utils/ez-callout/callout_listener.py recipient@example.com
 
 # Restart on failure with 10 second delay
 Restart=on-failure

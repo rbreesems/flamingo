@@ -27,19 +27,23 @@ SETUP ON RASPBERRY PI 4
       sudo apt update
       sudo apt install python3 python3-pip python3-venv
    c. Install USB support:
-      sudo apt install libusb-1.0-0-dev libusb-dev
+      sudo apt install libusb-dev
 
 2. Clone / Copy Repository:
    cd /home/pi
    git clone https://github.com/rbreesems/flamingo.git
    (or copy via SCP/USB)
 
-3. Set Up Python Virtual Environment:
-   cd /home/pi/flamingo/utils/ez-callout
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install --upgrade pip
-   pip install meshtastic pubsub-py2 paho-mqtt
+3. Install Meshtastic and Dependencies:
+   Follow the official Meshtastic installation guide for Linux:
+   https://meshtastic.org/docs/software/python/cli/installation/
+   
+   Quick install:
+   sudo apt update
+   sudo apt install python3-pip python3-dev
+   pip3 install --upgrade pip
+   pip3 install pytap2
+   pip3 install --upgrade "meshtastic[cli]"
 
 4. Configure Credentials:
    Automatic - Local Config File:

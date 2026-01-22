@@ -1,6 +1,6 @@
 #!/bin/bash
 # ez-callout systemd setup script for Raspberry Pi
-# This script automates setting up the ez-callout service with systemd to run on bood on a Raspberry Pi.
+# This script automates setting up the ez-callout service with systemd to run on boot on a Raspberry Pi.
 
 set -e
 
@@ -9,8 +9,10 @@ trap 'rm -f /tmp/ez-callout.service.$$' EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_FILE="$SCRIPT_DIR/ez-callout.service"
-VENV_PATH="$SCRIPT_DIR/venv"
-PYTHON_BIN="$VENV_PATH/bin/python"
+PYTHON_BIN="/usr/bin/python3"
+
+# Get the user who invoked sudo (not root)
+ACTUAL_USER="${SUDO_USER:-$(whoami)}"
 
 echo "========================================"
 echo "EZ Callout - Systemd Setup Script"
@@ -24,10 +26,10 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# Check if venv exists
-if [[ ! -d "$VENV_PATH" ]]; then
-    echo "ERROR: Virtual environment not found at $VENV_PATH"
-    echo "Please complete steps 1-3 of the README first (setup venv and install dependencies)"
+# Check if meshtastic is installed
+if ! python3 -c "import meshtastic" 2>/dev/null; then
+    echo "ERROR: Meshtastic is not installed"
+    echo "Please install meshtastic following the README instructions first"
     exit 1
 fi
 
@@ -37,8 +39,9 @@ if [[ ! -f "$SERVICE_FILE" ]]; then
     exit 1
 fi
 
-echo "✓ Virtual environment found"
+echo "✓ Meshtastic installed"
 echo "✓ Service file found"
+echo "✓ Detected user: $ACTUAL_USER"
 echo ""
 
 # Prompt for recipient email/SMS
@@ -53,12 +56,11 @@ echo "Updating service configuration..."
 
 # Create a temporary service file with the recipient substituted
 TEMP_SERVICE="/tmp/ez-callout.service.$$"
-sed "s|recipient@example.com|$RECIPIENT|g; s|/home/pi/.venv/bin/python|$PYTHON_BIN|g" "$SERVICE_FILE" > "$TEMP_SERVICE"
+sed "s|recipient@example.com|$RECIPIENT|g; s|User=pi|User=$ACTUAL_USER|g; s|/home/pi/flamingo/utils/ez-callout|$SCRIPT_DIR|g" "$SERVICE_FILE" > "$TEMP_SERVICE"
 
 # Copy to systemd directory
 echo "Copying service file to /etc/systemd/system/..."
 cp "$TEMP_SERVICE" /etc/systemd/system/ez-callout.service
-rm "$TEMP_SERVICE"
 
 # Set proper permissions
 chmod 644 /etc/systemd/system/ez-callout.service
