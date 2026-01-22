@@ -56,6 +56,33 @@ def on_connection(interface, topic=pub.AUTO_TOPIC):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] Connected to Meshtastic radio", flush=True)
 
+def connect_with_retry(max_retries=5, initial_delay=5):
+    """
+    Try to connect to radio with exponential backoff.
+    Useful for systemd service startup when radio might not be plugged in yet.
+    Retries: 5s, 10s, 20s, 40s, 80s delays between attempts.
+    Total wait time before giving up: ~155 seconds (~2.5 minutes)
+    """
+    delay = initial_delay
+    for attempt in range(1, max_retries + 1):
+        try:
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{ts}] Connection attempt {attempt}/{max_retries}...", flush=True)
+            interface = meshtastic.serial_interface.SerialInterface()
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{ts}] Successfully connected to Meshtastic radio", flush=True)
+            return interface
+        except Exception as e:
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{ts}] Connection attempt {attempt}/{max_retries} failed: {e}", flush=True)
+            if attempt < max_retries:
+                print(f"[{ts}] Retrying in {delay} seconds...", flush=True)
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+            else:
+                print(f"[{ts}] Failed to connect after {max_retries} attempts. Exiting.", flush=True)
+                sys.exit(1)
+
 def heartbeat(interval_seconds=300):
     """
     Periodically log that the listener is alive.
@@ -69,12 +96,8 @@ def heartbeat(interval_seconds=300):
 def main():
     global interface
     
-    print("Initializing...")
-    try:
-        interface = meshtastic.serial_interface.SerialInterface()
-    except Exception as e:
-        print(f"Failed to connect to radio: {e}")
-        sys.exit(1)
+    print("Initializing...", flush=True)
+    interface = connect_with_retry()
 
     pub.subscribe(on_receive, "meshtastic.receive")
     pub.subscribe(on_connection, "meshtastic.connection.established")
