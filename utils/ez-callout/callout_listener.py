@@ -6,10 +6,13 @@ import time
 import sys
 from send_callout import send_email, format_recipient
 import re
+import threading
 
 # ------------
 # 1. Plug in radio to device over USB-CALLOUT
 # 2. Run "python callout_listener.py recipient@email.com"
+# 3. On Pi: sudo systemctl start ez-callout
+# 4. Verify: sudo journalctl -u ez-callout -f
 # ------------
 
 if len(sys.argv) != 2:
@@ -61,6 +64,17 @@ def on_connection(interface, topic=pub.AUTO_TOPIC):
     name = node.get("user", {}).get("longName", "Unknown")
     print(f"[{ts}] Connected to node: {name}", flush=True)
 
+def heartbeat(interval_seconds=300):
+    """
+    Periodically log that the listener is alive.
+    Helps verify service is running on Pi when checking logs.
+    interval_seconds: heartbeat period (default 5 minutes)
+    """
+    while True:
+        time.sleep(interval_seconds)
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{ts}] [HEARTBEAT] Service is running and monitoring for messages", flush=True)
+
 def main():
     print("Initializing...")
     try:
@@ -71,6 +85,10 @@ def main():
 
     pub.subscribe(on_receive, "meshtastic.receive")
     pub.subscribe(on_connection, "meshtastic.connection.established")
+
+    # Start heartbeat thread to periodically log that service is alive
+    hb_thread = threading.Thread(target=heartbeat, args=(300,), daemon=True)
+    hb_thread.start()
 
     print("Listening for messages (Ctrl+C to exit)")
     try:

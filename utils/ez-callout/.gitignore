@@ -1,0 +1,3 @@
+# Local config and environment files for ez-callout
+.callout_config.json
+.env

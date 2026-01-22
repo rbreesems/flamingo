@@ -1,0 +1,38 @@
+[Unit]
+Description=EZ Callout - Meshtastic Message Forwarding Service
+After=network-online.target
+Wants=network-online.target
+Documentation=https://github.com/rbreesems/flamingo
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/flamingo/utils/ez-callout
+Environment="PATH=/home/pi/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+# Load credentials from environment variables or local .callout_config.json
+# Set CALLOUT_SENDER and CALLOUT_APP_PASSWORD here if preferred
+# EnvironmentFile=/home/pi/.callout_env
+
+# Replace 'recipient@example.com' with your actual emergency contact email or phone
+ExecStart=/home/pi/.venv/bin/python callout_listener.py recipient@example.com
+
+# Restart on failure with 10 second delay
+Restart=on-failure
+RestartSec=10
+
+# Allow graceful shutdown
+TimeoutStopSec=15
+KillMode=mixed
+
+# Logging to systemd journal
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ez-callout
+
+# Security hardening (optional)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

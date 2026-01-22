@@ -1,8 +1,12 @@
+import os
+import json
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
 import re
 import argparse
+import getpass
+from pathlib import Path
 
 # -----------------------------
 # Core callable function
@@ -11,8 +15,48 @@ def send_email(recipient: str, msg_text: str, subject: str = "Meshtastic Message
     """
     Send an email or VZW SMS.
     """
-    sender = "name@gmail.com"
-    app_password = "xxxx xxxx xxxx xxxx"  # 16-char app password
+    # Load credentials from environment or local config
+    def load_credentials():
+        # Priority: environment variables -> local config file
+        sender = os.environ.get("CALLOUT_SENDER")
+        app_password = os.environ.get("CALLOUT_APP_PASSWORD")
+
+        if sender and app_password:
+            return sender, app_password
+
+        config_path = Path(__file__).resolve().parent / ".callout_config.json"
+        if config_path.exists():
+            try:
+                with open(config_path, "r", encoding="utf-8") as fh:
+                    cfg = json.load(fh)
+                    return cfg.get("sender"), cfg.get("app_password")
+            except Exception:
+                pass
+
+        # Prompt the user if credentials are still missing
+        if not sender:
+            sender = input("Enter sender email (e.g. you@gmail.com): ")
+        if not app_password:
+            app_password = getpass.getpass("Enter Gmail app password (16 chars): ")
+
+        # Ask to save locally for convenience
+        try:
+            save = input("Save credentials to local .callout_config.json for future use? [y/N]: ").strip().lower()
+            if save == "y":
+                cfg = {"sender": sender, "app_password": app_password}
+                with open(config_path, "w", encoding="utf-8") as fh:
+                    json.dump(cfg, fh)
+                try:
+                    # Try to set restrictive permissions where supported
+                    os.chmod(config_path, 0o600)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        return sender, app_password
+
+    sender, app_password = load_credentials()
 
 
     # Append timestamp below message
