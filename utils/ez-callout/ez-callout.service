@@ -15,7 +15,7 @@ Environment="PYTHONUNBUFFERED=1"
 # EnvironmentFile=/home/pi/.callout_env
 
 # Replace 'recipient@example.com' with your actual emergency contact email or phone
-ExecStart=/usr/bin/python3 /home/pi/flamingo/utils/ez-callout/callout_listener.py recipient@example.com
+ExecStart=/usr/bin/python3 /home/pi/flamingo/utils/ez-callout/callout_listener.py RECIPIENT_PLACEHOLDER
 
 # Restart on failure with 10 second delay
 Restart=on-failure

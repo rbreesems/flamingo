@@ -51,6 +51,9 @@ if [[ -z "$RECIPIENT" ]]; then
     exit 1
 fi
 
+# Substitute RECIPIENT_PLACEHOLDER in the service file
+sed "s|RECIPIENT_PLACEHOLDER|$RECIPIENT|g" "$SERVICE_FILE" > "$TEMP_SERVICE"
+
 echo ""
 echo "Updating service configuration..."
 
