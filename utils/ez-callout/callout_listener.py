@@ -49,7 +49,7 @@ def on_receive(packet, interface):
             # Check for CALLOUT trigger
             if text.lower().startswith("callout"):
                 print(f"[{ts}] Sending callout alert to {RECIPIENT_EMAIL}...", flush=True)
-                send_email(RECIPIENT_EMAIL, msg, subject="**RESCUE CALLOUT**")
+                send_email(RECIPIENT_EMAIL, msg, subject="**TEST** RESCUE CALLOUT")
 
 def on_connection(interface, topic=pub.AUTO_TOPIC):
     """Callback for connection events"""
