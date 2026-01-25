@@ -340,6 +340,87 @@ def checkFirmwareVersion(info_output):
                     raise RuntimeWarning ("This is not the correct configurator for FW version FW_version."\
                                           " The output formats are different. Use the correct configurator version.")
 
+def getNodeDb(infocmd):
+    device_info = runCmd(infocmd, echoOnly=False, silent=True)
+    lines = device_info.splitlines()
+    lines = lines[2:]
+    state = "default"
+    my_info_dict = []
+    node_lines = []
+    bcount = 0
+    my_nodenum = ""
+    for line in lines:
+        if re.match("^My info.*", line):
+            my_info_dict = yaml.safe_load(line)
+            tdict = my_info_dict.get('My info')
+            my_nodenum =  tdict['myNodeNum']
+            #print(f"Found nodenum {my_nodenum}")
+        if 'Nodes in mesh' in line:
+            node_lines.append(line)
+            state = 'nodes'
+            bcount = 1
+            continue
+        if state == 'nodes':
+            node_lines.append(line)
+            if '{' in line:
+                bcount += 1
+            if '}' in line:
+                bcount -= 1
+            if bcount == 0:
+                break
+
+    if my_nodenum == "":
+        print("Failed to clear db, unable to parse connected node's id, exiting.")
+        return
+    
+    node_dict = None
+    if len(node_lines) > 0:
+        node_db = '\n'.join(node_lines)
+        node_data = yaml.safe_load(node_db)
+        #print(node_data)
+        node_dict = node_data.get('Nodes in mesh')
+
+    return my_nodenum, node_dict
+
+
+def doDeleteNodes(my_nodenum, node_dict):
+    isEmpty=True
+    ids = list(node_dict.keys())
+    for id in ids:
+        new_id = id.replace('!',"")
+        new_id = int(new_id,16)
+        if new_id == my_nodenum:
+            print(f"Skipping node {id} as this is the connected node.")
+        else:
+            print(f"Manually deleting node: {id}")
+            cmd = f"meshtastic --remove-node {new_id}"  
+            runCmd(cmd, echoOnly=False, silent=False)
+            print("Sleeping 10s")
+            isEmpty = False
+    return isEmpty
+
+
+def doClearDatabase(infocmd):
+    
+    tries = 1
+    while (tries < 3):
+        print(f"Node deletion, try#{tries}")
+        my_nodenum, node_dict = getNodeDb(infocmd)
+        if my_nodenum == "":
+            print("Failed to clear db, unable to parse connected node's id, exiting.")
+            return
+        if node_dict is None:
+            print("Failed to read Node db, exiting.")
+            return
+        isEmpty = doDeleteNodes(my_nodenum, node_dict)
+        if isEmpty:
+            print("Finished with deletion")
+            return
+        tries += 1
+
+    print("Failed to delete all nodes in DB")
+    return
+
 
 def main():
 
@@ -367,6 +448,8 @@ def main():
                         help='export config to configfiles/node_<longname>.yml')
     parser.add_argument('-e', '--erase',action='store_true',
                         help='factory reset node before starting.')
+    parser.add_argument('-cd', '--clear-db',action='store_true',
+                        help='clears database, use if meshtastic --reset-nodedb does delete all nodes')
 
     
     args = parser.parse_args()
@@ -424,6 +507,9 @@ def main():
     infocmd = f"{meshcmd} --info"
 
     device_info = ""
+    if args.clear_db:
+        doClearDatabase(infocmd)
+        exit(0)
 
     if not args.set:
         if config_opts:
