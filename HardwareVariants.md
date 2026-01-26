@@ -1,18 +1,28 @@
 # Hardware variants 
 
-## HCRU 
+## Huntsville Cave Rescue Unit (HCRU)/US
 
-### Cavenode
+Our base hardware:
+ - [RAK 19007 (WisBlock Base Board 2nd Gen)](https://docs.rakwireless.com/Product-Categories/WisBlock/RAK19007/Datasheet)
+ - [RAK 4631 WisBlock Core module](https://docs.rakwireless.com/product-categories/wisblock/rak4631/datasheet).
 
-### Slink 
 
-### Gen2 
+This is available as the [RAKwireless WisBlock Meshtastic Starter Kit](https://store.rokland.com/products/rak-wireless-wisblock-meshtastic-starter-kit) from [store.rokland.com](store.rokland.com).
 
-### Hybrid
+For the nodes that support the RS485 interface, we add the [RAK5801, RS485 Module](https://store.rakwireless.com/products/rak5802-rs485-interface?index=55).  This plugs into the RAK 19007 baseboard.
+
+The principle variants listed in the `variants/nrf52840/rak4631/platform.ini` file are:
+
+- `rak4631_flamingo` - base rak4631 build with Flamingo changes, compatible with off-the-shelf rak4631 radios like the [WisMesh Pocket V2](https://store.rokland.com/products/wismesh-pocket?srsltid=AfmBOooeGzU1v4pVKmmec-tGHulBCdLEFPMxsXNFNIvhLJSC50dYbHwc)
+
+- `rak4631_slink` - adds support for the RS485 interface, we use this in our latest hybrid nodes that support wireless + wired
+
+- `rak4631_cavegen2`  - our 2nd generation wireless only radios, has a blinky IO pin and a buzzer IO pin. Our packaging includes both the blinky LED and a buzzer.  See the build flags for pin assignments.
+
 
 
 ---
-## NSWCRS
+## New South Wales Cave Resce Squad (NSWCRS)/Australia
 
 We use custom boards, all off the RAK4630 at this point.
 We also use a combination of commercial ones for testing, and other purposes.

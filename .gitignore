@@ -15,3 +15,5 @@ tested_firmware/archived/*
 
 venv/
 utils/configurator/infofiles
+utils/configurator/keys.txt
+
