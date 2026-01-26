@@ -278,12 +278,14 @@ def printDeviceInfo(output):
         line = line.strip()
         if state == "":
             if re.match("^Owner:", line):
-                words = line.split()
-                if len(words) >= 3:
-                    longname = words[1].strip()
-                    shortname = words[2].strip()
-                    shortname = shortname.replace('(','')
-                    shortname = shortname.replace(')','')
+                words = re.split(r'[:()]', line)
+                # Remove empty strings and strip whitespace for all parts
+                words = [w.strip() for w in words if w.strip()]
+                if len(words) > 3:
+                    print(f"WARNING: Unexpected Owner line format, split into more than 3 parts: {words}")
+                if len(words) == 3:
+                    longname = words[1].strip(" ()")
+                    shortname = words[2].strip(" ()")
             if re.match("^\"user\":", line):
                 state = "user"
                 continue
@@ -317,7 +319,8 @@ def printDeviceInfo(output):
         try:
             if not posixpath.exists(infodir):
                 os.mkdir(infodir)
-            fname = posixpath.join(infodir, f"info_{longname}.txt")
+            sanitized_longname = longname.replace(' ', '_')
+            fname = posixpath.join(infodir, f"info_{sanitized_longname}.txt")
             with open(fname,"w") as file:
                 file.writelines(output)
             print(f"Wrote info file: {fname}")
@@ -556,9 +559,9 @@ def main():
                 setcmd = meshcmd
                 for key,value in new_settings.items():
                     if key == "user.longname":
-                        setcmd += f" --set-owner {value}"
+                        setcmd += f" --set-owner '{value}'"
                     elif key == "user.shortname":
-                        setcmd += f" --set-owner-short {value}"
+                        setcmd += f" --set-owner-short '{value}'"
                     elif key == "security.admin_key":
                         continue # need to be done separately - too big.
                     else:
@@ -610,7 +613,8 @@ def main():
                 try:
                     if not posixpath.exists(configdir):
                         os.mkdir(infodir)
-                    fname = posixpath.join(infodir, f"node_{longname}.yml")
+                    sanitized_longname = longname.replace(' ', '_')
+                    fname = posixpath.join(infodir, f"node_{sanitized_longname}.yml")
                     with open(fname,"w") as file:
                         file.writelines(output)
                     print(f"Wrote config file: {fname}")
