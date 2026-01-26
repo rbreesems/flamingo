@@ -7,6 +7,7 @@ import yaml
 import json
 import sys
 import posixpath
+import shlex
 
 
 # Helper program for CLI argument programming of cave mesh nodes
@@ -139,7 +140,7 @@ def runProgramCaptureOutput(args):
 def runCmd(cmd, echoOnly=False, silent=False, reboot=False):
     print(f"Running command: {cmd}")
     if not echoOnly:
-        args = cmd.split()
+        args = shlex.split(cmd)
         output = runProgramCaptureOutput(args)
 
         # Detect the Meshtastic "multiple serial ports" condition and stop early.
@@ -294,12 +295,14 @@ def printDeviceInfo(output):
         line = line.strip()
         if state == "":
             if re.match("^Owner:", line):
-                words = line.split()
-                if len(words) >= 3:
-                    longname = words[1].strip()
-                    shortname = words[2].strip()
-                    shortname = shortname.replace('(','')
-                    shortname = shortname.replace(')','')
+                words = re.split(r'[:()]', line)
+                # Remove empty strings and strip whitespace for all parts
+                words = [w.strip() for w in words if w.strip()]
+                if len(words) > 3:
+                    print(f"WARNING: Unexpected Owner line format, split into more than 3 parts: {words}")
+                if len(words) == 3:
+                    longname = words[1].strip(" ()")
+                    shortname = words[2].strip(" ()")
             if re.match("^\"user\":", line):
                 state = "user"
                 continue
@@ -333,7 +336,8 @@ def printDeviceInfo(output):
         try:
             if not posixpath.exists(infodir):
                 os.mkdir(infodir)
-            fname = posixpath.join(infodir, f"info_{longname}.txt")
+            sanitized_longname = longname.replace(' ', '_')
+            fname = posixpath.join(infodir, f"info_{sanitized_longname}.txt")
             with open(fname,"w") as file:
                 file.writelines(output)
             print(f"Wrote info file: {fname}")
@@ -355,6 +359,156 @@ def checkFirmwareVersion(info_output):
                 else:
                     raise RuntimeWarning ("This is not the correct configurator for FW version FW_version."\
                                           " The output formats are different. Use the correct configurator version.")
+
+def extractKeysFromInfo(info_output, meshcmd):
+    """
+    Extract nodeId, private key, and public key from device info output.
+    Returns dict with nodeId, private_key, public_key, or None if extraction fails.
+    nodeId is in hex format with ! prefix (e.g., "!710c5ed7")
+    """
+    nodeId = None
+    public_key = None
+    private_key = None
+
+    # Extract nodeId from "My info" line - convert myNodeNum to hex with ! prefix
+    for line in info_output.splitlines():
+        if line.startswith("My info"):
+            try:
+                json_str = line.split(':', maxsplit=1)[-1].strip()
+                my_info = json.loads(json_str)
+                myNodeNum = my_info.get('myNodeNum')
+                if myNodeNum:
+                    # Convert to hex and add ! prefix
+                    nodeId = f"!{myNodeNum:08x}"
+            except Exception as e:
+                print(f"ERROR: Failed to parse My info line: {e}")
+                return None
+
+    # Extract keys from "security" section
+    lines = info_output.splitlines()
+    security_lines = []
+    in_security = False
+    bcount = 0
+
+    for line in lines:
+        if '"security":' in line or '"security" :' in line:
+            security_lines.append(line)
+            in_security = True
+            bcount = 1
+            continue
+        if in_security:
+            security_lines.append(line)
+            if '{' in line:
+                bcount += line.count('{')
+            if '}' in line:
+                bcount -= line.count('}')
+            if bcount == 0:
+                break
+
+    if len(security_lines) > 0:
+        try:
+            security_text = '\n'.join(security_lines)
+            security_text = security_text.rstrip(',')
+            security_data = yaml.safe_load(security_text)
+            security_dict = security_data.get('security', {})
+            public_key = security_dict.get('publicKey')
+            private_key = security_dict.get('privateKey')
+        except Exception as e:
+            print(f"WARNING: Failed to parse security section: {e}")
+
+    if nodeId and public_key and private_key:
+        return {
+            'nodeId': nodeId,
+            'public_key': public_key,
+            'private_key': private_key
+        }
+    else:
+        print(f"WARNING: Failed to extract all keys. nodeId={nodeId}, public_key={'found' if public_key else 'missing'}, private_key={'found' if private_key else 'missing'}")
+        return None
+
+def writeKeysToFile(nodeId, private_key, public_key, config_file):
+    """
+    Write or update keys entry in keys.txt file.
+    If entry with same nodeId exists, replace it. Otherwise append.
+    Format: nodeId,private_key,public_key,config_file
+    """
+    keys_file = "keys.txt"
+    entries = []
+    header = "nodeId,private_key,public_key,config_file"
+    has_header = False
+
+    # Read existing entries
+    if os.path.exists(keys_file):
+        try:
+            with open(keys_file, 'r') as f:
+                first_line = True
+                for line in f:
+                    line = line.strip()
+                    if first_line and line == header:
+                        has_header = True
+                        first_line = False
+                        continue
+                    if line and not line.startswith('#'):
+                        # Format: nodeId,private_key,public_key,config_file
+                        parts = line.split(',', 3)
+                        if len(parts) == 4:
+                            existing_nodeId = parts[0].strip()
+                            # Skip if this is the nodeId we're updating
+                            if existing_nodeId != nodeId:
+                                entries.append(line)
+                    first_line = False
+        except Exception as e:
+            print(f"WARNING: Error reading keys.txt: {e}")
+
+    # Add or update entry
+    new_entry = f"{nodeId},{private_key},{public_key},{config_file}"
+    entries.append(new_entry)
+
+    # Write back to file
+    try:
+        with open(keys_file, 'w') as f:
+            f.write(header + '\n')
+            for entry in entries:
+                f.write(entry + '\n')
+        print(f"Wrote keys to {keys_file} for nodeId {nodeId}")
+    except Exception as e:
+        print(f"ERROR: Failed to write keys.txt: {e}")
+
+def readKeysFromFile(nodeId):
+    """
+    Read keys from keys.txt for a given nodeId.
+    Returns dict with private_key, public_key, config_file, or None if not found.
+    """
+    keys_file = "keys.txt"
+
+    if not os.path.exists(keys_file):
+        return None
+
+    try:
+        with open(keys_file, 'r') as f:
+            first_line = True
+            for line in f:
+                line = line.strip()
+                # Skip header line
+                if first_line and line == "nodeId,private_key,public_key,config_file":
+                    first_line = False
+                    continue
+                if line and not line.startswith('#'):
+                    # Format: nodeId,private_key,public_key,config_file
+                    parts = line.split(',', 3)
+                    if len(parts) == 4:
+                        existing_nodeId = parts[0].strip()
+                        if existing_nodeId == nodeId:
+                            return {
+                                'private_key': parts[1].strip(),
+                                'public_key': parts[2].strip(),
+                                'config_file': parts[3].strip()
+                            }
+                first_line = False
+    except Exception as e:
+        print(f"ERROR: Failed to read keys.txt: {e}")
+
+    return None
 
 def getNodeDb(infocmd):
     device_info = runCmd(infocmd, echoOnly=False, silent=True)
@@ -466,6 +620,8 @@ def main():
                         help='factory reset node before starting.')
     parser.add_argument('-cd', '--clear-db',action='store_true',
                         help='clears database, use if meshtastic --reset-nodedb does delete all nodes')
+    parser.add_argument('-rk', '--retain-keys',action='store_true',
+                        help='retain previous keys from keys.txt if available, otherwise keep existing keys')
 
     
     args = parser.parse_args()
@@ -536,12 +692,37 @@ def main():
         if channels:
             if not args.test:
                 doCompareChannels(device_info)
+        # Write keys to keys.txt even when not in set mode
+        if not args.test:
+            keys_info = extractKeysFromInfo(device_info, meshcmd)
+            if keys_info:
+                writeKeysToFile(keys_info['nodeId'], keys_info['private_key'],
+                              keys_info['public_key'], args.settingsFile)
         
     else:
+        # Handle key retention if requested (before setting any other settings)
+        if args.retain_keys and not args.test:
+            info_out = runCmd(infocmd, echoOnly=args.test, silent=True)
+            keys_info = extractKeysFromInfo(info_out, meshcmd)
+            if keys_info and keys_info.get('nodeId'):
+                saved_keys = readKeysFromFile(keys_info['nodeId'])
+                if saved_keys:
+                    print(f"Restoring keys from keys.txt for nodeId {keys_info['nodeId']}")
+                    # Set the keys using meshtastic commands
+                    set_private_cmd = f"{meshcmd} --set security.private_key base64:{saved_keys['private_key']}"
+                    # set_public_cmd = f"{meshcmd} --set security.public_key {saved_keys['public_key']}"
+                    runCmd(set_private_cmd, echoOnly=args.test, reboot=(not args.test))
+                    # runCmd(set_public_cmd, echoOnly=args.test, reboot=(not args.test))
+                    print("Keys restored successfully")
+                else:
+                    print(f"No previous keys found in keys.txt for nodeId {keys_info['nodeId']}, keeping existing keys")
+            else:
+                print("WARNING: Could not extract nodeId, cannot restore keys")
+
         num_retries = 0
         while num_retries < max_retries:
             # Need to do a get so that compare settings
-            info_out = runCmd("meshtastic --info",echoOnly=args.test) # user info is on line 3
+            info_out = runCmd(infocmd, echoOnly=args.test) # user info is on line 3
             checkFirmwareVersion(info_out)
 
             output = "\n".join(info_out.splitlines()[:5])
@@ -572,7 +753,7 @@ def main():
                 setcmd = meshcmd
                 for key,value in new_settings.items():
                     if key == "user.longname":
-                        setcmd += f" --set-owner {value}"
+                        setcmd += f" --set-owner '{value}'"
                     elif key == "user.shortname":
                         setcmd += f" --set-owner-short {value}"
                     elif key == "security.admin_key":
@@ -618,6 +799,11 @@ def main():
             
     if not args.test:
         printDeviceInfo(device_info)
+        # Write keys to keys.txt
+        keys_info = extractKeysFromInfo(device_info, meshcmd)
+        if keys_info:
+            writeKeysToFile(keys_info['nodeId'], keys_info['private_key'],
+                          keys_info['public_key'], args.settingsFile)
 
     if args.export_config:
         if longname:
@@ -626,7 +812,8 @@ def main():
                 try:
                     if not posixpath.exists(configdir):
                         os.mkdir(infodir)
-                    fname = posixpath.join(infodir, f"node_{longname}.yml")
+                    sanitized_longname = longname.replace(' ', '_')
+                    fname = posixpath.join(infodir, f"node_{sanitized_longname}.yml")
                     with open(fname,"w") as file:
                         file.writelines(output)
                     print(f"Wrote config file: {fname}")
