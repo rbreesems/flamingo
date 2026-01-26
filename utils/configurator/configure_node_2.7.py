@@ -141,6 +141,22 @@ def runCmd(cmd, echoOnly=False, silent=False, reboot=False):
     if not echoOnly:
         args = cmd.split()
         output = runProgramCaptureOutput(args)
+
+        # Detect the Meshtastic "multiple serial ports" condition and stop early.
+        # This happens when multiple devices are attached and no --port is given.
+        combined_err = (output.stderr or "") + "\n" + (output.stdout or "")
+        if ("Multiple serial ports were detected" in combined_err
+                and "--port" not in cmd):
+            # Show the original Meshtastic warning (which includes the ports list)
+            print("\nError from meshtastic -" + combined_err)
+            # Provide a clear instruction for the user running this configurator.
+            print(
+                "\nERROR: Multiple Meshtastic devices were detected on serial ports.\n"
+                "Please re-run this script and specify a single device using the '-p/--port' option.\n"
+                "Example: python configure_node_2.7.py -p COM25 <settings.yml>"
+            )
+            sys.exit(1)
+
         if not silent:
             lines = output.stdout.split('\n')
             for line in lines:
