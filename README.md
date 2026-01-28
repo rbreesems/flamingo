@@ -306,6 +306,8 @@ The `configure_node_2.7.py` script has recently added a `retain-keys` option.  A
 
 For a node to talk on a general channel, only the channel key is needed.
 
+Here is a [youtube video](https://youtu.be/ZyLO-XVfxyo) of us fixing this problem between two radios during the Tumbling Rock Jan 23/2026 test (J. Moon filming B.Reese correcting the public key mismatch).
+
 # Utility Software
 
 The `utils` subdirectory has the following python scripts:
