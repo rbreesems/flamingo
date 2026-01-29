@@ -476,7 +476,7 @@ The comms were generally flawless during the test. We had to do some remote IT w
 
 Latency was about one minute over the 15 hop chain. Below is a trace route (forward direction shown) sent from the Christmas tree.
 
-![Trace route (15 hops) from Christmas Tree](./doc/trace_route1_xtree.png)
+![Trace route (15 hops) from Christmas Tree](./doc/trace_route1_xtree.PNG)
 
 
 
