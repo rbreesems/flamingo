@@ -464,7 +464,7 @@ We returned to Tumbling Rock Cave Preserve on January 23/2026 with the goal of r
 
 The goal was accomplished, we placed 15 radios (6 bridge nodes for three wired segments, 9 wireless only radios).  
 
-This map shows the radio placement - this is much cleaner than the radio placement done for the Sept 27/2025 mock as we use all radios with external antennas for relays and listening, and used an SNR above about 3.0 for placement criteria and thus avoided any weak links.
+This map shows the radio placement - this is much cleaner than the radio placement done for the Sept 27/2025 mock as all radios had external antennas for relays and listening, and we used an SNR above 3.0 for placement criteria and thus avoided any weak links.
 
 ![TRock radio placement](./doc/trock_jan23_2026.png)
 
