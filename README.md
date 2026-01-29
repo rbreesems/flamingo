@@ -474,7 +474,7 @@ The following is a timeline (credit: J. Cole) of the radio placement. Some issue
 
 The comms were generally flawless during the test. We had to do some remote IT work for the two members at IC as the laptop used for logging decided to reboot for a Windows update.  Here is the ![complete log](./doc/trock_j23_26_parsed_log.txt) of the messages recorded at IC. The reboot happened between 15:29 and 15:41.  The log does not include outgoing tapbacks from the IC to the comms team to acknowledge messages.
 
-Latency was about one minute over the 15 hop chain. Below is a trace route (forward direction shown) sent from the Christmas tree.
+Latency was about one minute over the 15 hop chain (LoRa mode SHORT/FAST). Below is a trace route (forward direction shown) sent from the Christmas tree.
 
 ![Trace route (15 hops) from Christmas Tree](./doc/trace_route1_xtree.PNG)
 
