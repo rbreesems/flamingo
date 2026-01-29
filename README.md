@@ -468,7 +468,7 @@ This map shows the radio placement - this is much cleaner than the radio placeme
 
 ![TRock radio placement](./doc/trock_jan23_2026.png)
 
-The following is a timeline of the radio placement. Some issues with public key mismatches for the direct messaging used to turn packet test on/off slowed us down, and we were also taking video while we were progressing.
+The following is a timeline (credit: J. Cole) of the radio placement. Some issues with public key mismatches for the direct messaging used to turn packet test on/off slowed us down, and we were also taking video while we were progressing.
 
 ![Timeline for radio placement](./doc/trock_jan23_2026_timeline.png)
 
