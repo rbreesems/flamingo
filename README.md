@@ -472,7 +472,7 @@ The following is a timeline of the radio placement. Some issues with public key 
 
 ![Timeline for radio placement](./doc/trock_jan23_2026_timeline.png)
 
-The comms were generally flawless during the test. We had to do some remote IT work for the two members at IC as the laptop used for logging decided to reboot for a Windows update.  Here is the ![complete log](./doc/trock_j23_j26_parsed_log.txt) of the messages recorded at IC. The reboot happened between 15:29 and 15:41.
+The comms were generally flawless during the test. We had to do some remote IT work for the two members at IC as the laptop used for logging decided to reboot for a Windows update.  Here is the ![complete log](./doc/trock_j23_26_parsed_log.txt) of the messages recorded at IC. The reboot happened between 15:29 and 15:41.
 
 
 
