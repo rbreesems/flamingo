@@ -458,3 +458,21 @@ As an additional test, the final node was connected to a Raspberry Pi running th
 
 A trip is scheduled to Tumbling Rock cave near the end of January to test the 2.7.15 firmware with retries implemented for channel packets.  The primary goal is to replicate the end point reached in the September mock (the Christmas tree).  We will use the same number of wired segments and whatever number of wireless nodes is required to meet that goal. We expect to place much fewer radios than the September mock and to complete the setup in half the time.
 
+## Tumbling Rock Cave Preserver test, January 23, 2026
+
+We returned to Tumbling Rock Cave Preserve on January 23, 2026 with the goal of reaching the Christmas Tree, which was where comms reached during the mock rescue of Sept 27/2025. HCRU members present were R. Filler (IC), T. Barthel (IC), B. Reese, J. Moon, J. Cole, and J. Farrar. We wanted to test 2.7.15 (wireless radios) and 2.7.16 (bridge nodes) that had all of the recent improvements.
+
+The goal was accomplished, we placed 15 radios (6 bridge nodes for three wired segments, 9 wireless only radios).  
+
+This map shows the radio placement - this is much cleaner than the radio placement done for the Sept 27/2025 mock as we use all radios with external antennas for relays and listening, and used an SNR above about 3.0 for placement criteria.
+
+![TRock radio placement](./doc/trock_jan23_2026.png)
+
+The following is a timeline of the radio placement. Some issues with public key mismatches for the direct messaging used to turn packet test on/off slowed us down, and we were also taking video while we were progressing.
+
+![Timeline for radio placement](./doc/trock_jan23_2026_timeline.png)
+
+The comms were generally flawless during the test. We had to do some remote IT work for the two members at IC as the laptop used for logging decided to reboot for a Windows update.  Here is the ![complete log](./doc/trock_j23_j26_parsed_log.txt) of the messages recorded at IC. The reboot happened between 15:29 and 15:41.
+
+
+

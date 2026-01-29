@@ -1,0 +1,148 @@
+??:??:?? Incoming:  Test 	 host: Rigging-WP03  numhops: 0
+??:??:?? Incoming:  Test 	 host: Rigging-WP03  numhops: 0
+13:37:43 					Outgoing (IncidentCommand):  Test 1
+13:37:43 					Outgoing (IncidentCommand):  Test 1
+13:37:55 Incoming:  #### 	 host: Rigging-WP03  numhops: 0
+13:46:57 Incoming:  Comm check 	 host: Rigging-WP03  numhops: 0
+13:57:18 					Outgoing (IncidentCommand):  Com chk good
+13:57:18 					Outgoing (IncidentCommand):  Com chk good
+13:57:37 Incoming:  Comm check 	 host: HCRU-A20  numhops: 0
+13:58:01 Incoming:  Comm Chk 	 host: HCRU-A22  numhops: 0
+13:58:14 Incoming:  JVC 	 host: HCRU-A22  numhops: 0
+13:58:24 					Outgoing (IncidentCommand):  Ha 20 good
+13:58:24 					Outgoing (IncidentCommand):  Ha 20 good
+13:58:37 					Outgoing (IncidentCommand):  Ha 22 good coms
+13:58:37 					Outgoing (IncidentCommand):  Ha 22 good coms
+14:05:07 Incoming:  Test 	 host: Search2-WP02  numhops: 0
+14:05:20 					Outgoing (IncidentCommand):  Ack
+14:05:20 					Outgoing (IncidentCommand):  Ack
+14:13:50 Incoming:  #### 	 host: HCRU-A22  numhops: 0
+14:25:12 Incoming:  Laying spool #1 	 host: HCRU-A20  numhops: 1
+14:25:32 					Outgoing (IncidentCommand):  IC ACK
+14:25:32 					Outgoing (IncidentCommand):  IC ACK
+14:27:15 					Outgoing (IncidentCommand):  IC ACK
+14:27:15 					Outgoing (IncidentCommand):  IC ACK
+14:29:16 Incoming:  Comm check 	 host: HCRU-A20  numhops: 2
+14:29:54 					Outgoing (IncidentCommand):  IC ACK
+14:29:54 					Outgoing (IncidentCommand):  IC ACK
+14:30:19 Incoming:  Disconnecting and continuing spool 1 	 host: HCRU-A20  numhops: 2
+14:30:40 Incoming:  Ack 	 host: Search2-WP02  numhops: 0
+14:31:44 Incoming:  Test 	 host: Search2-WP02  numhops: 0
+14:31:47 					Outgoing (IncidentCommand):  Com check
+14:39:12 Incoming:  Comm check spool 1 finished 	 host: HCRU-A20  numhops: 2
+14:53:22 Incoming:  H01 placed 	 host: HCRU-A20  numhops: 2
+14:53:44 Incoming:  Ack 	 host: Search2-WP02  numhops: 0
+14:59:38 Incoming:  H2 placed 	 host: HCRU-A20  numhops: 3
+15:00:14 Incoming:  Ack 	 host: Search2-WP02  numhops: 0
+15:00:59 Incoming:  Plz use reply or thumbs up react as ack 	 host: HCRU-A20  numhops: 4
+15:02:05 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+15:06:43 Incoming:  H3 placed 	 host: HCRU-A20  numhops: 5
+15:07:04 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+15:15:15 Incoming:  H04 placed 	 host: HCRU-A20  numhops: 5
+15:15:45 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+15:27:58 Incoming:  A5 placed 	 host: Rigging-WP03  numhops: 6
+15:28:25 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+15:29:38 Incoming:  A5 placed 	 host: HCRU-A22  numhops: 6
+15:41:17 Incoming:  2. Find SerialMonitor 	 host: HCRU-A20  numhops: 7
+15:41:24 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+15:41:35 Incoming:  She is logging agaib 	 host: Search2-WP02  numhops: 0
+15:41:43 Incoming:  3. Start monitor on COM3 	 host: HCRU-A20  numhops: 7
+15:42:13 Incoming:  #### 	 host: HCRU-A20  numhops: 7
+15:42:15 Incoming:  Yes.  It opened right up 	 host: Search2-WP02  numhops: 0
+15:42:36 Incoming:  And we hit the start monitoring. 	 host: Search2-WP02  numhops: 0
+15:42:50 Incoming:  #### 	 host: HCRU-A20  numhops: 7
+15:52:17 Incoming:  WB11 placed 	 host: HCRU-A22  numhops: 8
+16:09:15 					Outgoing (IncidentCommand):  Ops Normal?
+16:09:15 					Outgoing (IncidentCommand):  Ops Normal?
+16:14:16 Incoming:  Test 	 host: HCRU-A22  numhops: 10
+16:14:58 Incoming:  WB12 placed 	 host: HCRU-A22  numhops: 10
+16:17:21 					Outgoing (IncidentCommand):  Did you receive status question asking if you all are ops normal?
+16:17:21 					Outgoing (IncidentCommand):  Did you receive status question asking if you all are ops normal?
+16:18:07 Incoming:  Sorry. We were laying wired bridge 	 host: HCRU-A22  numhops: 10
+16:18:16 Incoming:  All good 	 host: HCRU-A22  numhops: 10
+16:24:10 Incoming:  H7 placed 	 host: HCRU-A20  numhops: 10
+16:26:02 Incoming:  Individual test 	 host: Search2-WP02  numhops: 0
+16:30:44 Incoming:  Test 	 host: HCRU-A22  numhops: 11
+16:30:57 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+16:31:45 Incoming:  Thks 	 host: HCRU-A22  numhops: 11
+16:31:47 Incoming:  #### 	 host: HCRU-A20  numhops: 11
+16:33:16 Incoming:  H08 placed 	 host: HCRU-A22  numhops: 12
+16:33:25 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+16:38:20 Incoming:  Totem Gallery 	 host: HCRU-A22  numhops: 12
+16:42:05 Incoming:  H09 placed. End of totem gallery 	 host: HCRU-A22  numhops: 12
+16:42:19 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+16:45:13 Incoming:  Placing WB13 	 host: HCRU-A22  numhops: 13
+16:46:11 Incoming:  Admin note: IC node hanging in tent, Tom in truck 30ft away works fine.  WP02 inside ABs truck also works. 	 host: Search2-WP02  numhops: 0
+16:48:29 Incoming:  Distance test 	 host: Search2-WP02  numhops: 0
+16:48:30 					Outgoing (IncidentCommand):  Test.
+16:49:20 					Outgoing (IncidentCommand):  Test.
+16:49:29 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+16:50:07 Incoming:  Slight delay I saw you send it abd it took longer than when you were in the truck 	 host: Search2-WP02  numhops: 0
+16:50:27 					Outgoing (IncidentCommand):  Roger.
+16:51:34 					Outgoing (IncidentCommand):  100### Test.
+16:51:40 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+16:52:09 					Outgoing (IncidentCommand):  Test.
+16:52:09 					Outgoing (IncidentCommand):  Test.
+16:52:50 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+16:53:27 Incoming:  Teat 	 host: Search2-WP02  numhops: 0
+16:55:09 					Outgoing (IncidentCommand):  p#
+16:55:24 Incoming:  Test 	 host: Search2-WP02  numhops: 0
+16:55:26 					Outgoing (IncidentCommand):  Test.
+16:55:49 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:04:57 Incoming:  They still have to de-rig and come out.  We are going to miss the exit window on the application.  Should I let Chad know? 	 host: Search2-WP02  numhops: 0
+17:05:58 					Outgoing (IncidentCommand):  Yes.
+17:06:11 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:06:42 Incoming:  WB14 placed 	 host: HCRU-A22  numhops: 15
+17:07:18 					Outgoing (IncidentCommand):  Exit time will be passed###update expected exit time.
+17:07:18 					Outgoing (IncidentCommand):  Exit time will be passed###update expected exit time.
+17:10:31 Incoming:  We are at Xmas tree,  tearing down, 2 hours 	 host: Rigging-WP03  numhops: 15
+17:10:46 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:13:44 Incoming:  Christmas Tree!!!! 	 host: HCRU-A22  numhops: 15
+17:16:40 Incoming:  Hello from Xmas tree 	 host: HCRU-A20  numhops: 15
+17:17:11 Incoming:  At 	 host: HCRU-A21  numhops: 15
+17:17:28 Incoming:  Comms ack on general for tree 	 host: Rigging-WP03  numhops: 15
+17:17:39 Incoming:  I###m at Christmas tree 	 host: HCRU-A21  numhops: 15
+17:17:50 Incoming:  #### 	 host: HCRU-A20  numhops: 15
+17:18:41 Incoming:  Can you see A20 message? 	 host: HCRU-A22  numhops: 15
+17:18:48 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:19:23 Incoming:  Sorry I was updating Chad on our status for the application 	 host: Search2-WP02  numhops: 0
+17:19:32 Incoming:  Please acknowledge it. 	 host: HCRU-A22  numhops: 15
+17:20:28 Incoming:  There was tap back to the first Christmas tree report 	 host: Search2-WP02  numhops: 0
+17:20:50 Incoming:  Comms check from Xmas tree x3 	 host: HCRU-A20  numhops: 15
+17:20:57 Incoming:  I think there is a delay on that last leg 	 host: Search2-WP02  numhops: 0
+17:21:05 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:21:20 					Outgoing (IncidentCommand):  Received
+17:21:20 					Outgoing (IncidentCommand):  Received
+17:21:27 Incoming:  Thank you 	 host: HCRU-A22  numhops: 15
+17:22:20 Incoming:  Starting to recover comms 	 host: HCRU-A22  numhops: 15
+17:22:31 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:22:46 Incoming:  Will update before disconnecting 	 host: HCRU-A22  numhops: 15
+17:23:51 Incoming:  Dc of wb14 	 host: Rigging-WP03  numhops: 15
+17:24:03 					Outgoing (IncidentCommand):  p#
+17:24:05 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:24:07 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:24:14 Incoming:  Dc wb14 	 host: Rigging-WP03  numhops: 15
+17:24:14 					Outgoing (IncidentCommand):  p#
+17:24:30 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:38:15 Incoming:  Dc wb13 	 host: Rigging-WP03  numhops: 13
+17:38:47 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:40:17 Incoming:  DC H09 	 host: HCRU-A22  numhops: 13
+17:41:01 Incoming:  ######## 	 host: Search2-WP02  numhops: 0
+17:49:19 Incoming:  DC H07 	 host: HCRU-A22  numhops: 10
+17:49:40 Incoming:  DC H07 	 host: HCRU-A22  numhops: 10
+17:50:00 Incoming:  Test 	 host: HCRU-A22  numhops: 10
+17:50:34 					Outgoing (IncidentCommand):  Acq
+17:50:34 					Outgoing (IncidentCommand):  Acq
+17:50:50 Incoming:  #### 	 host: Search2-WP02  numhops: 0
+17:51:05 Incoming:  TY 	 host: HCRU-A22  numhops: 10
+17:54:13 					Outgoing (IncidentCommand):  Can###t believe we don###t even get paid to do this!!
+17:54:54 Incoming:  #### 	 host: N/A  numhops: 31
+17:56:35 					Outgoing (IncidentCommand):  Agreed.
+17:57:11 					Outgoing (IncidentCommand):  200 character max.
+18:05:35 Incoming:  DC WB11 	 host: HCRU-A22  numhops: 8
+18:11:34 Incoming:  DC H06 	 host: HCRU-A22  numhops: 7
+18:18:53 Incoming:  DC H03 	 host: HCRU-A22  numhops: 4
+18:21:36 Incoming:  DC H02 	 host: HCRU-A22  numhops: 4
+18:22:59 Incoming:  Test 	 host: Search2-WP02  numhops: 0
+18:24:00 Incoming:  Can start breaking down canopy 	 host: HCRU-A22  numhops: 2
+18:27:22 Incoming:  DC wB08 	 host: HCRU-A22  numhops: 2
