@@ -43,6 +43,7 @@ We also use a combination of commercial ones for testing, and other purposes.
 *ParaNode coming soon, cost down, and integrated GPS for paragliding*
 
 ### Basic units
+![Basic Node](./img/CaveNode_basic.jpg)
 
 Custom designed circuit board using a RAK4630, 
 Board is 72.8x18.7 mm
@@ -50,7 +51,7 @@ $23.15 USD board cost @20 (JLCPCB)
 Features:
 - Inbuilt battery protection
 - Reed switch / regular switch to isolate the battery when in the case (exposed to magnetic field)
-- 2x RGB leds(RT and message controlled), and 2x single colour LEDS (HB, and packet rx)
+- 3x RGB leds(Meshtastic heartbeat / packet Rx, RangeTest and message controlled)
 - Optional GPS
 - Optional I2C
 - Optional magnetic USB connector
@@ -61,7 +62,7 @@ Features:
 
 ### RS485 / Logger  
 ![RS485 Node](./img/RS485_Node.jpg)
-![RS485 Node](./img/RS485_Board.jpg)
+![RS485 Board](./img/RS485_Board.jpg)
 
 Custom designed circuit board using a RAK4630, 
 Board is 79.4x26.7 mm
