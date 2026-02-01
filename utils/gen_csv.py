@@ -19,6 +19,8 @@ node_data = {}  # key is short name, value is data dict that maps column_data_ke
 
 prefs_dict = {} # parsed from yaml file
 
+keys_dict = {}
+
 # To print CSV data:
 # for each node:
 #   get data dict
@@ -36,6 +38,7 @@ prefs_dict = {} # parsed from yaml file
 def parseOneInfoFile(fpath):
     global node_data
     global prefs_dict
+    global keys_dict
 
     node_dict = {}
     print(f"Parsing infofile: {fpath}")
@@ -67,7 +70,12 @@ def parseOneInfoFile(fpath):
                 i = 0
                 for word in words:
                     if word == "\"myNodeNum\":":
+                        id = int(words[i+1].replace(',',''))
                         node_dict["myNodeNum"] = words[i+1]
+                        if str(id) in keys_dict:
+                            node_dict['global_keyStored'] = 'yes'
+                        else:
+                            node_dict['global_keyStored'] = 'no'
                         break
                     i += 1
             if re.match("^Metadata:.*", line):
@@ -164,17 +172,63 @@ def makeCsvFile():
         ofile.write(f"{s}\n")
     ofile.close()
 
+def readAllKeysFromFile(fname):
+    """
+    Read keys from keys.txt, 
+    Returns nested dict with private_key, public_key, config_file, or None if not found
+    Top-level dict is nodeId.
+    Always returns a dict
+    """
+    keys_file = fname
+    
+    if not os.path.exists(keys_file):
+        return {}
+    
+
+    try:
+        topDict = {}
+        with open(keys_file, 'r') as f:
+            first_line = True
+            for line in f:
+                line = line.strip()
+                # Skip header line
+                if first_line and line == "nodeId,private_key,public_key,config_file":
+                    first_line = False
+                    continue
+                if line and not line.startswith('#'):
+                    # Format: nodeId,private_key,public_key,config_file
+                    parts = line.split(',', 3)
+                    if len(parts) == 4:
+                        id = parts[0].replace('!','')
+                        id = int(id,16) # convert to decimal
+                        topDict[str(id)] = {
+                                'private_key': parts[1].strip(),
+                                'public_key': parts[2].strip(),
+                                'config_file': parts[3].strip()
+                            }
+                first_line = False
+    except Exception as e:
+        print(f"ERROR: Failed to read keys.txt: {e}")
+
+    return topDict
+
+
 def main():
     global columns_name_dict
     global column_list
     global prefs_dict
+    global keys_dict
     parser = argparse.ArgumentParser(description=f"Generate CSV file for cave nodes, Version {version}.")
     parser.add_argument('configFile',type=str, help="YAML file containing configuration specifying what is to be included, required.")
-
+    parser.add_argument('-kf', '--keysFile', dest='keysFile', type=str,
+                        default='keys.txt',
+                        help="file containing public/private keys, default is keys.txt.")
 
     
     args = parser.parse_args()
 
+    keys_dict = readAllKeysFromFile(args.keysFile)
+   
     try:
         with open(args.configFile, 'r') as file:
             yml_opts = yaml.safe_load(file) # Use safe_load to prevent arbitrary code execution
@@ -187,13 +241,14 @@ def main():
         print(f"ERROR, expecting 'fixed_cols' dict that has list of fixed columns in file: {args.configFile}, exiting.")
         return -1
     
+
+    addColumn("global_keyStored", "keyStored")    # for keys file entry
     for v in fixed_cols:
         words = v.split(':')
         if len(words)==1:
             addColumn(f"global_{v}",v)
         else:
             addColumn(f"global_{words[0].strip()}", words[1].strip())
-       
 
     prefs = yml_opts.get('prefs',None)
     if prefs is None:
