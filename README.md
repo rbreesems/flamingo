@@ -8,6 +8,8 @@ With tongue-in-cheek, if flamingo must stand for something, then:
 
 AKA -> Using Meshtastic radios for underground (cave) communication
 
+This is a [youtube video](https://youtu.be/R3LtLcnrpAk) my Jamie Moon of a test in Tumbling Rock Cave Preserve (Jackson County/AL/USA) on January 23/2026 in which we deployed a 15-hop network, with three wired segments (900 ft/274m, 800 ft/243m, 800 ft/243m). This video also gives an overview of the Flamingo project.
+
 # Summary
 The goal of Flamingo is to provide a reliable cave communication system that is:
 - Versatile
