@@ -6,10 +6,35 @@ import yaml
 import sys
 from pathlib import Path
 from dataclasses import dataclass
+import emoji
 
 # Helper program for to parse serial log messages
 # This parsing compatible with greater than HCRU 7/25.2 that
 # fixed problem with logging of long messages
+
+def makeEmojiDict():
+
+    all_emojis = emoji.EMOJI_DATA
+
+    emoji_byte_dict = {}  # maps byte string to english string
+    # Print the first 10 emojis and their English short names
+    for i, (char, data) in enumerate(all_emojis.items()):
+        utf_bytes = char.encode('utf-8')
+        if len(utf_bytes) > 4:
+            continue
+        if utf_bytes[0] == 0xf0:
+            s = f"{utf_bytes[1:]}"
+        else:
+            s = f"{utf_bytes}"
+        s = s.replace('\\x','')
+        s = s[2:]
+        s = s.replace("\'","")
+        key = ':' + s + ':'
+        emoji_byte_dict[key] = data['en'] 
+        #print(f"key: {key}, {char} : {data['en']}")
+
+    return emoji_byte_dict
+        
 
 
 def filterColorCode(s):
@@ -89,9 +114,16 @@ def translate_host(host, yml_opts):
     new_host = getOutgoingName(host, yml_opts)
     if new_host is not None:
         return 
+    
+def replaceEmoji(msg, emoji_byte_dict):
+    if not (':' in msg):
+        return msg
+    elist = re.findall(":[0-9a-f]{6}:", msg)
+    for emo in elist:
+        msg = msg.replace(emo, emoji_byte_dict.get(emo,""))
+    return emoji.emojize(msg)
 
-
-def parseOneLogFile(fpath, yml_opts):
+def parseOneLogFile(fpath, yml_opts, emoji_byte_dict, ofile):
     global log_data
     global prefs_dict
 
@@ -107,7 +139,7 @@ def parseOneLogFile(fpath, yml_opts):
         if state == 'default':
             if 'Routing sniffing' in line:
                 continue
-            if re.search(".*TextModule msg.*",line) or re.search(".*PhoneApi msg.*",line):
+            if re.search(".*TextModule msg.*",line):
                 
                 words = line.split()
                 tstamp = words[2]
@@ -119,16 +151,10 @@ def parseOneLogFile(fpath, yml_opts):
                     if 'ln=' in word:
                         host = cwords[2].split('=')[1]
                         break
-                if host == 'reesetdeck':
-                    host = host
                 msg = ""
                 txhost = ""
                 if not isOutgoing(host, yml_opts):
                     txhost = getIncomingName(host, yml_opts)
-                if re.search(".*PhoneApi msg.*",line):
-                    phoneApiMessage = True
-                else:
-                    phoneApiMessage = False
                 if len(cwords) < 6:
                     print(f"DEBUG: {line} ")
                     cwords  = cwords
@@ -153,27 +179,39 @@ def parseOneLogFile(fpath, yml_opts):
                 msg = msg+line.split("z=",1)[1]
                 continue
             elif msg != "":
+                msg = replaceEmoji(msg,emoji_byte_dict)
                 state = 'default'
                 if isOutgoing(host, yml_opts):
                     if re.match("^#.*", msg) or re.match("^P#.*", msg) or re.match("^`#.*", msg):
                         continue
                     
                     entry = LogEntry(tstamp, txhost, "", msg, num_hops)
-                    print(f"{entry.tstamp} \t\t\t\t\tOutgoing ({getOutgoingName(host, yml_opts)}):  {entry.outmsg}")
+                    s = f"{entry.tstamp} \t\t\t\t\tOutgoing ({getOutgoingName(host, yml_opts)}):  {entry.outmsg}"
+                    if ofile:
+                        ofile.write(f"{s}\n")
+                    else:
+                        print(s)
                 else:
                     txhost = getIncomingName(host, yml_opts)
                     entry = LogEntry(tstamp, txhost, msg, "", num_hops)
-                    print(f"{entry.tstamp} Incoming:  {entry.inmsg} \t host: {entry.txhost}  numhops: {entry.num_hops}")
+                    s = f"{entry.tstamp} Incoming:  {entry.inmsg} \t host: {entry.txhost}  numhops: {entry.num_hops}"
+                    if ofile:
+                        ofile.write(f"{s}\n")
+                    else:
+                        print(s)
             else:
                 state = 'default'
-
-
+    if ofile:
+        ofile.close()
 
 def main():
     
     global prefs_dict
     parser = argparse.ArgumentParser(description=f"Parse serial logs from cave testing, Version {version}.")
     parser.add_argument('argumentsFile',type=str, help="YAML file containing all arguments.")
+    parser.add_argument('-o', '--outFile', dest='outFile', type=str,
+                        default=None,
+                        help="optional output file for parsed output, will be in UTF-8 encoding.")
     args = parser.parse_args()
 
     try:
@@ -190,10 +228,19 @@ def main():
     if not posixpath.isdir(logdir):
          print(f"ERROR: value for 'logdir' of {logdir} is not a directory ")
          return
-    count = 0
+    
+    ofile = None
+    if args.outFile:
+        try:
+            ofile = open(args.outFile, 'w', encoding="utf-8")
+        except Exception as e:
+            print("ERROR: Unexpected error opening output file: %s, %s/%s" % (args.outFile, sys.exc_info()[0], e))
+            exit(-1)
+    
+    emoji_byte_dict = makeEmojiDict()
     for entry in sorted(Path(logdir).iterdir(), key=os.path.getmtime):
         if entry.is_file():
-            parseOneLogFile(posixpath.join(logdir,entry.name), yml_opts)
+            parseOneLogFile(posixpath.join(logdir,entry.name), yml_opts, emoji_byte_dict, ofile)
             
 
     return

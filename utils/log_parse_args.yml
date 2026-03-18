@@ -11,7 +11,7 @@
 # outgoing: dictionary that translates outgoing radio names to names to be output in parsed log
 #
 
-logdir: 'D:/meshtastic/logs/trock_mock_logs'
+logdir: 'D:/meshtastic/logs/emoji_test'
 
 incoming:
   Listener1 : breese-comms
@@ -24,4 +24,6 @@ incoming:
 outgoing:
   reesetdeck: IncidentCommandAlt
   IncidentCommand: IncidentCommand
+  BReese05: BReese05
+
 

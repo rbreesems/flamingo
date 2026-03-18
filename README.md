@@ -164,7 +164,9 @@ RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with
 
 Our terminology for radio that has the RS485 interface is `bridge node`, as it allows bridging between the wireless/wired worlds.
 
-Baud rate vs range testing yielded:
+The maximum working baud rage for a short wire (< 2 feet) was found to be 230400 buad. 
+
+Baud rate vs range testing with field-phone two-conductor field-comm wire yielded:
 
   - 115200 can drive 100 ft
   - 57600 can drive 700 ft
@@ -172,6 +174,11 @@ Baud rate vs range testing yielded:
   - 9600 can drive 2400 ft 
   - 4800 can drive 4700 ft (1.4 km) 
   - 2400 can drive 5500 ft (1.6 km, do not know max distance,  suspect it is approximately 3 km - 9800 ft )
+
+Wire types - gauge, twisted vs non-twisted makes a difference.
+
+  - 1000 ft two wire, 22 AWG solid conductor, non-twisted - works @9600 but not @19200
+  - 1000 ft two wire, 23 AWG solid conductor, twisted - works @19200 but not @38400
 
 Any packet received over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is delivered to the firmware stack in the same manner as a packet received by LORA RX. Any packet received over LORA RX that is rebroadcast by the router is also sent over RS485 TX.  Packet flow on the RS485 serial link is bidirectional, but does not support full duplex (simulataneous TX and RX).
 
@@ -318,7 +325,7 @@ The `utils` subdirectory has the following python scripts:
 
 2. The `gen_csv.py` is a utility that parses all of the files in the `infofiles` subdirectory and writes out a summary CSV file. The format of the CSV file is specified by a YML file, see the `node_csvspec.yml` file for an example. This gives you a handy summary of all the radios that have been programmed.
 
-3. The `log_parse.py` file is a utility for parsing the radio serial log files to produce a summary of incoming/outgoing messages + timestamps.
+3. The `log_parse.py` file is a utility for parsing the radio serial log files to produce a summary of incoming/outgoing messages + timestamps. This utility was upgraded to handle the emoji hex encoding in the log output that was added in Flamingo 3.26 build.
 
 
 # Testing
