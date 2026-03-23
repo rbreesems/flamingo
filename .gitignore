@@ -11,9 +11,13 @@ utils/logs/*
 tested_firmware/heltec-v3/*
 utils/nodes.csv
 utils/configurator/nodes.csv
+utils/configurator/nodes_power.csv
+utils/log_parse_args_trock.yml
 tested_firmware/archived/*
 
 venv/
 utils/configurator/infofiles
 utils/configurator/keys.txt
+utils/configurator/hcru_mesh_nodes_keys.txt
+
 

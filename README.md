@@ -111,6 +111,9 @@ command was chosen to not be part of a normal status message.
 
 - The `hopmod_2.7.15`, `hopmod_2.7.16` branches have additional changes over `hopmod_2.7.9`. These changes added retries for channel messages (configured for two retransmits on failure, stock firmware has none), and retries direct messages even if there is no known neighbor (stock firmware only retries if there is a known neighbor). See the section that discusses retry behavior for the rationale for these changes. The SNR threshold for three beeps on rangetest packets was changed from 1.0 to 3.0. There is also a critical update to the RS485 serial link code that adds a TX queue and improved RX handling, see the section on RS485 collision testing. If you use the RS485 link, then you should use `hopmod_2.7.15` or higher.
 
+- The `hopmod_2.7.16` branch was updated in March 2026 with a fix for channel message retry cancellation. Previous to this fix, only the originator node canceled scheduled channel rebroadcasts if it heard a neighbor echo the packet. This bug caused unnecessary LORA TX.  With the fix, now all nodes in the chain will cancel scheduled channel broadcasts if they hear a neighbor echo a previously sent packet.  The debug logging output was also extended to encode emojis as
+ansii hex in the output so that these can be converted back to emojis by the `log_parse.py` utility. Previously, emojis appeared as `##` string in the debug output.
+
 The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
 1. `env:rak4631` - just contains hop limit/admin modifications
@@ -139,6 +142,19 @@ On the Bridge Nodes, aka serial link nodes (RAK19007 Wisblock base board + RAK46
 ## What LORA speed mode to use for cave nodes?
 
 In our cave testing, we used MEDIUM/SLOW for our mocks/testing through October 2025. However, after the September Tumbling Rock cave rescue mock, we did some detailed hop latency/range testing (see the dedicated section on this). This resulted in a decision to use SHORT/FAST going forward in order to reduce latency over a large number of hops and to keep TX contention low. The distance that wireless nodes can practically reach in a cave means that the range difference between MEDIUM and SHORT modes is not that significant, and that we would rather have lower latency/less contention.  Wired segments with bridge nodes can be used to cover long distances with wireless nodes used to bridge gaps or reach vertically if needed.
+
+## What Device roles to use for cave nodes?
+
+First, using the `CLIENT` role for all nodes will work, but is not optimal as explained below. We used the `CLIENT` role exclusively for a long time before we learned that using different roles can improve both latency and chain debugging.
+
+There are three device roles that we use for cave nodes:
+
+- `ROUTER` - this role is used for nodes that form the primary communication chain. The principle reason to use this role is because it has much lower latency when rebroadcasting packets than a role like `CLIENT`.  The following [blog post](https://meshtastic.org/blog/demystifying-router-late/) has a great explantion of how the different roles calculate latency when rebroadcasting packets.  As an example of the latency difference, a seven-node chain of all CLIENT nodes had an end-to-end latency of about 10 seconds for a channel message using LORA SHORT/FAST mode, while the same seven-node chain only had a one to two second latency when all nodes had ROUTER roles.
+
+- `CLIENT` - this can be used for any teams who are will be going in and out of range of the primary communication chain or who are extending past the end of the primary communication chain. This role rebroadcasts packets like the `ROUTER` role, but with a longer latency.  By rebroadcasting, these nodes can dynamically extend comms past the primary communication chain.
+
+- `CLIENT_MUTE` - this role should be used for rescuer radios that are always in range of the primary communication chain. One reason to use this role is that packets are not rebroadcast which reduces TX contention.  A second reason is that when trying to debug a weak link in the communication chain you do not want nearby rescuer radios rebroadcasting packets, which will obfuscate your attempts to locate a weak link in the primary communication chain.
+
 
 ## Buzzer Haptic for RSSI
 
@@ -325,7 +341,7 @@ The `utils` subdirectory has the following python scripts:
 
 2. The `gen_csv.py` is a utility that parses all of the files in the `infofiles` subdirectory and writes out a summary CSV file. The format of the CSV file is specified by a YML file, see the `node_csvspec.yml` file for an example. This gives you a handy summary of all the radios that have been programmed.
 
-3. The `log_parse.py` file is a utility for parsing the radio serial log files to produce a summary of incoming/outgoing messages + timestamps. This utility was upgraded to handle the emoji hex encoding in the log output that was added in Flamingo 3.26 build.
+3. The `log_parse.py` file is a utility for parsing the radio serial log files to produce a summary of incoming/outgoing messages + timestamps. This utility was upgraded to handle the emoji hex encoding in the log output that was added in Flamingo 3.26 build.  This has been updated in March 2026 along with the `fw2.7.16` firmware to support emojis in the log output.
 
 
 # Testing
