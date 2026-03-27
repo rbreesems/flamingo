@@ -503,7 +503,12 @@ Latency was about one minute over the 15 hop chain (LoRa mode SHORT/FAST). Below
 
 ![Trace route (15 hops) from Christmas Tree](./doc/trace_route1_xtree.PNG)
 
+## Tumbling Rock Cave Preserve test, March 20/2026
 
+A short test was done at Tumbling Rock on March 20, namely to test out a different frequency and re-test EZ-Callout
 
+Four of the TacMesh radios had their cores swapped with EU-433 modules (RAK4631-L) and some foldable antennas from Amazon. They were programmed to have encryption disabled and broadcast Jamie's HAM radio technician callsign so as to be as FCC-compliant as reasonably possible. With the help of T. Barthel and B. Filler, B. Reese and Jamie laid a short wired segment into the cave and then placed 915/433MHz nodes in parallel. During range-testing on the first leg, it was quickly evident that the 915 radios had better signal for the exact same path. Thinking it was a faulty new unit, we tried both a different TacMesh unit and a different 433MHz antenna from the bunch. At the same spot that Bob's radio (904MHz) was getting an average SNR of 10dB, the 433MHz radios were getting around zero or -2dB SNR. Given this result, and the added inconvenience (and integration cost) of the new frequency, we concluded there was no significant advantage of 433 over 915 for our application.
 
+On the surface, an extra node (set as CLIENT_MUTE) was connected to a Raspberry Pi 4 running the EZ-Callout script via USB. The Pi was connected to the HCRU StarLink system for satellite internet. This successfully listened to the FLAMINGO network traffic throughout the test. From several hops into the cave, we were able to send an automated callout message to Jamie's brother out-of-state. Once exiting the cave, we confirmed that he received the callout message via SMS within a minute of sending our message. This shows a promising result that could be useful for remote and/or expedition caving where no personnel are at the surface.
 
+![SMS message as received from ez-callout](./doc/ez-callout_receive.jpg)
