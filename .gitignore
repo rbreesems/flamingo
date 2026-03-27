@@ -14,6 +14,9 @@ utils/configurator/nodes.csv
 utils/configurator/nodes_power.csv
 utils/log_parse_args_trock.yml
 tested_firmware/archived/*
+meshapp/.mypy_ache
+meshapp/src/__pycache__
+
 
 venv/
 utils/configurator/infofiles

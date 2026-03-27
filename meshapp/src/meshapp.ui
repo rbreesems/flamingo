@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1057</width>
+    <height>618</height>
+   </rect>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::ClickFocus</enum>
+  </property>
+  <property name="windowTitle">
+   <string>Flamingo MeshApp</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_84">
+    <item>
+     <widget class="QTabWidget" name="mainTabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="homeTab">
+       <attribute name="title">
+        <string>Home</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0,0,6">
+          <item>
+           <widget class="QPushButton" name="clearCurrentLogWindowPushButton">
+            <property name="toolTip">
+             <string>Clears currently exposed log window</string>
+            </property>
+            <property name="text">
+             <string>Clear</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="connectDevicePushButton">
+            <property name="toolTip">
+             <string>Connect to currently selected COM port</string>
+            </property>
+            <property name="text">
+             <string>Connect</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comPortComboBox">
+            <property name="toolTip">
+             <string>Detected COM Ports</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="isConnectedCheckBox">
+            <property name="text">
+             <string>isConnected</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="connectedDeviceLineEdit">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="placeholderText">
+             <string>connectedDevice</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTabWidget" name="logTabWidget">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="sysLogTab">
+           <attribute name="title">
+            <string>SysLog</string>
+           </attribute>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QTextEdit" name="sysLogTextEdit">
+              <property name="acceptDrops">
+               <bool>false</bool>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="deviceLogTab">
+           <attribute name="title">
+            <string>DeviceLog</string>
+           </attribute>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QTextEdit" name="deviceLogTextEdit"/>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="settingsTab">
+       <attribute name="title">
+        <string>Settings</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QTabWidget" name="optionsTabWidget">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="optionsGeneralTab">
+           <attribute name="title">
+            <string>General</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_66">
+              <item>
+               <widget class="QPushButton" name="configLoadPushButton">
+                <property name="text">
+                 <string>Load Config</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="configSavePushButton">
+                <property name="text">
+                 <string>Save Config</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="configSaveAsPushButton">
+                <property name="text">
+                 <string>Save Config as...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_31">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout">
+              <item>
+               <widget class="QPushButton" name="browseDefaultLogDirPushButton">
+                <property name="toolTip">
+                 <string>Browse to directory to use for log files</string>
+                </property>
+                <property name="text">
+                 <string>Browse (Log Dir)</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="logDirLineEdit"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="autoConnectSerialCheckBox">
+              <property name="toolTip">
+               <string>Autoconnect if only one serial port is detected</string>
+              </property>
+              <property name="text">
+               <string>Autoconnect to serial port</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_4">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>439</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1057</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuDummy">
+    <property name="title">
+     <string>Dummy</string>
+    </property>
+   </widget>
+   <addaction name="menuDummy"/>
+  </widget>
+  <action name="actionLoad_Network">
+   <property name="text">
+    <string>Open...                          ctrl-O</string>
+   </property>
+   <property name="toolTip">
+    <string>Load network from an XML file</string>
+   </property>
+   <property name="statusTip">
+    <string>Load network from an XML file</string>
+   </property>
+  </action>
+  <action name="actionMerge_Network">
+   <property name="text">
+    <string>Merge Network</string>
+   </property>
+   <property name="statusTip">
+    <string>Merge multiple XML network files into one.</string>
+   </property>
+  </action>
+  <action name="actionSave_Network_Visualization_subsetOld">
+   <property name="text">
+    <string>Save Network As (Visualization subset)</string>
+   </property>
+   <property name="statusTip">
+    <string>Save nodes displayed in Visualization tab to an XML file.</string>
+   </property>
+  </action>
+  <action name="actionCSV_Export">
+   <property name="text">
+    <string>CSV Export</string>
+   </property>
+   <property name="statusTip">
+    <string>Export to CSV - uses  code from CSV plugin.</string>
+   </property>
+  </action>
+  <action name="actionCSV_Export_Visualization_subset">
+   <property name="text">
+    <string>CSV Export (Visualization subset)</string>
+   </property>
+   <property name="statusTip">
+    <string>Export to CSV only nodes displayed  in Visualization tab.</string>
+   </property>
+  </action>
+  <action name="actionExpand_Rlogin_Data">
+   <property name="text">
+    <string>Expand Rlogin Data</string>
+   </property>
+  </action>
+  <action name="vmdeploymentActionSSheet_Import">
+   <property name="text">
+    <string>SSheet Import</string>
+   </property>
+  </action>
+  <action name="vmDeploymentActionGenerateAnsibleFiles">
+   <property name="text">
+    <string>Generate Ansible Files (no restore)</string>
+   </property>
+   <property name="statusTip">
+    <string>Generate Ansible files from current devices (restoration data not generated).</string>
+   </property>
+  </action>
+  <action name="vmDeploymentActionSSheet_Export">
+   <property name="text">
+    <string>SSheet Export</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="vmdeploymentActionSheet_Merge">
+   <property name="text">
+    <string>SSheet Import/Link XML/Generate Ansible Files (restore)</string>
+   </property>
+   <property name="toolTip">
+    <string>Import SSheet, load XML and link SSheet/XML object, then generate Ansible files</string>
+   </property>
+  </action>
+  <action name="actionVisio_Import">
+   <property name="text">
+    <string>Visio Import</string>
+   </property>
+   <property name="statusTip">
+    <string>Import a Visio file.</string>
+   </property>
+  </action>
+  <action name="vmDeploymentActionSSheetImportGenerateAnsibleFiles">
+   <property name="text">
+    <string>SSheet Import/Generate Ansible Files (no restore)</string>
+   </property>
+  </action>
+  <action name="actionLoad_Network_Directory">
+   <property name="text">
+    <string>Merge Network (Directory)</string>
+   </property>
+   <property name="toolTip">
+    <string>Merge all XML files from a directory</string>
+   </property>
+   <property name="statusTip">
+    <string>Merge all XML files from a directory</string>
+   </property>
+  </action>
+  <action name="actionSave_Network_DescriptionOld">
+   <property name="text">
+    <string>Save Network As (Text view)</string>
+   </property>
+   <property name="toolTip">
+    <string>Will save network in text format using information available from View Devices tab.</string>
+   </property>
+   <property name="statusTip">
+    <string>Will save network in text format using information available from View Devices tab.</string>
+   </property>
+  </action>
+  <action name="actionGenerateVirtualNetworks">
+   <property name="text">
+    <string>Auto Generate Virtual Networks</string>
+   </property>
+   <property name="toolTip">
+    <string>Will auto generate virtual networks for all nodes not connected to one. Useful for physical network scans if routers are not scanned.</string>
+   </property>
+   <property name="statusTip">
+    <string>Will auto generate virtual networks for all nodes not connected to one. Useful for physical network scans if routers are not scanned.</string>
+   </property>
+  </action>
+  <action name="actionRegenerateVirtualNetworks">
+   <property name="text">
+    <string>Regenerate Virtual Networks</string>
+   </property>
+   <property name="statusTip">
+    <string>This deletes all virtual  networks and regnerates them; useful after a network merge where there may be duplicates.</string>
+   </property>
+  </action>
+  <action name="actionSaveNetworkPlottingSubsetOld">
+   <property name="text">
+    <string>Save Network As (Plotting data subset)</string>
+   </property>
+  </action>
+  <action name="actionNormalizeInterfaces">
+   <property name="text">
+    <string>Normalize Interfaces</string>
+   </property>
+   <property name="toolTip">
+    <string>Normalize Interfaces</string>
+   </property>
+   <property name="statusTip">
+    <string>Interface names will be changed to Eth0, Eth1, etc, with control network as Eth0.</string>
+   </property>
+  </action>
+  <action name="vmDeploymentActionGenerateCredentials">
+   <property name="text">
+    <string>Generate Netmapper Scan Credentials</string>
+   </property>
+   <property name="statusTip">
+    <string>Generate Netmapper Scan Credentials (does not use Ansible execution)</string>
+   </property>
+  </action>
+  <action name="vmDeploymentActionGenerateCredentialsWithAnsible">
+   <property name="text">
+    <string>Generate Netmapper Scan Credentials (use Ansible)</string>
+   </property>
+   <property name="statusTip">
+    <string>Use Ansible to generate scan credentials, needed if passwords are vault encoded.</string>
+   </property>
+  </action>
+  <action name="vmDeploymentActionGenerateAnsibleFilesWithRestore">
+   <property name="text">
+    <string>Generate Ansible Files (with restore)</string>
+   </property>
+   <property name="statusTip">
+    <string>Generate Ansible files from current devices with restoration data loaded from scanned XML file.</string>
+   </property>
+  </action>
+  <action name="actionReinitialize">
+   <property name="text">
+    <string>New...(Reinitialize)</string>
+   </property>
+   <property name="statusTip">
+    <string>Reinitialize - clear database, close all windows.</string>
+   </property>
+  </action>
+  <action name="actionConvertScanToNetSpec">
+   <property name="text">
+    <string>Convert Scan XML to NetSpec XML</string>
+   </property>
+  </action>
+  <action name="actionResourceCalculator">
+   <property name="text">
+    <string>Resource Calculator</string>
+   </property>
+   <property name="statusTip">
+    <string>Opens the resource calculator.</string>
+   </property>
+  </action>
+  <action name="actionDistToNonDist">
+   <property name="text">
+    <string>Distributed to Non-distributed</string>
+   </property>
+   <property name="statusTip">
+    <string>Convert current database from distributed mode to non-distributed mode.</string>
+   </property>
+  </action>
+  <action name="actionNonDistToDist">
+   <property name="text">
+    <string>Non-Distributed to Distributed</string>
+   </property>
+   <property name="statusTip">
+    <string>Convert current database from non-distributed mode to distributed mode.</string>
+   </property>
+  </action>
+  <action name="actionSave_Network">
+   <property name="text">
+    <string>Save                              ctrl-S</string>
+   </property>
+  </action>
+  <action name="vmDeploymentActionGenerateAnsibleFilesInMemory">
+   <property name="text">
+    <string>Generate Ansible Files (no restore, in memory)</string>
+   </property>
+  </action>
+  <action name="actionClearScanData">
+   <property name="text">
+    <string>Clear Scan Data</string>
+   </property>
+   <property name="toolTip">
+    <string>Clears merged scan data from a network spec.</string>
+   </property>
+   <property name="statusTip">
+    <string>Clears merged scan data from a network spec.</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="actionSave_NetworkAsNewFile">
+   <property name="text">
+    <string>New File</string>
+   </property>
+  </action>
+  <action name="actionSave_Network_Visualization_subset">
+   <property name="text">
+    <string>Visualization Subset</string>
+   </property>
+  </action>
+  <action name="actionSave_Network_Text_View">
+   <property name="text">
+    <string>Text View</string>
+   </property>
+  </action>
+  <action name="actionSaveNetworkPlottingSubset">
+   <property name="text">
+    <string>Plotting Data Subset</string>
+   </property>
+  </action>
+  <action name="actionHideMapping">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hide Mapping</string>
+   </property>
+  </action>
+  <action name="actionHideVisualization">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hide Visualization</string>
+   </property>
+  </action>
+  <action name="actionHideCredentials">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hide Credentials</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

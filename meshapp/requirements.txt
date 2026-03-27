@@ -1,0 +1,5 @@
+PyYAML
+types-PyYAML
+meshtastic
+PySide6==6.9.0
+DeepDiff

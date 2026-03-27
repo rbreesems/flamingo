@@ -1,0 +1,5 @@
+{
+    "mypy.enabled": false,
+    "mypy-type-checker.args": ["--ignore-missing-imports"] ,
+    "python.pythonPath": "D:/meshtastic/python_venv/venv/Scripts/python.exe"
+}

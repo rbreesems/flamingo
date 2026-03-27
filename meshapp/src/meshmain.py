@@ -1,0 +1,390 @@
+
+
+from meshapp import Ui_MainWindow
+import sys
+import gc
+from pyside_imports import *
+import emoji
+import logging
+import time
+import html
+from utils import *
+import meshtastic
+import queue
+import meshtastic.serial_interface
+from pubsub import pub
+
+
+
+if sys.platform.lower().startswith('win'):
+    #code that is specific to the Windows platform.
+    import ctypes
+    #this code from: https://github.com/pyinstaller/pyinstaller/issues/1339
+
+
+    def hideConsole():
+        """
+        This function hides the console window in GUI mode. It is necessary for 
+        the frozen application because this application can support both command line 
+        processing and GUI mode. Therefore, it cannot be run via pythonw.exe.
+        """
+        whnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if whnd != 0:
+            ctypes.windll.user32.ShowWindow(whnd, 0)
+            # if you wanted to close the handles...
+            #ctypes.windll.kernel32.CloseHandle(whnd)
+
+    def showConsole():
+        """
+        This function unhides the console window.
+        """
+        whnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if whnd != 0:
+            ctypes.windll.user32.ShowWindow(whnd, 1)
+
+else:
+    #dummy functions for CLI mode
+    def hideConsole():
+        pass
+
+    def showConsole():
+        pass
+
+
+
+class StreamToLogger(object):
+    """
+    This class is a fake file-like stream object that redirects writes to 
+    a logger instance. Use this to redirect stderr to our log file.
+    """
+    def __init__(self, log_level=logging.INFO):
+        """
+        This function is the constructor for the StreamToLogger class.
+        """
+        self.log_level = log_level
+
+    def write(self, buf):
+        """
+        Take lines from the buffer, format them, write to the log file.
+        Verbosity is 10 so that these do not appear in the GUI as in some cases, STDERR
+        messages are OK
+        """
+        #we do not want these lines polluting the console output since we should be catching
+        #all errors anyway, so verbosity level is 10. We will mark these with a STDERR tag in the log file.
+        for line in buf.rstrip().splitlines():
+            outputLogMessage("STDERRR - " + line.rstrip(), level=self.log_level,verbosity=10)
+
+    def flush(self):
+        return
+
+    def getvalue(self):
+        return 0
+
+class MeshappLoggerFileHandler(logging.FileHandler):
+    """
+    Use this wrapper around logging file handler class so that we
+    can exit on log file write error.
+    """
+
+    def emit(self, record):
+        try:
+            logging.FileHandler.emit(self,record)
+        except Exception as e:
+            s = "ERROR: Unexpected Error writing to MeshApp log file, exiting application,  error: %s/%s " % (sys.exc_info()[0], e)
+            print(s)
+            sys.exit(-1)
+
+class MeshappLoggerHandler(logging.Handler):
+    
+    def emit(self,record):
+        """
+        This emits one logging record, called by the global logger
+        """
+    
+        verbosity = MeshAppContext.defaultLogger.verbosity
+
+        #use verbosity to filter 'info' messages only
+        if ( record.levelno == logging.INFO and verbosity is not None  and verbosity > MeshAppContext.defaultVerbosity):
+            return
+        try:
+            useTimeStamps = False
+            mw = MeshAppContext.mainWindow
+            msg = self.format(record)
+            if useTimeStamps:
+                msg = "%s -- %s" % (time.strftime("%a %b %d %H:%M:%S"),msg)
+            if mw is None:
+                print(msg)     #print to stdout
+            else:
+                mt = mw.sysLogTextEdit
+                if (record.levelno == logging.ERROR):
+                    mt.append("<font color=\"red\"> <b>%s</b> </font>" % html.escape(msg))
+                elif (record.levelno == logging.WARNING):
+                    mt.append("<font color=\"orange\"> <b>%s</b> </font>" % html.escape(msg))
+                else:
+                    colorName = getSystemStyleDefaultColorName()
+                    mt.append("<font color=\"%s\">%s</font>" % (colorName,html.escape(msg)))
+                mt.verticalScrollBar().setValue(mt.verticalScrollBar().maximum())
+
+                doEventProcessing()
+        except:
+            self.handleError(record)
+
+def configureLogging(logfile=None):
+    """
+    Configure netmapper logging system
+    """
+    
+    logdir = MeshAppContext.getConfigOption('General:LogDirectory', default='')
+    if logdir != '':
+        logfile = getTemporaryFilename('meshappLog_',dir=logdir)
+    else:
+        logfile = getTemporaryFilename('meshappLog_',useOsTempDir=True)
+    MeshAppContext.logfile = logfile
+
+    topLogger = logging.getLogger('meshapp')
+    topLogger.setLevel(logging.DEBUG)
+    myhandler = MeshappLoggerHandler()
+    myhandler.setLevel(logging.INFO)
+    topLogger.addHandler(myhandler)
+    fh = MeshappLoggerFileHandler(logfile,mode='w', encoding='utf-8')
+    fh.setLevel(logging.DEBUG)
+    topLogger.addHandler(fh)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt="%Y-%m-%d %H:%M:%S %z")
+    fh.setFormatter(formatter)
+    MeshAppContext.defaultLogger = topLogger
+    # the following captures any warnings output by libraries to the log file instead of allowing them to go to STDOUT
+    logging.captureWarnings(True)
+
+    sl = StreamToLogger()
+    sys.stderr = sl  # redirect stderr to our log file
+
+
+
+    return logfile
+
+
+def onReceive(packet, interface): # called when a packet arrives
+    outputLogMessage(f"Received Mesh packet: {packet}")
+
+def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
+    # defaults to broadcast, specify a destination ID if you wish
+    outputLogMessage(f"Connected to meshtastic device", echoStatus=True)
+   
+    MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(True)
+
+def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
+    # defaults to broadcast, specify a destination ID if you wish
+    outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
+    MeshAppContext.isMeshConnected = False
+    MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(False)
+
+
+class MeshMainWindow(QMainWindow, Ui_MainWindow):
+
+    nodeTypes = ["ROUTER"]
+
+    
+    def __init__(self,parent=None):
+        """
+        This function is the constructor for the MainWindow class.
+        """
+        super(MeshMainWindow,self).__init__(parent)
+        self.setupUi(self)
+        self.mainThread = threading.current_thread()  #use this to keep track of main thread
+
+        self.idleTimer = QtCore.QTimer()
+        self.idleTimer.setInterval(200)  # poll every 200 ms for events
+        # noinspection PyUnresolvedReferences
+        self.idleTimer.timeout.connect(self.idleLoop)  # process our own events during idle time, false lint positive
+        self.idleTimer.start()
+        self.systemDefaultColorName = None
+        self.serialPorts = []
+        self.maxQueueSize = 100
+        self.actionQueue = queue.Queue(100)
+        pub.subscribe(onReceive, "meshtastic.receive")
+        pub.subscribe(onConnectionEstablished, "meshtastic.connection.established")
+        pub.subscribe(onConnectionLost, "meshtastic.connection.lost")
+
+        self.count = 0
+
+        # Config
+        self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
+        self.autoConnectSerialCheckBox.clicked.connect(self.doAutoConnectSerialCheckBox)
+        self.connectDevicePushButton.clicked.connect(self.doConnectDevicePushButton)
+        self.isConnectedCheckBox.stateChanged.connect(self.doisConnectedCheckBoxStateChange)
+
+        # Init fields
+        self.doOptionInit()
+
+
+    def doOptionInit(self):
+        self.logDirLineEdit.setText(MeshAppContext.getConfigOption('General:LogDirectory', default=''))
+        self.autoConnectSerialCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoConnect', default=False))
+        self.connectDevicePushButton.setDisabled(self.autoConnectSerialCheckBox.isChecked())
+        return
+
+    def addAction(self, item):
+        if self.actionQueue.full():
+            outputLogMessage("Ignoring action queue addition, queue is full", level=logging.ERROR, echoStatus=True)
+        else:
+            self.actionQueue.put(item)
+
+    def idleLoop(self):
+        """
+        Called during Idle time of the GUI
+        """
+        # Print welcome
+        if not MeshAppContext.welcomeShown:
+            outputLogMessage(f"Welcome to Meshapp - logfile is {MeshAppContext.logfile}")
+            MeshAppContext.welcomeShown = True
+
+        self.count += 1
+        if self.count == 5:
+            self.count = 0
+            if not MeshAppContext.isMeshConnected:
+                ports = listSerialPorts()
+                if len(ports) > 0:
+                    portNameList = []
+                    for port in ports:
+                        portNameList.append(port['device'])
+                    portNameList.sort()
+                    if self.serialPorts != portNameList:
+                        # update combo box
+                        outputStatusMessageMainWindow(f"Found connected serial ports")
+                        self.serialPorts = portNameList
+                        self.comPortComboBox.clear()
+                        for comPort in portNameList:
+                            self.comPortComboBox.addItem(comPort)
+                    if len(self.serialPorts) == 1 and MeshAppContext.getConfigOption('General:AutoConnect', default=False):
+                        # try to connect
+                        try:
+                            interface = meshtastic.serial_interface.SerialInterface(devPath=port['device'])
+                            MeshAppContext.isMeshConnected = True
+                        except Exception as e:
+                            outputLogMessage(f"ERROR: error in connecting serial device {sys.exc_info()[0]}/{e}", level=logging.ERROR, echoStatus=True)
+                else:
+                    outputStatusMessageMainWindow(f"No serial ports connected")
+                    self.serialPorts = []
+                    self.comPortComboBox.clear()  # clear com port list
+        if not self.actionQueue.empty():
+            flist = self.actionQueue.get()
+            if callable(flist[0]):
+                try:
+                    flist[0](*flist[1:])  # first item is method, next times are args
+                except Exception as e:
+                    s = "ERROR: Error calling actionQueue item, method: %s, arguments: %s, error: %s/%s " % (flist[0],flist[1:],sys.exc_info()[0], e)
+                    outputLogMessage(s, level=logging.ERROR)
+
+    def doDirBrowse(self, msg, configOption, textControl, default=None):
+        
+        if configOption is not None:
+            lastpath = MeshAppContext.getConfigOption(configOption)
+        else:
+            lastpath = None
+        if lastpath is None or not posixpath.isdir(lastpath):
+            dirPath = getHomeDirectory()
+        else:
+            dirPath = lastpath
+        options = QFileDialog.Options()
+        # noinspection PyCallByClass
+        newDirPath = QFileDialog.getExistingDirectory(self, msg, dirPath, options)
+
+        if configOption is not None:
+            if newDirPath:
+                # save this off as an option
+                MeshAppContext.setConfigOption(configOption, newDirPath)
+                if textControl is not None:
+                    textControl.setText(newDirPath)
+            elif default is not None:
+                MeshAppContext.setConfigOption(configOption, default)
+                if textControl is not None:
+                    textControl.setText(default)
+        return newDirPath
+    
+    def doBrowseDefaultLogDirPushButton(self):
+        self.doDirBrowse("Select logging directory",
+                            'General:LogDirectory',
+                            self.logDirLineEdit)
+
+    def doAutoConnectSerialCheckBox(self):
+        MeshAppContext.setConfigOption('General:AutoConnect', self.autoConnectSerialCheckBox.isChecked())
+        
+
+    def doConnectDevicePushButton(self):
+        comPort = self.comPortComboBox.currentText()
+        try:
+            interface = meshtastic.serial_interface.SerialInterface(devPath=comPort)
+            MeshAppContext.isMeshConnected = True
+        except Exception as e:
+            outputLogMessage(f"ERROR: error in connecting serial device {sys.exc_info()[0]}/{e}", level=logging.ERROR, echoStatus=True)
+
+    def doisConnectedCheckBoxStateChange(self, state):
+        if state == Qt.CheckState.Checked.value:
+            # true
+            MeshAppContext.isMeshConnected = True
+            self.connectDevicePushButton.setDisabled(True)
+            self.comPortComboBox.setDisabled(True)
+        else:
+            MeshAppContext.isMeshConnected = False
+            self.connectDevicePushButton.setDisabled(False)
+            self.comPortComboBox.setDisabled(False)
+            
+
+
+        return
+    
+    def closeEvent(self, event):
+        MeshAppContext.saveConfigFile()
+        event.accept()
+
+    def isTabExposed(self,name):
+        return self.mainTabWidget.tabText(self.mainTabWidget.currentIndex()) == name
+
+
+
+def meshappStart():
+    """
+    Main entry point for the app
+    """
+
+    # disable automatic garbage collection so we can handle it ourselves
+    # QT does not do well with automatic GC
+    gc.disable()
+    if sys.platform.lower().startswith('win'):
+        if getattr(sys, 'frozen', False):
+            hideConsole()
+
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication()
+        MeshAppContext.mainApp = app
+
+    frame = MeshMainWindow()
+    MeshAppContext.mainWindow = frame
+    frame.show()
+    configureLogging()
+
+    app.exec_()
+
+    # and at the end
+    if sys.platform.lower().startswith('win'):
+        if getattr(sys, 'frozen', False):
+            showConsole()
+
+
+
+def main():
+
+    MeshAppContext.loadConfigFile()
+    
+    while (True):
+
+        meshappStart()
+        break
+
+    
+    sys.exit(0)
+
+#main
+if __name__ == '__main__':
+    main()
