@@ -511,3 +511,4 @@ Four of the TacMesh radios had their cores swapped with EU-433 modules (RAK4631-
 
 On the surface, an extra node (set as CLIENT_MUTE) was connected to a Raspberry Pi 4 running the EZ-Callout script via USB. The Pi was connected to the HCRU StarLink system for satellite internet. This successfully listened to the FLAMINGO network traffic throughout the test. From several hops into the cave, we were able to send an automated callout message to Jamie's brother out-of-state. Once exiting the cave, we confirmed that he received the callout message via SMS within a minute of sending our message. This shows a promising result that could be useful for remote and/or expedition caving where no personnel are at the surface.
 
+![SMS message as received from ez-callout](./doc/ez-callout_receive.jpg)
