@@ -15,6 +15,42 @@ import yaml
 from copy import deepcopy
 from deepdiff import DeepDiff
 
+def filterColorCode(s):
+    #the following explains color codes
+    #https://www.shellhacks.com/bash-colors/
+    #state
+    # 0 normal
+    # 1 possible start, found \e
+    # 2 in esc sequence, looking for m
+    #
+    state = 0  #state 0, not in escape sequence
+    newS = []
+    esc = '\x1b'
+    for i in range(len(s)):
+        c = s[i]
+        if c == 0:
+            continue
+        if state == 0:
+            if c == esc:
+                state = 1
+                continue
+            newS.append(c)
+        elif state == 1:
+            if c == '[':
+                #definitely in escape
+                state = 2
+                continue
+            else:
+                state = 0
+                newS.append(c)
+        elif state == 2:
+            if c == 'm':
+                state = 0
+            elif not (c >= '0' and c <= '9'):
+                # broken esc sequence
+                state = 0
+    return "".join(newS)
+
 
 
 def repairText(value):
@@ -158,10 +194,19 @@ def outputLogMessageThread(msg, verbosity=None, level=logging.INFO, logger=None,
         #either main window not active, or we are in the main thread, ok to print.
         outputLogMessage(msg,verbosity=verbosity,level=level,logger=logger)
     else:
-        #DO TODO
-        #Need to implement some sort of action queue in the Main Window for  non-blocking 
-        # actions that need to executed in the main thread
         mw.addAction([outputLogMessage, msg, verbosity, level, logger, echoStatus])
+
+def outputDebugMessage(msg, textEdit):
+    textEdit.append(msg)
+    textEdit.verticalScrollBar().setValue(textEdit.verticalScrollBar().maximum())
+    doEventProcessing()
+
+def outputDebugMessageThread(msg, textEdit):
+    mw = MeshAppContext.mainWindow
+    if mw is None or (mw.mainThread == threading.current_thread()):
+        outputDebugMessage(msg, textEdit)
+    else:
+        mw.addAction([outputDebugMessage, msg, textEdit])
         
 
 def outputLogMessage(msg, verbosity=None, level=logging.INFO, logger=None, echoStatus=False,statusMethod=None):

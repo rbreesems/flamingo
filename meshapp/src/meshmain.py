@@ -8,6 +8,7 @@ import emoji
 import logging
 import time
 import html
+import io
 from utils import *
 import meshtastic
 import queue
@@ -79,6 +80,28 @@ class StreamToLogger(object):
 
     def getvalue(self):
         return 0
+    
+class MeshappStream(io.IOBase):
+
+    def __init__(self, filestream, textEdit):
+        self.filestream = filestream
+        self.textEdit = textEdit
+
+    def read(self, size=-1):
+        # Define how data is retrieved
+        return "data"
+
+    def write(self, b):
+        # write to both file and the text edit
+        orgLen = len(b)
+        b = filterColorCode(b)
+        self.filestream.write(b)
+        b = b.rstrip()
+        outputDebugMessageThread(b, self.textEdit)
+        return orgLen
+    
+    def close(self):
+        self.filestream.close()
 
 class MeshappLoggerFileHandler(logging.FileHandler):
     """
@@ -124,7 +147,6 @@ class MeshappLoggerHandler(logging.Handler):
                     colorName = getSystemStyleDefaultColorName()
                     mt.append("<font color=\"%s\">%s</font>" % (colorName,html.escape(msg)))
                 mt.verticalScrollBar().setValue(mt.verticalScrollBar().maximum())
-
                 doEventProcessing()
         except:
             self.handleError(record)
@@ -168,15 +190,25 @@ def onReceive(packet, interface): # called when a packet arrives
 
 def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
-    outputLogMessage(f"Connected to meshtastic device", echoStatus=True)
-   
+    shortName = MeshAppContext.mainWindow.serialInterface.getShortName()
+    longName = MeshAppContext.mainWindow.serialInterface.getLongName()
+    outputLogMessage(f"Connected to meshtastic device: {shortName}", echoStatus=True)
     MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(True)
-
+    MeshAppContext.mainWindow.connectedDeviceLineEdit.setText(f"{shortName} ({longName})")
+   
 def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
     outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
     MeshAppContext.isMeshConnected = False
     MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(False)
+    MeshAppContext.mainWindow.connectedDeviceLineEdit.clear()
+    if MeshAppContext.mainWindow.debugStream is not None:
+        try:
+            MeshAppContext.mainWindow.serialInterface = None
+            MeshAppContext.mainWindow.debugStream.close()
+            MeshAppContext.mainWindow.debugStream = None
+        except:
+            pass
 
 
 class MeshMainWindow(QMainWindow, Ui_MainWindow):
@@ -204,7 +236,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         pub.subscribe(onReceive, "meshtastic.receive")
         pub.subscribe(onConnectionEstablished, "meshtastic.connection.established")
         pub.subscribe(onConnectionLost, "meshtastic.connection.lost")
-
+        self.debugStream = None
+        self.serialInterface = None  # value returned by meshtastic.serial_interface.SerialInterface
         self.count = 0
 
         # Config
@@ -256,9 +289,22 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                         for comPort in portNameList:
                             self.comPortComboBox.addItem(comPort)
                     if len(self.serialPorts) == 1 and MeshAppContext.getConfigOption('General:AutoConnect', default=False):
+                         # open debug file
+                        deviceComPort = self.serialPorts[0]
+                        logdir = MeshAppContext.getConfigOption('General:LogDirectory', default='')
+                        if logdir != '':
+                            debugFile = getTemporaryFilename(f"{deviceComPort}_debug_",dir=logdir)
+                        else:
+                            debugFile = getTemporaryFilename(f"{deviceComPort}_debug_",useOsTempDir=True)
+                        try:
+                            ofile = open(debugFile, "w", encoding="utf-8")
+                            debugStream = MeshappStream(ofile,self.deviceLogTextEdit)
+                        except:
+                            debugStream = None
+                        self.debugStream = debugStream
                         # try to connect
                         try:
-                            interface = meshtastic.serial_interface.SerialInterface(devPath=port['device'])
+                            self.serialInterface = meshtastic.serial_interface.SerialInterface(devPath=deviceComPort, debugOut=debugStream)
                             MeshAppContext.isMeshConnected = True
                         except Exception as e:
                             outputLogMessage(f"ERROR: error in connecting serial device {sys.exc_info()[0]}/{e}", level=logging.ERROR, echoStatus=True)

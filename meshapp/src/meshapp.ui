@@ -73,6 +73,9 @@
           </item>
           <item>
            <widget class="QLineEdit" name="connectedDeviceLineEdit">
+            <property name="acceptDrops">
+             <bool>false</bool>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -99,7 +102,7 @@
         <item>
          <widget class="QTabWidget" name="logTabWidget">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="sysLogTab">
            <attribute name="title">
