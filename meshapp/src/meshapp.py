@@ -148,6 +148,7 @@ class Ui_MainWindow(object):
 
         self.connectedDeviceLineEdit = QLineEdit(self.homeTab)
         self.connectedDeviceLineEdit.setObjectName(u"connectedDeviceLineEdit")
+        self.connectedDeviceLineEdit.setAcceptDrops(False)
         self.connectedDeviceLineEdit.setReadOnly(True)
 
         self.horizontalLayout_5.addWidget(self.connectedDeviceLineEdit)
@@ -188,6 +189,26 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addWidget(self.logTabWidget)
 
         self.mainTabWidget.addTab(self.homeTab, "")
+        self.messagesTab = QWidget()
+        self.messagesTab.setObjectName(u"messagesTab")
+        self.horizontalLayout_6 = QHBoxLayout(self.messagesTab)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.messagesTabWidget = QTabWidget(self.messagesTab)
+        self.messagesTabWidget.setObjectName(u"messagesTabWidget")
+        self.ch0Tab = QWidget()
+        self.ch0Tab.setObjectName(u"ch0Tab")
+        self.horizontalLayout_7 = QHBoxLayout(self.ch0Tab)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.ch0TextEdit = QTextEdit(self.ch0Tab)
+        self.ch0TextEdit.setObjectName(u"ch0TextEdit")
+
+        self.horizontalLayout_7.addWidget(self.ch0TextEdit)
+
+        self.messagesTabWidget.addTab(self.ch0Tab, "")
+
+        self.horizontalLayout_6.addWidget(self.messagesTabWidget)
+
+        self.mainTabWidget.addTab(self.messagesTab, "")
         self.settingsTab = QWidget()
         self.settingsTab.setObjectName(u"settingsTab")
         self.horizontalLayout_2 = QHBoxLayout(self.settingsTab)
@@ -271,6 +292,7 @@ class Ui_MainWindow(object):
 
         self.mainTabWidget.setCurrentIndex(0)
         self.logTabWidget.setCurrentIndex(0)
+        self.messagesTabWidget.setCurrentIndex(0)
         self.optionsTabWidget.setCurrentIndex(0)
 
 
@@ -414,6 +436,8 @@ class Ui_MainWindow(object):
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.sysLogTab), QCoreApplication.translate("MainWindow", u"SysLog", None))
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.deviceLogTab), QCoreApplication.translate("MainWindow", u"DeviceLog", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.homeTab), QCoreApplication.translate("MainWindow", u"Home", None))
+        self.messagesTabWidget.setTabText(self.messagesTabWidget.indexOf(self.ch0Tab), QCoreApplication.translate("MainWindow", u"Ch.0", None))
+        self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.messagesTab), QCoreApplication.translate("MainWindow", u"Messages", None))
         self.configLoadPushButton.setText(QCoreApplication.translate("MainWindow", u"Load Config", None))
         self.configSavePushButton.setText(QCoreApplication.translate("MainWindow", u"Save Config", None))
         self.configSaveAsPushButton.setText(QCoreApplication.translate("MainWindow", u"Save Config as...", None))
@@ -422,7 +446,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.browseDefaultLogDirPushButton.setText(QCoreApplication.translate("MainWindow", u"Browse (Log Dir)", None))
 #if QT_CONFIG(tooltip)
-        self.autoConnectSerialCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Autoconnect if serial port is detected", None))
+        self.autoConnectSerialCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Autoconnect if only one serial port is detected", None))
 #endif // QT_CONFIG(tooltip)
         self.autoConnectSerialCheckBox.setText(QCoreApplication.translate("MainWindow", u"Autoconnect to serial port", None))
         self.optionsTabWidget.setTabText(self.optionsTabWidget.indexOf(self.optionsGeneralTab), QCoreApplication.translate("MainWindow", u"General", None))

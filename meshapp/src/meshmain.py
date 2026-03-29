@@ -187,14 +187,17 @@ def configureLogging(logfile=None):
 
 def onReceive(packet, interface): # called when a packet arrives
     outputLogMessage(f"Received Mesh packet: {packet}")
+    MeshAppContext.updateNodeDbFromPacket(packet)
 
 def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
     shortName = MeshAppContext.mainWindow.serialInterface.getShortName()
     longName = MeshAppContext.mainWindow.serialInterface.getLongName()
+    MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.addChannels])
     outputLogMessage(f"Connected to meshtastic device: {shortName}", echoStatus=True)
     MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(True)
     MeshAppContext.mainWindow.connectedDeviceLineEdit.setText(f"{shortName} ({longName})")
+    MeshAppContext.addLocalNodeToDb()
    
 def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
@@ -239,6 +242,14 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.debugStream = None
         self.serialInterface = None  # value returned by meshtastic.serial_interface.SerialInterface
         self.count = 0
+        
+        # channelTextEdits are text edits indexed by channel number
+        # messageTextEdits are text edits indexed by from nodeId
+        # channel 0 text edit always exists and is fixed.
+        # Other text edits are dynamically added as channels are discovered
+        # or DMs added
+        self.channelTextEdits = {"0": self.ch0TextEdit}
+        self.messageTextEdits = {}
 
         # Config
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
@@ -270,6 +281,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if not MeshAppContext.welcomeShown:
             outputLogMessage(f"Welcome to Meshapp - logfile is {MeshAppContext.logfile}")
             MeshAppContext.welcomeShown = True
+
+        #if not self.tabAdded:
+        #    tabName = "Ch1"
+        #    textEdit = QTextEdit()
+        #    self.messagesTabWidget.addTab(textEdit, tabName)
+        #    self.tabAdded = True
 
         self.count += 1
         if self.count == 5:
@@ -320,6 +337,40 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 except Exception as e:
                     s = "ERROR: Error calling actionQueue item, method: %s, arguments: %s, error: %s/%s " % (flist[0],flist[1:],sys.exc_info()[0], e)
                     outputLogMessage(s, level=logging.ERROR)
+        doEventProcessing()
+
+    def setMessageTabName(self, name, isChannel0 = False):
+        if isChannel0:
+            # this is the easy case
+            self.messagesTabWidget.setTabText(0, name)
+        else:
+            # iterate through the tabs and check if a tab with this name
+            # already exists 
+            for i in range(self.messagesTabWidget.count()):
+                if self.messagesTabWidget.tabText(i) == name:
+                    return  # this tab already exists
+            # add this tab with a text edit
+            textEdit = QTextEdit()
+            self.messagesTabWidget.addTab(textEdit, name)
+            self.channelTextEdits[str(self.messagesTabWidget.count()-1)] = textEdit
+        return
+
+    def addChannels(self):
+        """
+        Called on Connection
+        """
+        myNode = self.serialInterface.localNode
+        if not myNode.channels:
+            return
+        index = 0
+        for c in myNode.channels:
+            name = f"Ch.{index}"
+            if (c.settings and c.settings.name):
+                name = f"Ch.{index} {c.settings.name}"
+                self.setMessageTabName(name, index==0)
+            index += 1
+        return
+        
 
     def doDirBrowse(self, msg, configOption, textControl, default=None):
         

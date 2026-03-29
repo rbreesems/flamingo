@@ -48,6 +48,7 @@ from PySide6.QtGui import QIntValidator
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtGui import QPageSize
 
+
 # QtWidgets
 from PySide6.QtWidgets import QToolTip
 from PySide6.QtWidgets import QGraphicsItemGroup
@@ -102,3 +103,4 @@ from PySide6.QtWidgets import QPlainTextEdit
 from PySide6.QtWidgets import QSpinBox
 from PySide6.QtWidgets import QLineEdit
 from PySide6.QtWidgets import QTableWidgetSelectionRange
+from PySide6.QtWidgets import QTextEdit

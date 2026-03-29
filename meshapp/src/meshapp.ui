@@ -102,7 +102,7 @@
         <item>
          <widget class="QTabWidget" name="logTabWidget">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="sysLogTab">
            <attribute name="title">
@@ -128,6 +128,30 @@
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
              <widget class="QTextEdit" name="deviceLogTextEdit"/>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="messagesTab">
+       <attribute name="title">
+        <string>Messages</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QTabWidget" name="messagesTabWidget">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="ch0Tab">
+           <attribute name="title">
+            <string>Ch.0</string>
+           </attribute>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <item>
+             <widget class="QTextEdit" name="ch0TextEdit"/>
             </item>
            </layout>
           </widget>

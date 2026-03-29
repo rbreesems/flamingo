@@ -12,8 +12,32 @@ import time
 import logging
 import serial
 import yaml
+import re
 from copy import deepcopy
 from deepdiff import DeepDiff
+
+def isBroadcastId(id):
+    id = convertNodeId(id)
+    return id == 4294967295
+
+def convertNodeId(id):
+    if isinstance(id, int):
+        return id
+    if isinstance(id, str):
+        if id[0] == '!':
+            try:
+                id_int = int(id[1:], 16)
+                return id_int
+            except Exception as e:
+                outputLogMessage("ERROR: Unexpected error converting node id: %s, %s/%s" % (id, sys.exc_info()[0], e), level=logging.ERROR)
+        else:
+            try:
+                id_int = int(id, 10)
+                return id_int
+            except Exception as e:
+                outputLogMessage("ERROR: Unexpected error converting node id: %s, %s/%s" % (id, sys.exc_info()[0], e), level=logging.ERROR)
+    outputLogMessage(f"ERROR: expected either int or string for node id: {id}", level=logging.ERROR)
+    return id
 
 def filterColorCode(s):
     #the following explains color codes
@@ -236,6 +260,18 @@ def outputLogMessage(msg, verbosity=None, level=logging.INFO, logger=None, echoS
         else:
             outputStatusMessageMainWindow(msg, mainTab=False, level=level)
 
+class Node(object):
+
+    def __init__(self, id=""):
+        self.id = convertNodeId(id)   #this is always the decimal ID
+        self.longName = ""
+        self.shortName = ""
+        self.role = ""
+        self.batteryLevel = 0
+        self.voltage = 0
+        self.uptimeSeconds = 0
+        self.lastUpdate = time.time()
+
 
 class ActionItem(object): 
     
@@ -261,6 +297,7 @@ class MeshAppContext(object):
     isMeshConnected = False
     configData = None
     configDataOrg = None
+    nodeDb: dict[int, dict] = {}
 
     @classmethod
     def getConfigOption(self, configOption, default=None):
@@ -335,6 +372,83 @@ class MeshAppContext(object):
         except Exception as e:
             print("ERROR: Unexpected error writing yml file: %s, %s/%s" % (configFilePath, sys.exc_info()[0], e))
             return
+        
+    @classmethod
+    def addLocalNodeToDb(self):
+        """
+        Add the locally connected node to the DB, called on connection
+        """
+        info = self.mainWindow.serialInterface.getMyNodeInfo()
+        id = info.get('num',None)
+        if id is None:
+            return
+        newNode = Node(id=id)
+        self.nodeDb[newNode.id] = newNode
+        user = info.get('user',None)
+        if user:
+            newNode.longName = user.get('longName','')
+            newNode.shortName = user.get('shortName','')
+
+    @classmethod
+    def addEmptyNode(self,id):
+        """
+        Called when packet arrives for from/to id values
+        Add nodes if not in DB, update lastUpdate time
+        """
+        id = convertNodeId(id)
+        if isBroadcastId(id):
+            return
+        if id not in self.nodeDb:
+            self.nodeDb[id] = Node(id=id)
+        else:
+            self.nodeDb[id].lastUpdate = time.time()
+
+    @classmethod
+    def getNodeById(self,id):
+        id = convertNodeId(id)
+        return self.nodeDb.get(id,None)
+
+    @classmethod
+    def updateNodeDbFromPacket(self, packet):
+        fromId = packet.get('from',None)
+        if fromId:
+            self.addEmptyNode(fromId)
+        toId = packet.get('to',None)
+        if toId:
+            self.addEmptyNode(toId)
+        decoded = packet.get('decoded', None)
+        if decoded is None:
+            return
+        portnum = decoded.get('portnum', None)
+        if portnum == 'TELEMETRY_APP':
+            telemetry = decoded.get('telemetry', None)
+            if telemetry:
+                deviceMetrics = telemetry.get('deviceMetrics', None)
+                if deviceMetrics:
+                    batteryLevel = deviceMetrics.get('batteryLevel', None)
+                    if isinstance(batteryLevel, int):
+                        node = self.getNodeById(fromId)
+                        if node:
+                            node.batteryLevel = batteryLevel
+        elif portnum == 'NODEINFO_APP':
+            user = decoded.get('user', None)
+            if user:
+                id = user.get('id',None)
+                if id:
+                    node = self.getNodeById(id)
+                    node.longName = user.get('longName', '')
+                    node.shortName = user.get('shortName', '')
+                    node.role = user.get('role', '')
+
+
+
+
+
+            
+
+
+
+        
         
 
     
