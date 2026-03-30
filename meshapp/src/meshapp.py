@@ -17,10 +17,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
-    QHBoxLayout, QLineEdit, QMainWindow, QMenu,
-    QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
-    QStatusBar, QTabWidget, QTextEdit, QVBoxLayout,
-    QWidget)
+    QHBoxLayout, QLabel, QLineEdit, QMainWindow,
+    QMenu, QMenuBar, QPushButton, QSizePolicy,
+    QSpacerItem, QSpinBox, QStatusBar, QTabWidget,
+    QTextEdit, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -263,11 +263,79 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.autoConnectSerialCheckBox)
 
+        self.enableDeviceLogEchoCheckBox = QCheckBox(self.optionsGeneralTab)
+        self.enableDeviceLogEchoCheckBox.setObjectName(u"enableDeviceLogEchoCheckBox")
+
+        self.verticalLayout.addWidget(self.enableDeviceLogEchoCheckBox)
+
         self.verticalSpacer_4 = QSpacerItem(20, 439, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout.addItem(self.verticalSpacer_4)
 
         self.optionsTabWidget.addTab(self.optionsGeneralTab, "")
+        self.guiTab = QWidget()
+        self.guiTab.setObjectName(u"guiTab")
+        self.verticalLayout_3 = QVBoxLayout(self.guiTab)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.useDarkStylelCheckBox = QCheckBox(self.guiTab)
+        self.useDarkStylelCheckBox.setObjectName(u"useDarkStylelCheckBox")
+
+        self.verticalLayout_3.addWidget(self.useDarkStylelCheckBox)
+
+        self.enableFontScalingCheckBox = QCheckBox(self.guiTab)
+        self.enableFontScalingCheckBox.setObjectName(u"enableFontScalingCheckBox")
+
+        self.verticalLayout_3.addWidget(self.enableFontScalingCheckBox)
+
+        self.horizontalLayout_9 = QHBoxLayout()
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.widgetScalingComboBox = QComboBox(self.guiTab)
+        self.widgetScalingComboBox.setObjectName(u"widgetScalingComboBox")
+
+        self.horizontalLayout_9.addWidget(self.widgetScalingComboBox)
+
+        self.label_2 = QLabel(self.guiTab)
+        self.label_2.setObjectName(u"label_2")
+
+        self.horizontalLayout_9.addWidget(self.label_2)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_9.addItem(self.horizontalSpacer_3)
+
+        self.horizontalLayout_9.setStretch(0, 1)
+        self.horizontalLayout_9.setStretch(1, 1)
+        self.horizontalLayout_9.setStretch(2, 20)
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_9)
+
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.fontDpiSpinBox = QSpinBox(self.guiTab)
+        self.fontDpiSpinBox.setObjectName(u"fontDpiSpinBox")
+
+        self.horizontalLayout_8.addWidget(self.fontDpiSpinBox)
+
+        self.label = QLabel(self.guiTab)
+        self.label.setObjectName(u"label")
+
+        self.horizontalLayout_8.addWidget(self.label)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_8.addItem(self.horizontalSpacer_2)
+
+        self.horizontalLayout_8.setStretch(0, 1)
+        self.horizontalLayout_8.setStretch(1, 1)
+        self.horizontalLayout_8.setStretch(2, 20)
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_8)
+
+        self.verticalSpacer = QSpacerItem(20, 348, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_3.addItem(self.verticalSpacer)
+
+        self.optionsTabWidget.addTab(self.guiTab, "")
 
         self.horizontalLayout_2.addWidget(self.optionsTabWidget)
 
@@ -449,7 +517,28 @@ class Ui_MainWindow(object):
         self.autoConnectSerialCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Autoconnect if only one serial port is detected", None))
 #endif // QT_CONFIG(tooltip)
         self.autoConnectSerialCheckBox.setText(QCoreApplication.translate("MainWindow", u"Autoconnect to serial port", None))
+#if QT_CONFIG(tooltip)
+        self.enableDeviceLogEchoCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Enable echo of device debug output to GUI - warning - adversely affects performance!", None))
+#endif // QT_CONFIG(tooltip)
+        self.enableDeviceLogEchoCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable Device Log Echo", None))
         self.optionsTabWidget.setTabText(self.optionsTabWidget.indexOf(self.optionsGeneralTab), QCoreApplication.translate("MainWindow", u"General", None))
+#if QT_CONFIG(tooltip)
+        self.useDarkStylelCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Takes effect on restart", None))
+#endif // QT_CONFIG(tooltip)
+        self.useDarkStylelCheckBox.setText(QCoreApplication.translate("MainWindow", u"Use Dark Style", None))
+#if QT_CONFIG(tooltip)
+        self.enableFontScalingCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Requires GUI restart", None))
+#endif // QT_CONFIG(tooltip)
+        self.enableFontScalingCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable Font/Widget Scaling", None))
+#if QT_CONFIG(tooltip)
+        self.widgetScalingComboBox.setToolTip(QCoreApplication.translate("MainWindow", u"Larger values, larger widgets. Requires GUI restart.", None))
+#endif // QT_CONFIG(tooltip)
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"Widget Scaling", None))
+#if QT_CONFIG(tooltip)
+        self.fontDpiSpinBox.setToolTip(QCoreApplication.translate("MainWindow", u"Larger values, larger font. Requires GUI restart.", None))
+#endif // QT_CONFIG(tooltip)
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Font DPI", None))
+        self.optionsTabWidget.setTabText(self.optionsTabWidget.indexOf(self.guiTab), QCoreApplication.translate("MainWindow", u"GUI", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.settingsTab), QCoreApplication.translate("MainWindow", u"Settings", None))
         self.menuDummy.setTitle(QCoreApplication.translate("MainWindow", u"Dummy", None))
     # retranslateUi

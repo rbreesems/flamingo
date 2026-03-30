@@ -15,10 +15,29 @@ import yaml
 import re
 from copy import deepcopy
 from deepdiff import DeepDiff
+from default_config import defaultConfigYml
 
 def isBroadcastId(id):
     id = convertNodeId(id)
     return id == 4294967295
+
+def isWindowsOs():
+    return sys.platform.lower().startswith('win')
+
+def deepMerge(target, source):
+    """
+    Recursively merges source into target.
+    """
+    for key, value in source.items():
+        # If both are dictionaries, recurse
+        if (key in target and 
+            isinstance(target[key], dict) and 
+            isinstance(value, dict)):
+            deepMerge(target[key], value)
+        else:
+            # Otherwise, just update the value
+            target[key] = value
+    return target
 
 def convertNodeId(id):
     if isinstance(id, int):
@@ -155,7 +174,7 @@ def getSystemStyleDefaultColorName():
     return mw.systemDefaultColorName
 
 def getHomeDirectory():
-    if sys.platform.lower().startswith('win'):
+    if isWindowsOs():
         home_path = PureWindowsPath(os.path.expanduser("~"))
         home_dir = home_path.as_posix()
     else:
@@ -176,7 +195,7 @@ def getTemporaryFilename(base, ext='txt',useOsTempDir=False, dir=None):
     else:
         dirname = dir
     if useOsTempDir or dirname is None:
-        if sys.platform.lower().startswith('win'):
+        if isWindowsOs():
             winpath = PureWindowsPath(tempfile.gettempdir())
             dirname = winpath.as_posix()
         else:
@@ -297,6 +316,7 @@ class MeshAppContext(object):
     isMeshConnected = False
     configData = None
     configDataOrg = None
+    deviceLogEchoEnabled = False   # duplicate this from config for performance
     nodeDb: dict[int, dict] = {}
 
     @classmethod
@@ -344,19 +364,30 @@ class MeshAppContext(object):
     
     @classmethod
     def loadConfigFile(self, configFilePath=None):
+
+        defaultConfig = yaml.safe_load(defaultConfigYml)
         if configFilePath is None:
             configFilePath = self.getConfigFilePath()
         if not posixpath.isfile(configFilePath):
             return  #no config data
+        newConfig = {}
 
         try:
             with open(configFilePath, 'r') as file:
-                self.configData = yaml.safe_load(file) # Use safe_load to prevent arbitrary code execution
-                self.configDataOrg = deepcopy(self.configData)
+                newConfig = yaml.safe_load(file) # Use safe_load to prevent arbitrary code execution
+                self.configDataOrg = deepcopy(newConfig)
                 print(f"Configdata loaded from {configFilePath}")
         except Exception as e:
             print("ERROR: Unexpected error parsing yml file: %s, %s/%s" % (configFilePath, sys.exc_info()[0], e))
+            self.configData = defaultConfig
             return
+        
+        # merge newConfig into defaultConfig recursively
+        # do this because defaultConfig may have new settings that
+        # are not in a user's config
+        deepMerge(defaultConfig, newConfig)
+        self.configData = defaultConfig
+        
 
     @classmethod 
     def saveConfigFile(self, configFilePath=None):

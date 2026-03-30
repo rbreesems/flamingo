@@ -96,8 +96,9 @@ class MeshappStream(io.IOBase):
         orgLen = len(b)
         b = filterColorCode(b)
         self.filestream.write(b)
-        b = b.rstrip()
-        outputDebugMessageThread(b, self.textEdit)
+        if MeshAppContext.deviceLogEchoEnabled:
+            b = b.rstrip()
+            outputDebugMessageThread(b, self.textEdit)
         return orgLen
     
     def close(self):
@@ -251,20 +252,44 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.channelTextEdits = {"0": self.ch0TextEdit}
         self.messageTextEdits = {}
 
+        # populate widget scaling
+        for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
+            self.widgetScalingComboBox.addItem(value)
+        self.widgetScalingComboBox.setCurrentIndex(0)
+
+
         # Config
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
         self.autoConnectSerialCheckBox.clicked.connect(self.doAutoConnectSerialCheckBox)
+        self.enableDeviceLogEchoCheckBox.clicked.connect(self.doEnableDeviceLogEchoCheckBox)
         self.connectDevicePushButton.clicked.connect(self.doConnectDevicePushButton)
-        self.isConnectedCheckBox.stateChanged.connect(self.doisConnectedCheckBoxStateChange)
-
+        self.isConnectedCheckBox.stateChanged.connect(self.doIsConnectedCheckBoxStateChange)
+        self.useDarkStylelCheckBox.clicked.connect(self.doUseDarkStylelCheckBox)
+        self.enableFontScalingCheckBox.clicked.connect(self.doEnableFontScalingCheckBox)
         # Init fields
         self.doOptionInit()
+        # do not connect this until spin Box has been initialized
+        self.fontDpiSpinBox.valueChanged.connect(self.doFontDpiSpinBox)
+        self.widgetScalingComboBox.currentIndexChanged.connect(self.doWidgetScalingComboBox)
 
 
     def doOptionInit(self):
         self.logDirLineEdit.setText(MeshAppContext.getConfigOption('General:LogDirectory', default=''))
         self.autoConnectSerialCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoConnect', default=False))
+        self.enableDeviceLogEchoCheckBox.setChecked(MeshAppContext.getConfigOption('General:EnableDeviceLogEcho', default=False))
         self.connectDevicePushButton.setDisabled(self.autoConnectSerialCheckBox.isChecked())
+        MeshAppContext.deviceLogEchoEnabled = self.enableDeviceLogEchoCheckBox.isChecked()
+        self.useDarkStylelCheckBox.setChecked(MeshAppContext.getConfigOption('GUI:UseDarkStyle', default=False))
+        self.enableFontScalingCheckBox.setChecked(MeshAppContext.getConfigOption('GUI:EnableFontScaling', default=False))
+        self.fontDpiSpinBox.setMinimum(20)
+        self.fontDpiSpinBox.setMaximum(200)
+        self.fontDpiSpinBox.setValue(MeshAppContext.getConfigOption('GUI:FontDpi', default=96))
+        widgetScale = MeshAppContext.getConfigOption('GUI:WidgetScale', default=1.0)
+        index = self.widgetScalingComboBox.findText(str(widgetScale))
+        if index == -1:
+            index = 0
+        self.widgetScalingComboBox.setCurrentIndex(index)
+
         return
 
     def addAction(self, item):
@@ -281,12 +306,6 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if not MeshAppContext.welcomeShown:
             outputLogMessage(f"Welcome to Meshapp - logfile is {MeshAppContext.logfile}")
             MeshAppContext.welcomeShown = True
-
-        #if not self.tabAdded:
-        #    tabName = "Ch1"
-        #    textEdit = QTextEdit()
-        #    self.messagesTabWidget.addTab(textEdit, tabName)
-        #    self.tabAdded = True
 
         self.count += 1
         if self.count == 5:
@@ -406,6 +425,21 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     def doAutoConnectSerialCheckBox(self):
         MeshAppContext.setConfigOption('General:AutoConnect', self.autoConnectSerialCheckBox.isChecked())
         
+    def doEnableDeviceLogEchoCheckBox(self):
+        MeshAppContext.setConfigOption('General:EnableDeviceLogEcho', self.enableDeviceLogEchoCheckBox.isChecked())
+        MeshAppContext.deviceLogEchoEnabled = self.enableDeviceLogEchoCheckBox.isChecked()
+
+    def doUseDarkStylelCheckBox(self):
+        MeshAppContext.setConfigOption('GUI:UseDarkStyle', self.useDarkStylelCheckBox.isChecked())
+
+    def doEnableFontScalingCheckBox(self):
+        MeshAppContext.setConfigOption('GUI:EnableFontScaling', self.enableFontScalingCheckBox.isChecked())
+       
+    def doFontDpiSpinBox(self):
+        MeshAppContext.setConfigOption('GUI:FontDpi', self.fontDpiSpinBox.value())
+
+    def doWidgetScalingComboBox(self):
+        MeshAppContext.setConfigOption('GUI:WidgetScale', float(self.widgetScalingComboBox.currentText()))
 
     def doConnectDevicePushButton(self):
         comPort = self.comPortComboBox.currentText()
@@ -415,7 +449,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         except Exception as e:
             outputLogMessage(f"ERROR: error in connecting serial device {sys.exc_info()[0]}/{e}", level=logging.ERROR, echoStatus=True)
 
-    def doisConnectedCheckBoxStateChange(self, state):
+    def doIsConnectedCheckBoxStateChange(self, state):
         if state == Qt.CheckState.Checked.value:
             # true
             MeshAppContext.isMeshConnected = True
@@ -425,9 +459,6 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             MeshAppContext.isMeshConnected = False
             self.connectDevicePushButton.setDisabled(False)
             self.comPortComboBox.setDisabled(False)
-            
-
-
         return
     
     def closeEvent(self, event):
@@ -437,7 +468,28 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     def isTabExposed(self,name):
         return self.mainTabWidget.tabText(self.mainTabWidget.currentIndex()) == name
 
+def initStyle(app):
 
+    if MeshAppContext.getConfigOption('GUI:UseDarkStyle', default=False):
+        exePath = getExecutablePath()
+        exePath = exePath.replace('\\', '/')  # change to posix path
+        stylePath = posixpath.join(exePath,"dark.stylesheet")
+        darkStyle = None
+        if posixpath.isfile(stylePath):
+            try:
+                infile = open(stylePath, 'r')
+                lines = infile.readlines()
+                infile.close()
+                darkStyle = "".join(lines)
+            except Exception as e:
+                s = "ERROR: Error style sheet: %s, error: %s/%s " % (stylePath, sys.exc_info()[0], e)
+                outputLogMessage(s, level=logging.ERROR)
+        if darkStyle:
+            try:
+                app.setStyleSheet(darkStyle)
+            except Exception as e:
+                s = "ERROR: Error applying dark style sheet, error: %s/%s " % (sys.exc_info()[0], e)
+                outputLogMessage(s, level=logging.ERROR)
 
 def meshappStart():
     """
@@ -447,32 +499,55 @@ def meshappStart():
     # disable automatic garbage collection so we can handle it ourselves
     # QT does not do well with automatic GC
     gc.disable()
-    if sys.platform.lower().startswith('win'):
+    if isWindowsOs():
         if getattr(sys, 'frozen', False):
             hideConsole()
 
     app = QApplication.instance()
     if app is None:
+        if MeshAppContext.getConfigOption('GUI:EnableFontScaling', default=False):
+            os.environ["QT_SCREEN_SET_FACTOR"]="0"
+            os.environ["QT_SCALE_FACTOR"] = str(MeshAppContext.getConfigOption('GUI:WidgetScale'))
+            os.environ["QT_FONT_DPI"] = str(MeshAppContext.getConfigOption('GUI:FontDpi'))
         app = QApplication()
         MeshAppContext.mainApp = app
 
     frame = MeshMainWindow()
     MeshAppContext.mainWindow = frame
+    initStyle(app) 
     frame.show()
     configureLogging()
 
     app.exec_()
 
     # and at the end
-    if sys.platform.lower().startswith('win'):
+    if isWindowsOs():
         if getattr(sys, 'frozen', False):
             showConsole()
 
+
+def getExecutablePath():
+    """
+    Return the executable path of this the python program executing
+    """
+    if getattr(sys, 'frozen', False):
+        #this is frozen
+        exePath = getattr(sys, '_MEIPASS', None)
+        if re.search(r"_internal$", exePath):
+            if isWindowsOs():
+                exePath = exePath.replace(r"\_internal","")
+            else:
+                exePath = exePath.replace(r"/_internal", "")
+    else:
+        exePath = os.path.realpath(__file__)
+        (exePath,tail) = os.path.split(exePath)
+    return exePath
 
 
 def main():
 
     MeshAppContext.loadConfigFile()
+   
     
     while (True):
 
