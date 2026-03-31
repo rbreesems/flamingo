@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from pathlib import PureWindowsPath
+from pathlib import PureWindowsPath, Path, PurePath
 import sys
 from datetime import datetime
 import posixpath
@@ -16,6 +16,7 @@ import re
 from copy import deepcopy
 from deepdiff import DeepDiff
 from default_config import defaultConfigYml
+
 
 def isBroadcastId(id):
     id = convertNodeId(id)
@@ -291,6 +292,19 @@ class Node(object):
         self.uptimeSeconds = 0
         self.lastUpdate = time.time()
 
+    @classmethod
+    def fromDict(self, aDict):
+        aNode = Node()
+        for key, value in aDict.items():
+            setattr(aNode, key, value)
+        return Node
+
+    def toDict(self):
+        aDict = {}
+        for attr, value in vars(self).items():
+            aDict[attr] = value
+        return aDict
+
 
 class ActionItem(object): 
     
@@ -359,16 +373,22 @@ class MeshAppContext(object):
         return
     
     @classmethod
+    def getConfigDirPath(self):
+        configDir = posixpath.join(getHomeDirectory(), '.flamingo_meshapp')
+        Path(configDir).mkdir(exist_ok=True)
+        return configDir
+
+    @classmethod
     def getConfigFilePath(self):
-        return posixpath.join(getHomeDirectory(), 'meshapp_config.yml')
+        return posixpath.join(self.getConfigDirPath(), 'meshapp_config.yml')
     
     @classmethod
     def loadConfigFile(self, configFilePath=None):
-
         defaultConfig = yaml.safe_load(defaultConfigYml)
         if configFilePath is None:
             configFilePath = self.getConfigFilePath()
         if not posixpath.isfile(configFilePath):
+            self.configData = defaultConfig
             return  #no config data
         newConfig = {}
 
@@ -395,7 +415,7 @@ class MeshAppContext(object):
             configFilePath = self.getConfigFilePath()
         try:
             diffs = DeepDiff(self.configData, self.configDataOrg)
-            if len(diffs) > 0:
+            if len(diffs) > 0 or not posixpath.isfile(configFilePath):
                 with open(configFilePath, 'w') as file:
                     yaml.safe_dump(self.configData,file) # Use safe_load to prevent arbitrary code execution
                 
@@ -404,6 +424,51 @@ class MeshAppContext(object):
             print("ERROR: Unexpected error writing yml file: %s, %s/%s" % (configFilePath, sys.exc_info()[0], e))
             return
         
+    @classmethod
+    def nodeDbToDict(self):
+        nodeDict = {}
+        for id, node in self.nodeDb.items():
+            nodeDict[id] = node.toDict()
+        return nodeDict
+
+    @classmethod
+    def dictToNodeDb(self, aDict):
+        self.nodeDb = {}
+        if aDict is not None:
+            for key, value in aDict.items():
+                self.nodeDb[key] = Node.fromDict(value)
+
+    @classmethod
+    def getNodeDbFilePath(self):
+        return posixpath.join(self.getConfigDirPath(), 'meshapp_nodedb.yml')
+    
+    @classmethod
+    def loadNodeDb(self):
+        nodedbFilePath = self.getNodeDbFilePath()
+        if not posixpath.isfile(nodedbFilePath):
+            return  #no config data
+        try:
+            with open(nodedbFilePath, 'r') as file:
+                aDict = yaml.safe_load(file) # Use safe_load to prevent arbitrary code execution
+                
+                        
+                print(f"NodeDb loaded from {nodedbFilePath}")
+        except Exception as e:
+            print("ERROR: Unexpected error parsing yml file: %s, %s/%s" % (nodedbFilePath, sys.exc_info()[0], e))
+            return
+        
+    @classmethod 
+    def saveNodeDb(self, configFilePath=None):
+        nodedbFilePath = self.getNodeDbFilePath()
+        try:
+            with open(nodedbFilePath, 'w') as file:
+                    yaml.safe_dump(MeshAppContext.nodeDbToDict(),file)
+                    print(f"NodeDb saved to {configFilePath}")
+        except Exception as e:
+            print("ERROR: Unexpected error writing yml file: %s, %s/%s" % (nodedbFilePath, sys.exc_info()[0], e))
+            return
+        
+       
     @classmethod
     def addLocalNodeToDb(self):
         """

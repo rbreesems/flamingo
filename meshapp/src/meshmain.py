@@ -189,6 +189,8 @@ def configureLogging(logfile=None):
 def onReceive(packet, interface): # called when a packet arrives
     outputLogMessage(f"Received Mesh packet: {packet}")
     MeshAppContext.updateNodeDbFromPacket(packet)
+    MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.handleMessage, packet])
+
 
 def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
@@ -243,6 +245,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.debugStream = None
         self.serialInterface = None  # value returned by meshtastic.serial_interface.SerialInterface
         self.count = 0
+        self.channelNames = {}
         
         # channelTextEdits are text edits indexed by channel number
         # messageTextEdits are text edits indexed by from nodeId
@@ -358,10 +361,13 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     outputLogMessage(s, level=logging.ERROR)
         doEventProcessing()
 
-    def setMessageTabName(self, name, isChannel0 = False):
+    def setMessageTabName(self, name, channel):
+        isChannel0 = channel == 0
+        self.channelNames[channel] = name
         if isChannel0:
             # this is the easy case
             self.messagesTabWidget.setTabText(0, name)
+            self.channelTextEdits[channel]  = self.ch0TextEdit
         else:
             # iterate through the tabs and check if a tab with this name
             # already exists 
@@ -371,8 +377,33 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             # add this tab with a text edit
             textEdit = QTextEdit()
             self.messagesTabWidget.addTab(textEdit, name)
-            self.channelTextEdits[str(self.messagesTabWidget.count()-1)] = textEdit
+            self.channelTextEdits[channel] = textEdit
         return
+    
+    def getMessageTextEditByChannel(self, channel):
+        return self.channelTextEdits[channel]
+
+    def handleMessage(self, packet):
+        decoded = packet.get('decoded', None)
+        if decoded is None:
+            return
+        fromId = packet.get('from',None)
+        toId = packet.get('to',None)
+        portnum = decoded.get('portnum', None)
+        if portnum != 'TEXT_MESSAGE_APP':
+            return
+        if not isBroadcastId(toId):
+            outputLogMessage("ERROR, direct messages unimplemented.", level=logging.ERROR, echoStatus=True)
+            return
+        # this is a channel message
+        channel = packet.get('channel', 0)
+        textEdit = self.getMessageTextEditByChannel(channel)
+        payload = decoded.get('payload', None)
+        if payload:
+            msg = payload.decode("utf-8")
+            textEdit.append(msg)
+        return
+    
 
     def addChannels(self):
         """
@@ -386,9 +417,11 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             name = f"Ch.{index}"
             if (c.settings and c.settings.name):
                 name = f"Ch.{index} {c.settings.name}"
-                self.setMessageTabName(name, index==0)
+                self.setMessageTabName(name, index)
             index += 1
         return
+    
+    
         
 
     def doDirBrowse(self, msg, configOption, textControl, default=None):
@@ -463,6 +496,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     
     def closeEvent(self, event):
         MeshAppContext.saveConfigFile()
+        MeshAppContext.saveNodeDb()
         event.accept()
 
     def isTabExposed(self,name):
@@ -547,8 +581,7 @@ def getExecutablePath():
 def main():
 
     MeshAppContext.loadConfigFile()
-   
-    
+    MeshAppContext.loadNodeDb()
     while (True):
 
         meshappStart()
