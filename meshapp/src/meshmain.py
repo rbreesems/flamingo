@@ -216,6 +216,46 @@ def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)conn
         except:
             pass
 
+class MessageData(object):
+    def __init__(self, messageText, id):
+        self.id = id
+        self.fromNodeId = 0  # not sure we need this
+        self.messageType = "in"
+        self.messageText = messageText
+        self.longName = ""   # from longname
+        self.startCursor = 0
+        self.endCursor = 0
+        self.status = None
+
+class MessagePage(object):
+
+    def __init__(self, textEdit):
+        self.textEdit = textEdit
+        self.cursorPosition = 0
+        self.messages = []  # list of message objects
+        self.nextMessageId = 0
+        self.statusLine = "                    "
+
+    def getNextMessageId(self):
+        self.nextMessageId += 1
+        return self.nextMessageId
+    
+    def displayMessage(self, messageType, messageText, longName):
+        if messageType == "in":
+            messageData = MessageData(messageText, self.getNextMessageId())
+            messageData.messageType = messageType
+            messageData.longName = longName
+            self.messages.append(messageData)
+            messageData.startCursor = self.cursorPosition
+            totalMessage = f"IN ({longName})\n{messageText}\n{self.statusLine}\n"
+            messageLength = len(totalMessage)
+            messageData.endCursor =  messageData.startCursor + messageLength - 1
+            self.cursorPosition += messageLength
+            self.textEdit.append(totalMessage)
+        else:
+            outputLogMessage("ERROR, outgoing messages not handled yet", level=logging.error, echoStatus = True)
+    
+
 
 class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
@@ -252,7 +292,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         # channel 0 text edit always exists and is fixed.
         # Other text edits are dynamically added as channels are discovered
         # or DMs added
-        self.channelTextEdits = {"0": self.ch0TextEdit}
+        self.channelTextEdits = { 0 : MessagePage(self.ch0TextEdit)}
         self.messageTextEdits = {}
 
         # populate widget scaling
@@ -367,7 +407,6 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if isChannel0:
             # this is the easy case
             self.messagesTabWidget.setTabText(0, name)
-            self.channelTextEdits[channel]  = self.ch0TextEdit
         else:
             # iterate through the tabs and check if a tab with this name
             # already exists 
@@ -377,12 +416,9 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             # add this tab with a text edit
             textEdit = QTextEdit()
             self.messagesTabWidget.addTab(textEdit, name)
-            self.channelTextEdits[channel] = textEdit
+            self.channelTextEdits[channel] = MessagePage(textEdit)
         return
     
-    def getMessageTextEditByChannel(self, channel):
-        return self.channelTextEdits[channel]
-
     def handleMessage(self, packet):
         decoded = packet.get('decoded', None)
         if decoded is None:
@@ -397,12 +433,24 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             return
         # this is a channel message
         channel = packet.get('channel', 0)
-        textEdit = self.getMessageTextEditByChannel(channel)
         payload = decoded.get('payload', None)
         if payload:
-            msg = payload.decode("utf-8")
-            textEdit.append(msg)
+            self.displayChannelMessage(payload, fromId, channel, "in")
         return
+    
+    def displayChannelMessage(self, payload, fromId, channel, messageType):
+        # TODO Redo this with message objects
+        node = MeshAppContext.getNodeById(fromId)
+        if node is None:
+            longName = 'unknown'
+        else:
+            longName = node.longName
+            if longName == "":
+                longName = 'unknown'
+
+        messageText = payload.decode("utf-8")
+        self.channelTextEdits[channel].displayMessage(messageType, messageText, longName)
+        
     
 
     def addChannels(self):

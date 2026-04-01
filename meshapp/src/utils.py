@@ -292,12 +292,7 @@ class Node(object):
         self.uptimeSeconds = 0
         self.lastUpdate = time.time()
 
-    @classmethod
-    def fromDict(self, aDict):
-        aNode = Node()
-        for key, value in aDict.items():
-            setattr(aNode, key, value)
-        return Node
+   
 
     def toDict(self):
         aDict = {}
@@ -430,13 +425,20 @@ class MeshAppContext(object):
         for id, node in self.nodeDb.items():
             nodeDict[id] = node.toDict()
         return nodeDict
+    
+    @classmethod
+    def dictToNode(self, aDict):
+        aNode = Node(id=0) # pass in a dummy ID, this will get overwritten
+        for key, value in aDict.items():
+            setattr(aNode, key, value)
+        return aNode
 
     @classmethod
     def dictToNodeDb(self, aDict):
         self.nodeDb = {}
         if aDict is not None:
             for key, value in aDict.items():
-                self.nodeDb[key] = Node.fromDict(value)
+                self.nodeDb[key] = self.dictToNode(value)
 
     @classmethod
     def getNodeDbFilePath(self):
@@ -451,7 +453,7 @@ class MeshAppContext(object):
             with open(nodedbFilePath, 'r') as file:
                 aDict = yaml.safe_load(file) # Use safe_load to prevent arbitrary code execution
                 
-                        
+                self.dictToNodeDb(aDict)     
                 print(f"NodeDb loaded from {nodedbFilePath}")
         except Exception as e:
             print("ERROR: Unexpected error parsing yml file: %s, %s/%s" % (nodedbFilePath, sys.exc_info()[0], e))
@@ -462,8 +464,9 @@ class MeshAppContext(object):
         nodedbFilePath = self.getNodeDbFilePath()
         try:
             with open(nodedbFilePath, 'w') as file:
-                    yaml.safe_dump(MeshAppContext.nodeDbToDict(),file)
-                    print(f"NodeDb saved to {configFilePath}")
+                    nodeDict = MeshAppContext.nodeDbToDict()
+                    yaml.safe_dump(nodeDict,file)
+                    print(f"NodeDb saved to {nodedbFilePath}")
         except Exception as e:
             print("ERROR: Unexpected error writing yml file: %s, %s/%s" % (nodedbFilePath, sys.exc_info()[0], e))
             return
@@ -502,7 +505,8 @@ class MeshAppContext(object):
     @classmethod
     def getNodeById(self,id):
         id = convertNodeId(id)
-        return self.nodeDb.get(id,None)
+        retVal = self.nodeDb.get(id,None)
+        return retVal
 
     @classmethod
     def updateNodeDbFromPacket(self, packet):
