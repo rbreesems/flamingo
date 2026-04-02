@@ -234,7 +234,10 @@ class MessagePage(object):
         self.cursorPosition = 0
         self.messages = []  # list of message objects
         self.nextMessageId = 0
-        self.statusLine = "                    "
+        #self.statusLine = "#E#0#t                   "
+        self.eotMarker = "#E_0?+"
+        self.statusLine = "                             "
+        self.fmt = None
 
     def getNextMessageId(self):
         self.nextMessageId += 1
@@ -247,11 +250,56 @@ class MessagePage(object):
             messageData.longName = longName
             self.messages.append(messageData)
             messageData.startCursor = self.cursorPosition
-            totalMessage = f"IN ({longName})\n{messageText}\n{self.statusLine}\n"
+            preamble = f"IN ({longName})\n{messageText}\n"
+            msgEnd = f"{self.eotMarker}{self.statusLine}\n"
+            totalMessage = f"{preamble}{msgEnd}"
             messageLength = len(totalMessage)
-            messageData.endCursor =  messageData.startCursor + messageLength - 1
-            self.cursorPosition += messageLength
+            
+            
             self.textEdit.append(totalMessage)
+            # find the actual end of the message, search for self.eotMarker
+            cursor = self.textEdit.textCursor()
+            pos = messageData.startCursor + len(preamble)
+            endpos = pos + len(msgEnd)  # do not let the search go past this
+            foundEot = False
+            index = 0
+            while (pos < endpos):
+                cursor.setPosition(pos)
+                c = self.textEdit.document().characterAt(pos)
+                if index == 0:
+                    if c == self.eotMarker[index]:
+                        index += 1
+                else:
+                    if c != self.eotMarker[index]:
+                        index = 0 # reset search
+                    else:
+                        index += 1
+                        if index == len(self.eotMarker):
+                            # found the string
+                            foundEot = True
+                            pos += 1
+                            break
+                pos += 1
+            if foundEot:
+                messageData.endCursor =  pos + len(self.statusLine)+1
+                self.cursorPosition = messageData.endCursor+1
+            else:
+                # did not find EOT. A problem, use default
+                messageData.endCursor =  messageData.startCursor + messageLength
+                self.cursorPosition = messageData.endCursor+1
+            # do formatting
+            # set cursor
+            cursor = self.textEdit.textCursor()
+            cursor.setPosition(messageData.startCursor)
+            cursor.setPosition(messageData.startCursor+len(f"IN ({longName}")+1, QTextCursor.KeepAnchor)
+            # apply fmt
+            if self.fmt is None:
+                self.fmt = QTextCharFormat()
+            self.fmt.setFontWeight(QFont.Weight.Bold)
+            self.fmt.setForeground(QColor("blue"))
+            cursor.setCharFormat(self.fmt)
+            outputLogMessage(f"Message: start:{messageData.startCursor}, end: {messageData.endCursor} cursorpos:{self.cursorPosition}")
+
         else:
             outputLogMessage("ERROR, outgoing messages not handled yet", level=logging.error, echoStatus = True)
     
@@ -580,7 +628,7 @@ def meshappStart():
 
     # disable automatic garbage collection so we can handle it ourselves
     # QT does not do well with automatic GC
-    gc.disable()
+    #gc.disable()
     if isWindowsOs():
         if getattr(sys, 'frozen', False):
             hideConsole()

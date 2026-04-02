@@ -47,6 +47,9 @@ from PySide6.QtGui import QValidator
 from PySide6.QtGui import QIntValidator
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtGui import QPageSize
+from PySide6.QtGui import QTextCursor
+from PySide6.QtGui import QTextCharFormat
+
 
 
 # QtWidgets
