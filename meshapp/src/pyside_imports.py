@@ -107,3 +107,4 @@ from PySide6.QtWidgets import QSpinBox
 from PySide6.QtWidgets import QLineEdit
 from PySide6.QtWidgets import QTableWidgetSelectionRange
 from PySide6.QtWidgets import QTextEdit
+from PySide6.QtWidgets import QToolButton

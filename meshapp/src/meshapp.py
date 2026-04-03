@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshapp.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.0
+## Created by: Qt User Interface Compiler version 6.11.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -17,10 +17,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
-    QHBoxLayout, QLabel, QLineEdit, QMainWindow,
-    QMenu, QMenuBar, QPushButton, QSizePolicy,
-    QSpacerItem, QSpinBox, QStatusBar, QTabWidget,
-    QTextEdit, QVBoxLayout, QWidget)
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QSizePolicy, QSpacerItem, QSpinBox, QStatusBar,
+    QTabWidget, QTextEdit, QToolButton, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -191,22 +192,75 @@ class Ui_MainWindow(object):
         self.mainTabWidget.addTab(self.homeTab, "")
         self.messagesTab = QWidget()
         self.messagesTab.setObjectName(u"messagesTab")
-        self.horizontalLayout_6 = QHBoxLayout(self.messagesTab)
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.verticalLayout_6 = QVBoxLayout(self.messagesTab)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_5 = QVBoxLayout()
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.messagesTabWidget = QTabWidget(self.messagesTab)
         self.messagesTabWidget.setObjectName(u"messagesTabWidget")
         self.ch0Tab = QWidget()
         self.ch0Tab.setObjectName(u"ch0Tab")
-        self.horizontalLayout_7 = QHBoxLayout(self.ch0Tab)
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.verticalLayout_7 = QVBoxLayout(self.ch0Tab)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.ch0TextEdit = QTextEdit(self.ch0Tab)
         self.ch0TextEdit.setObjectName(u"ch0TextEdit")
 
-        self.horizontalLayout_7.addWidget(self.ch0TextEdit)
+        self.verticalLayout_7.addWidget(self.ch0TextEdit)
 
         self.messagesTabWidget.addTab(self.ch0Tab, "")
 
-        self.horizontalLayout_6.addWidget(self.messagesTabWidget)
+        self.verticalLayout_5.addWidget(self.messagesTabWidget)
+
+        self.groupBox = QGroupBox(self.messagesTab)
+        self.groupBox.setObjectName(u"groupBox")
+        self.verticalLayout_4 = QVBoxLayout(self.groupBox)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.sendMessageTextEdit = QTextEdit(self.groupBox)
+        self.sendMessageTextEdit.setObjectName(u"sendMessageTextEdit")
+
+        self.verticalLayout_4.addWidget(self.sendMessageTextEdit)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.sendMessagePushButton = QPushButton(self.groupBox)
+        self.sendMessagePushButton.setObjectName(u"sendMessagePushButton")
+
+        self.horizontalLayout_6.addWidget(self.sendMessagePushButton)
+
+        self.clearMessagePushButton = QPushButton(self.groupBox)
+        self.clearMessagePushButton.setObjectName(u"clearMessagePushButton")
+
+        self.horizontalLayout_6.addWidget(self.clearMessagePushButton)
+
+        self.emojisMessageToolButton = QToolButton(self.groupBox)
+        self.emojisMessageToolButton.setObjectName(u"emojisMessageToolButton")
+
+        self.horizontalLayout_6.addWidget(self.emojisMessageToolButton)
+
+        self.charCountLineEdit = QLineEdit(self.groupBox)
+        self.charCountLineEdit.setObjectName(u"charCountLineEdit")
+
+        self.horizontalLayout_6.addWidget(self.charCountLineEdit)
+
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_6.addItem(self.horizontalSpacer_4)
+
+        self.horizontalLayout_6.setStretch(0, 1)
+        self.horizontalLayout_6.setStretch(1, 1)
+        self.horizontalLayout_6.setStretch(2, 1)
+        self.horizontalLayout_6.setStretch(3, 1)
+        self.horizontalLayout_6.setStretch(4, 10)
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_6)
+
+
+        self.verticalLayout_5.addWidget(self.groupBox)
+
+        self.verticalLayout_5.setStretch(0, 20)
+        self.verticalLayout_5.setStretch(1, 1)
+
+        self.verticalLayout_6.addLayout(self.verticalLayout_5)
 
         self.mainTabWidget.addTab(self.messagesTab, "")
         self.settingsTab = QWidget()
@@ -505,6 +559,11 @@ class Ui_MainWindow(object):
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.deviceLogTab), QCoreApplication.translate("MainWindow", u"DeviceLog", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.homeTab), QCoreApplication.translate("MainWindow", u"Home", None))
         self.messagesTabWidget.setTabText(self.messagesTabWidget.indexOf(self.ch0Tab), QCoreApplication.translate("MainWindow", u"Ch.0", None))
+        self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Input", None))
+        self.sendMessagePushButton.setText(QCoreApplication.translate("MainWindow", u"Send", None))
+        self.clearMessagePushButton.setText(QCoreApplication.translate("MainWindow", u"Clear", None))
+        self.emojisMessageToolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
+        self.charCountLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"char count", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.messagesTab), QCoreApplication.translate("MainWindow", u"Messages", None))
         self.configLoadPushButton.setText(QCoreApplication.translate("MainWindow", u"Load Config", None))
         self.configSavePushButton.setText(QCoreApplication.translate("MainWindow", u"Save Config", None))
@@ -527,7 +586,9 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.useDarkStylelCheckBox.setText(QCoreApplication.translate("MainWindow", u"Use Dark Style", None))
 #if QT_CONFIG(tooltip)
-        self.enableFontScalingCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Requires GUI restart", None))
+        self.enableFontScalingCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Requires GUI restart. If enabled, Widget/Font scaling are based on values below.\n"
+"If disabled, values below are ignored and Font/Widget scaling adjust automatically based on screen resolution.\n"
+" Results are OS dependent, experiment with different values.", None))
 #endif // QT_CONFIG(tooltip)
         self.enableFontScalingCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable Font/Widget Scaling", None))
 #if QT_CONFIG(tooltip)

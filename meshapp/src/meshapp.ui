@@ -139,23 +139,84 @@
        <attribute name="title">
         <string>Messages</string>
        </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <layout class="QVBoxLayout" name="verticalLayout_6">
         <item>
-         <widget class="QTabWidget" name="messagesTabWidget">
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <widget class="QWidget" name="ch0Tab">
-           <attribute name="title">
-            <string>Ch.0</string>
-           </attribute>
-           <layout class="QHBoxLayout" name="horizontalLayout_7">
-            <item>
-             <widget class="QTextEdit" name="ch0TextEdit"/>
-            </item>
-           </layout>
-          </widget>
-         </widget>
+         <layout class="QVBoxLayout" name="verticalLayout_5" stretch="20,1">
+          <item>
+           <widget class="QTabWidget" name="messagesTabWidget">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <widget class="QWidget" name="ch0Tab">
+             <attribute name="title">
+              <string>Ch.0</string>
+             </attribute>
+             <layout class="QVBoxLayout" name="verticalLayout_7">
+              <item>
+               <widget class="QTextEdit" name="ch0TextEdit"/>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox">
+            <property name="title">
+             <string>Input</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QTextEdit" name="sendMessageTextEdit"/>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="1,1,1,1,10">
+               <item>
+                <widget class="QPushButton" name="sendMessagePushButton">
+                 <property name="text">
+                  <string>Send</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="clearMessagePushButton">
+                 <property name="text">
+                  <string>Clear</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="emojisMessageToolButton">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="charCountLineEdit">
+                 <property name="placeholderText">
+                  <string>char count</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_4">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>

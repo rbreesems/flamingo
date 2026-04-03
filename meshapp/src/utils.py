@@ -18,6 +18,7 @@ from deepdiff import DeepDiff
 from default_config import defaultConfigYml
 
 
+
 def isBroadcastId(id):
     id = convertNodeId(id)
     return id == 4294967295
@@ -327,6 +328,30 @@ class MeshAppContext(object):
     configDataOrg = None
     deviceLogEchoEnabled = False   # duplicate this from config for performance
     nodeDb: dict[int, dict] = {}
+    # node colors for everthing except local node
+    colorIndex = 0
+    nodeColorList = ["green", "darkCyan", "darkMagenta", "gray"]
+    nodeColorMap: dict[int, str] = {}
+    localNodeId = 0
+    localNodeLongName = ""
+
+    @classmethod
+    def getNextNodeColor(self):
+        color = self.nodeColorList[self.colorIndex]
+        self.colorIndex += 1
+        if self.colorIndex == len(self.nodeColorList):
+            self.colorIndex = 0
+        return color
+    
+    @classmethod
+    def getNodeColor(self, id):
+        id = convertNodeId(id)
+        if id not in self.nodeColorMap:
+            if id == self.localNodeId:
+                self.nodeColorMap[id] = "blue"
+            else:
+                self.nodeColorMap[id] = self.getNextNodeColor()
+        return self.nodeColorMap[id]
 
     @classmethod
     def getConfigOption(self, configOption, default=None):
@@ -427,6 +452,10 @@ class MeshAppContext(object):
         return nodeDict
     
     @classmethod
+    def addNodeToDb(self, id, node):
+        self.nodeDb[id] = node
+
+    @classmethod
     def dictToNode(self, aDict):
         aNode = Node(id=0) # pass in a dummy ID, this will get overwritten
         for key, value in aDict.items():
@@ -438,7 +467,7 @@ class MeshAppContext(object):
         self.nodeDb = {}
         if aDict is not None:
             for key, value in aDict.items():
-                self.nodeDb[key] = self.dictToNode(value)
+                self.addNodeToDb(key, self.dictToNode(value))
 
     @classmethod
     def getNodeDbFilePath(self):
@@ -483,10 +512,12 @@ class MeshAppContext(object):
             return
         newNode = Node(id=id)
         self.nodeDb[newNode.id] = newNode
+        self.localNodeId = convertNodeId(id)
         user = info.get('user',None)
         if user:
             newNode.longName = user.get('longName','')
             newNode.shortName = user.get('shortName','')
+            self.localNodeLongName = newNode.longName
 
     @classmethod
     def addEmptyNode(self,id):
@@ -498,9 +529,8 @@ class MeshAppContext(object):
         if isBroadcastId(id):
             return
         if id not in self.nodeDb:
-            self.nodeDb[id] = Node(id=id)
-        else:
-            self.nodeDb[id].lastUpdate = time.time()
+            self.addNodeToDb(id, Node(id=id))
+        self.nodeDb[id].lastUpdate = time.time()
 
     @classmethod
     def getNodeById(self,id):

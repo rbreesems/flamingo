@@ -15,6 +15,15 @@ import queue
 import meshtastic.serial_interface
 from pubsub import pub
 
+from qextrawidgets.gui.icons import QThemeResponsiveIcon
+from qextrawidgets.core.utils.emoji_fonts import QEmojiFonts
+from qextrawidgets.gui.items.icon_item import QIconItem
+from qextrawidgets.widgets.menus.emoji_picker_menu import QEmojiPickerMenu
+from qextrawidgets.gui.items import QIconCategoryItem
+
+from emoji_data_python import emoji_data
+
+
 
 
 if sys.platform.lower().startswith('win'):
@@ -199,6 +208,7 @@ def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (
     MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.addChannels])
     outputLogMessage(f"Connected to meshtastic device: {shortName}", echoStatus=True)
     MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(True)
+    
     MeshAppContext.mainWindow.connectedDeviceLineEdit.setText(f"{shortName} ({longName})")
     MeshAppContext.addLocalNodeToDb()
    
@@ -243,66 +253,65 @@ class MessagePage(object):
         self.nextMessageId += 1
         return self.nextMessageId
     
-    def displayMessage(self, messageType, messageText, longName):
+    def displayMessage(self, messageType, messageText, longName, fromId):
+        
+        messageData = MessageData(messageText, self.getNextMessageId())
+        messageData.messageType = messageType
+        messageData.longName = longName
+        self.messages.append(messageData)
+        messageData.startCursor = self.cursorPosition
         if messageType == "in":
-            messageData = MessageData(messageText, self.getNextMessageId())
-            messageData.messageType = messageType
-            messageData.longName = longName
-            self.messages.append(messageData)
-            messageData.startCursor = self.cursorPosition
             preamble = f"IN ({longName})\n{messageText}\n"
-            msgEnd = f"{self.eotMarker}{self.statusLine}\n"
-            totalMessage = f"{preamble}{msgEnd}"
-            messageLength = len(totalMessage)
-            
-            
-            self.textEdit.append(totalMessage)
-            # find the actual end of the message, search for self.eotMarker
-            cursor = self.textEdit.textCursor()
-            pos = messageData.startCursor + len(preamble)
-            endpos = pos + len(msgEnd)  # do not let the search go past this
-            foundEot = False
-            index = 0
-            while (pos < endpos):
-                cursor.setPosition(pos)
-                c = self.textEdit.document().characterAt(pos)
-                if index == 0:
-                    if c == self.eotMarker[index]:
-                        index += 1
-                else:
-                    if c != self.eotMarker[index]:
-                        index = 0 # reset search
-                    else:
-                        index += 1
-                        if index == len(self.eotMarker):
-                            # found the string
-                            foundEot = True
-                            pos += 1
-                            break
-                pos += 1
-            if foundEot:
-                messageData.endCursor =  pos + len(self.statusLine)+1
-                self.cursorPosition = messageData.endCursor+1
-            else:
-                # did not find EOT. A problem, use default
-                messageData.endCursor =  messageData.startCursor + messageLength
-                self.cursorPosition = messageData.endCursor+1
-            # do formatting
-            # set cursor
-            cursor = self.textEdit.textCursor()
-            cursor.setPosition(messageData.startCursor)
-            cursor.setPosition(messageData.startCursor+len(f"IN ({longName}")+1, QTextCursor.KeepAnchor)
-            # apply fmt
-            if self.fmt is None:
-                self.fmt = QTextCharFormat()
-            self.fmt.setFontWeight(QFont.Weight.Bold)
-            self.fmt.setForeground(QColor("blue"))
-            cursor.setCharFormat(self.fmt)
-            outputLogMessage(f"Message: start:{messageData.startCursor}, end: {messageData.endCursor} cursorpos:{self.cursorPosition}")
-
         else:
-            outputLogMessage("ERROR, outgoing messages not handled yet", level=logging.error, echoStatus = True)
-    
+            preamble = f"OUT ({longName})\n{messageText}\n"
+        msgEnd = f"{self.eotMarker}{self.statusLine}\n"
+        totalMessage = f"{preamble}{msgEnd}"
+        messageLength = len(totalMessage)
+            
+        self.textEdit.append(totalMessage)
+        # find the actual end of the message, search for self.eotMarker
+        cursor = self.textEdit.textCursor()
+        pos = messageData.startCursor + len(preamble)
+        endpos = pos + len(msgEnd)  # do not let the search go past this
+        foundEot = False
+        index = 0
+        while (pos < endpos):
+            cursor.setPosition(pos)
+            c = self.textEdit.document().characterAt(pos)
+            if index == 0:
+                if c == self.eotMarker[index]:
+                    index += 1
+            else:
+                if c != self.eotMarker[index]:
+                    index = 0 # reset search
+                else:
+                    index += 1
+                    if index == len(self.eotMarker):
+                        # found the string
+                        foundEot = True
+                        pos += 1
+                        break
+            pos += 1
+        if foundEot:
+            messageData.endCursor =  pos + len(self.statusLine)+1
+            self.cursorPosition = messageData.endCursor+1
+        else:
+            # did not find EOT. A problem, use default
+            messageData.endCursor =  messageData.startCursor + messageLength
+            self.cursorPosition = messageData.endCursor+1
+        # do formatting
+        nodeColor = MeshAppContext.getNodeColor(fromId)
+        # set cursor
+        cursor = self.textEdit.textCursor()
+        cursor.setPosition(messageData.startCursor)
+        cursor.setPosition(messageData.startCursor+len(f"IN ({longName}")+1, QTextCursor.KeepAnchor)
+        # apply fmt
+        if self.fmt is None:
+            self.fmt = QTextCharFormat()
+        self.fmt.setFontWeight(QFont.Weight.Bold)
+        self.fmt.setForeground(QColor(nodeColor))
+        cursor.setCharFormat(self.fmt)
+        outputLogMessage(f"Message: start:{messageData.startCursor}, end: {messageData.endCursor} cursorpos:{self.cursorPosition}")
 
 
 class MeshMainWindow(QMainWindow, Ui_MainWindow):
@@ -333,7 +342,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.debugStream = None
         self.serialInterface = None  # value returned by meshtastic.serial_interface.SerialInterface
         self.count = 0
-        self.channelNames = {}
+        self.channelToName = {}
+        self.nameToChannel = {}
         
         # channelTextEdits are text edits indexed by channel number
         # messageTextEdits are text edits indexed by from nodeId
@@ -357,11 +367,28 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.isConnectedCheckBox.stateChanged.connect(self.doIsConnectedCheckBoxStateChange)
         self.useDarkStylelCheckBox.clicked.connect(self.doUseDarkStylelCheckBox)
         self.enableFontScalingCheckBox.clicked.connect(self.doEnableFontScalingCheckBox)
+        self.sendMessageTextEdit.textChanged.connect(self.sendMessageTextChanged)
+        self.clearMessagePushButton.clicked.connect(lambda : self.sendMessageTextEdit.clear())
+        self.sendMessagePushButton.clicked.connect(self.doSendMessageClicked)
+        #self.emojisMessagePushButton.clicked.connect(self.doEmojisMessagePushButton)
         # Init fields
         self.doOptionInit()
         # do not connect this until spin Box has been initialized
         self.fontDpiSpinBox.valueChanged.connect(self.doFontDpiSpinBox)
         self.widgetScalingComboBox.currentIndexChanged.connect(self.doWidgetScalingComboBox)
+
+        #emoji config
+        self.emoji_picker_menu = QEmojiPickerMenu(self)
+        self.emoji_picker = self.emoji_picker_menu.picker()
+
+        emoji_picker_view = self.emoji_picker.view()
+        emoji_picker_delegate = self.emoji_picker.delegate()
+
+        self.emojisMessageToolButton.setIcon(QThemeResponsiveIcon.fromAwesome("fa6s.face-smile"))
+        self.emojisMessageToolButton.setMenu(self.emoji_picker_menu)
+        self.emojisMessageToolButton.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+
+        self.emoji_picker.picked.connect(self._on_emoji_picked)
 
 
     def doOptionInit(self):
@@ -382,6 +409,9 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.widgetScalingComboBox.setCurrentIndex(index)
 
         return
+    
+    def _on_emoji_picked(self, item: QIconItem) -> None:
+        self.sendMessageTextEdit.textCursor().insertText(item.data(Qt.ItemDataRole.EditRole))
 
     def addAction(self, item):
         if self.actionQueue.full():
@@ -449,9 +479,30 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     outputLogMessage(s, level=logging.ERROR)
         doEventProcessing()
 
+    def doSendMessageClicked(self):
+
+         
+        #TODO Extend for direct messages
+        msg = self.sendMessageTextEdit.toPlainText()
+        tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
+        channel = self.nameToChannel[tabName]
+        packet = self.serialInterface.sendText(msg, '^all', wantAck=False, wantResponse=False, channelIndex=channel)
+        # now need to send this to our text edit
+        self.channelTextEdits[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId)
+        self.sendMessageTextEdit.clear()
+        return
+
+
+    def sendMessageTextChanged(self):
+        count = self.sendMessageTextEdit.document().characterCount()
+        self.charCountLineEdit.setText(f"{count}")
+
+    
     def setMessageTabName(self, name, channel):
         isChannel0 = channel == 0
-        self.channelNames[channel] = name
+        self.channelToName[channel] = name
+        self.nameToChannel[name] = channel
+        
         if isChannel0:
             # this is the easy case
             self.messagesTabWidget.setTabText(0, name)
@@ -497,7 +548,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 longName = 'unknown'
 
         messageText = payload.decode("utf-8")
-        self.channelTextEdits[channel].displayMessage(messageType, messageText, longName)
+        self.channelTextEdits[channel].displayMessage(messageType, messageText, longName, fromId)
         
     
 
@@ -583,10 +634,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             # true
             MeshAppContext.isMeshConnected = True
             self.connectDevicePushButton.setDisabled(True)
+            self.sendMessagePushButton.setEnabled(True)
             self.comPortComboBox.setDisabled(True)
         else:
             MeshAppContext.isMeshConnected = False
             self.connectDevicePushButton.setDisabled(False)
+            self.sendMessagePushButton.setEnabled(False)
             self.comPortComboBox.setDisabled(False)
         return
     
