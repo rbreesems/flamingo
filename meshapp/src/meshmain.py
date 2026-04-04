@@ -226,6 +226,10 @@ def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)conn
         except:
             pass
 
+def handleMessageAck(argDict):
+
+    return
+
 class MessageData(object):
     def __init__(self, messageText, id):
         self.id = id
@@ -233,9 +237,11 @@ class MessageData(object):
         self.messageType = "in"
         self.messageText = messageText
         self.longName = ""   # from longname
-        self.startCursor = 0
-        self.endCursor = 0
+        self.startCursor = 0 # beginning of entire message
+        self.endCursor = 0  # end of entire message
+        self.statusCursor = 0 # beginning of status line
         self.status = None
+        self.textEdit = None  # this is the textEdit that this MessageData appears on
 
 class MessagePage(object):
 
@@ -258,6 +264,7 @@ class MessagePage(object):
         messageData = MessageData(messageText, self.getNextMessageId())
         messageData.messageType = messageType
         messageData.longName = longName
+        messageData.textEdit = self.textEdit
         self.messages.append(messageData)
         messageData.startCursor = self.cursorPosition
         if messageType == "in":
@@ -272,6 +279,7 @@ class MessagePage(object):
         # find the actual end of the message, search for self.eotMarker
         cursor = self.textEdit.textCursor()
         pos = messageData.startCursor + len(preamble)
+        messageData.statusCursor = pos # this is the start of search, this is default value, will be adjusted if Eot marker found
         endpos = pos + len(msgEnd)  # do not let the search go past this
         foundEot = False
         index = 0
@@ -293,12 +301,19 @@ class MessagePage(object):
                         break
             pos += 1
         if foundEot:
+            messageData.statusCursor = pos - len(self.eotMarker)  # beginning of status line
             messageData.endCursor =  pos + len(self.statusLine)+1
             self.cursorPosition = messageData.endCursor+1
         else:
             # did not find EOT. A problem, use default
             messageData.endCursor =  messageData.startCursor + messageLength
             self.cursorPosition = messageData.endCursor+1
+        # replace the EOT text with spaces so that it is not visible
+        cursor = self.textEdit.textCursor()
+        cursor.setPosition(messageData.statusCursor)
+        cursor.setPosition(messageData.statusCursor+len(self.eotMarker), QTextCursor.KeepAnchor)
+        cursor.insertText("      ")
+        
         # do formatting
         nodeColor = MeshAppContext.getNodeColor(fromId)
         # set cursor
@@ -312,6 +327,7 @@ class MessagePage(object):
         self.fmt.setForeground(QColor(nodeColor))
         cursor.setCharFormat(self.fmt)
         outputLogMessage(f"Message: start:{messageData.startCursor}, end: {messageData.endCursor} cursorpos:{self.cursorPosition}")
+        return messageData
 
 
 class MeshMainWindow(QMainWindow, Ui_MainWindow):
@@ -352,6 +368,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         # or DMs added
         self.channelTextEdits = { 0 : MessagePage(self.ch0TextEdit)}
         self.messageTextEdits = {}
+        self.waitingForAck = {} # key is packet ID, data is MessageData object
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -479,6 +496,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     outputLogMessage(s, level=logging.ERROR)
         doEventProcessing()
 
+    
+
     def doSendMessageClicked(self):
 
          
@@ -486,9 +505,11 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         msg = self.sendMessageTextEdit.toPlainText()
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
         channel = self.nameToChannel[tabName]
-        packet = self.serialInterface.sendText(msg, '^all', wantAck=False, wantResponse=False, channelIndex=channel)
+        packet = self.serialInterface.sendText(msg, '^all', wantAck=True, wantResponse=False, onResponse=handleMessageAck, channelIndex=channel)
         # now need to send this to our text edit
-        self.channelTextEdits[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId)
+        outputLogMessage(f"Out packet id: {packet.id}")
+        messageData = self.channelTextEdits[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId)
+        self.waitingForAck[packet.id] = messageData
         self.sendMessageTextEdit.clear()
         return
 
