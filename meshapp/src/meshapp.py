@@ -246,11 +246,28 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_6.addItem(self.horizontalSpacer_4)
 
+        self.addDmTabPushButton = QPushButton(self.groupBox)
+        self.addDmTabPushButton.setObjectName(u"addDmTabPushButton")
+
+        self.horizontalLayout_6.addWidget(self.addDmTabPushButton)
+
+        self.dmTabsComboBox = QComboBox(self.groupBox)
+        self.dmTabsComboBox.setObjectName(u"dmTabsComboBox")
+
+        self.horizontalLayout_6.addWidget(self.dmTabsComboBox)
+
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_6.addItem(self.horizontalSpacer_5)
+
         self.horizontalLayout_6.setStretch(0, 1)
         self.horizontalLayout_6.setStretch(1, 1)
         self.horizontalLayout_6.setStretch(2, 1)
         self.horizontalLayout_6.setStretch(3, 1)
-        self.horizontalLayout_6.setStretch(4, 10)
+        self.horizontalLayout_6.setStretch(4, 5)
+        self.horizontalLayout_6.setStretch(5, 1)
+        self.horizontalLayout_6.setStretch(6, 3)
+        self.horizontalLayout_6.setStretch(7, 5)
 
         self.verticalLayout_4.addLayout(self.horizontalLayout_6)
 
@@ -560,10 +577,29 @@ class Ui_MainWindow(object):
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.homeTab), QCoreApplication.translate("MainWindow", u"Home", None))
         self.messagesTabWidget.setTabText(self.messagesTabWidget.indexOf(self.ch0Tab), QCoreApplication.translate("MainWindow", u"Ch.0", None))
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Input", None))
+#if QT_CONFIG(tooltip)
+        self.sendMessagePushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Send message to exposed Message tab", None))
+#endif // QT_CONFIG(tooltip)
         self.sendMessagePushButton.setText(QCoreApplication.translate("MainWindow", u"Send", None))
+#if QT_CONFIG(tooltip)
+        self.clearMessagePushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Clear send message", None))
+#endif // QT_CONFIG(tooltip)
         self.clearMessagePushButton.setText(QCoreApplication.translate("MainWindow", u"Clear", None))
+#if QT_CONFIG(tooltip)
+        self.emojisMessageToolButton.setToolTip(QCoreApplication.translate("MainWindow", u"Emoji Picker", None))
+#endif // QT_CONFIG(tooltip)
         self.emojisMessageToolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
+#if QT_CONFIG(tooltip)
+        self.charCountLineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Message byte count", None))
+#endif // QT_CONFIG(tooltip)
         self.charCountLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"char count", None))
+#if QT_CONFIG(tooltip)
+        self.addDmTabPushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Add DM tab for selected node if one is not already available", None))
+#endif // QT_CONFIG(tooltip)
+        self.addDmTabPushButton.setText(QCoreApplication.translate("MainWindow", u"Add DM", None))
+#if QT_CONFIG(tooltip)
+        self.dmTabsComboBox.setToolTip(QCoreApplication.translate("MainWindow", u"Node choice", None))
+#endif // QT_CONFIG(tooltip)
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.messagesTab), QCoreApplication.translate("MainWindow", u"Messages", None))
         self.configLoadPushButton.setText(QCoreApplication.translate("MainWindow", u"Load Config", None))
         self.configSavePushButton.setText(QCoreApplication.translate("MainWindow", u"Save Config", None))

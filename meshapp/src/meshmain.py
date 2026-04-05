@@ -61,6 +61,11 @@ else:
         pass
 
 
+def getStatusFontSize(textEdit):
+    baseSize =  textEdit.font().pointSize()
+    newSize = float(baseSize) * 0.8
+    return newSize
+
 
 class StreamToLogger(object):
     """
@@ -83,6 +88,7 @@ class StreamToLogger(object):
         #all errors anyway, so verbosity level is 10. We will mark these with a STDERR tag in the log file.
         for line in buf.rstrip().splitlines():
             outputLogMessage("STDERRR - " + line.rstrip(), level=self.log_level,verbosity=10)
+        return
 
     def flush(self):
         return
@@ -163,7 +169,7 @@ class MeshappLoggerHandler(logging.Handler):
 
 def configureLogging(logfile=None):
     """
-    Configure netmapper logging system
+    Configure logging system
     """
     
     logdir = MeshAppContext.getConfigOption('General:LogDirectory', default='')
@@ -174,6 +180,7 @@ def configureLogging(logfile=None):
     MeshAppContext.logfile = logfile
 
     topLogger = logging.getLogger('meshapp')
+    topLogger.propagate = False
     topLogger.setLevel(logging.DEBUG)
     myhandler = MeshappLoggerHandler()
     myhandler.setLevel(logging.INFO)
@@ -198,6 +205,7 @@ def configureLogging(logfile=None):
 def onReceive(packet, interface): # called when a packet arrives
     outputLogMessage(f"Received Mesh packet: {packet}")
     MeshAppContext.updateNodeDbFromPacket(packet)
+    MeshAppContext.handleAckPacket(packet)
     MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.handleMessage, packet])
 
 
@@ -226,10 +234,6 @@ def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)conn
         except:
             pass
 
-def handleMessageAck(argDict):
-
-    return
-
 class MessageData(object):
     def __init__(self, messageText, id):
         self.id = id
@@ -253,6 +257,7 @@ class MessagePage(object):
         #self.statusLine = "#E#0#t                   "
         self.eotMarker = "#E_0?+"
         self.statusLine = "                             "
+        self.name = ""  #tab name
         self.fmt = None
 
     def getNextMessageId(self):
@@ -323,10 +328,14 @@ class MessagePage(object):
         # apply fmt
         if self.fmt is None:
             self.fmt = QTextCharFormat()
-        self.fmt.setFontWeight(QFont.Weight.Bold)
+        newSize = getStatusFontSize(self.textEdit)
+        self.fmt.setFontPointSize(newSize)
+        #self.fmt.setFontWeight(QFont.Weight.Bold)
         self.fmt.setForeground(QColor(nodeColor))
         cursor.setCharFormat(self.fmt)
-        outputLogMessage(f"Message: start:{messageData.startCursor}, end: {messageData.endCursor} cursorpos:{self.cursorPosition}")
+        if messageType == "in":
+            # display incoming messages on status bar
+            outputStatusMessageMainWindow(f"{self.name}: IN ({longName}): {messageText}")
         return messageData
 
 
@@ -361,14 +370,15 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.channelToName = {}
         self.nameToChannel = {}
         
-        # channelTextEdits are text edits indexed by channel number
-        # messageTextEdits are text edits indexed by from nodeId
+        # channelMessagePages are Message pages indexed by channel number
+        # directMessagePages are Message pages indexed by from nodeId
         # channel 0 text edit always exists and is fixed.
         # Other text edits are dynamically added as channels are discovered
         # or DMs added
-        self.channelTextEdits = { 0 : MessagePage(self.ch0TextEdit)}
-        self.messageTextEdits = {}
+        self.channelMessagePages = { 0 : MessagePage(self.ch0TextEdit)}
+        self.directMessagePages = {}  # key is always the remote node ID
         self.waitingForAck = {} # key is packet ID, data is MessageData object
+        self.orphanAcks = {}  #  for acks not in waitingForAck, value is error reason
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -387,6 +397,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.sendMessageTextEdit.textChanged.connect(self.sendMessageTextChanged)
         self.clearMessagePushButton.clicked.connect(lambda : self.sendMessageTextEdit.clear())
         self.sendMessagePushButton.clicked.connect(self.doSendMessageClicked)
+        self.mainTabWidget.currentChanged.connect(self.doMainTabWidgetCurrentChanged)
         #self.emojisMessagePushButton.clicked.connect(self.doEmojisMessagePushButton)
         # Init fields
         self.doOptionInit()
@@ -494,9 +505,76 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 except Exception as e:
                     s = "ERROR: Error calling actionQueue item, method: %s, arguments: %s, error: %s/%s " % (flist[0],flist[1:],sys.exc_info()[0], e)
                     outputLogMessage(s, level=logging.ERROR)
+        if len(self.orphanAcks) > 0 and len(self.waitingForAck) > 0:
+            foundAck = None
+            for requestId, errorReason in self.orphanAcks.items():
+                if requestId in self.waitingForAck:
+                    self.handleMessageAck(requestId, errorReason)
+                    foundAck = requestId
+                    break
+            if foundAck:
+                self.orphanAcks.pop(foundAck)
+
         doEventProcessing()
 
+    def doMainTabWidgetCurrentChanged(self, index):
+        if self.mainTabWidget.tabText(index) == "Messages":
+            self.updateDmTabsComboBox()
+
+    def updateDmTabsComboBox(self):
+        # only update if we are connected
+        if not MeshAppContext.isMeshConnected:
+            return
+        
+        nameList = []
+        for nodeInfo in MeshAppContext.nodeDb.values():
+            if nodeInfo.id != MeshAppContext.localNodeId and nodeInfo.longName:
+                nameList.append(nodeInfo.longName)
+        if len(nameList) > 0:
+            # existing tabs
+            dmSet = set(list(self.directMessagePages.keys()))
+            nameList.sort()
+            self.dmTabsComboBox.clear()
+            for name in nameList:
+                if not (name in dmSet):
+                    self.dmTabsComboBox.addItem(name)
     
+    def handleMessageAck(self, requestId, errorReason):
+
+        messageData = self.waitingForAck.get(requestId, None)
+        if messageData is None:
+            # save this ack as the ack could come back before we are ready to handle it
+            self.orphanAcks[requestId] = errorReason
+            return
+        statusText = None
+        statusColor = getLocalUserColor()
+        if errorReason == 'NONE':
+            statusText = "  Acknowledged"
+        elif errorReason == 'MAX_RETRANSMIT':
+            statusText = "  Max retransmit"
+            statusColor = "red"
+        if statusText is None:
+            return
+        # we got an ack, remove this messageData from the waitingForAck queue
+        self.waitingForAck.pop(requestId)
+        # now need to display the message text
+        cursor = messageData.textEdit.textCursor()
+        cursor.setPosition(messageData.statusCursor)
+        cursor.setPosition(messageData.statusCursor+len(statusText), QTextCursor.KeepAnchor)
+        cursor.insertText(statusText)
+
+        # Do formatting
+        newSize = getStatusFontSize(messageData.textEdit)
+        self.fmt = QTextCharFormat()
+        self.fmt.setFontPointSize(newSize)
+        self.fmt.setFontUnderline(True)
+        #self.fmt.setFontWeight(QFont.Weight.Bold)
+        self.fmt.setForeground(QColor(statusColor))
+        cursor.setPosition(messageData.statusCursor+2)
+        cursor.setPosition(messageData.statusCursor+len(statusText), QTextCursor.KeepAnchor)
+        cursor.setCharFormat(self.fmt)
+
+        return
 
     def doSendMessageClicked(self):
 
@@ -505,10 +583,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         msg = self.sendMessageTextEdit.toPlainText()
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
         channel = self.nameToChannel[tabName]
-        packet = self.serialInterface.sendText(msg, '^all', wantAck=True, wantResponse=False, onResponse=handleMessageAck, channelIndex=channel)
+        packet = self.serialInterface.sendText(msg, '^all', wantAck=True, wantResponse=False, channelIndex=channel)
         # now need to send this to our text edit
         outputLogMessage(f"Out packet id: {packet.id}")
-        messageData = self.channelTextEdits[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId)
+        messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId)
         self.waitingForAck[packet.id] = messageData
         self.sendMessageTextEdit.clear()
         return
@@ -516,10 +594,30 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
     def sendMessageTextChanged(self):
         count = self.sendMessageTextEdit.document().characterCount()
+        if count != 0:
+            count -= 1
         self.charCountLineEdit.setText(f"{count}")
 
+    def getDirectMessageTabName(self, remoteId):
+        # this will add a message data tab if needed based on remote ID
+        remoteNode = MeshAppContext.getNodeById(remoteId)
+        if remoteNode is not None and remoteNode.longName:
+            tabName = remoteNode.longName
+        else:
+            tabName = str(remoteId)
+        for i in range(self.messagesTabWidget.count()):
+            if self.messagesTabWidget.tabText(i) == tabName:
+                return tabName # this tab already exists
+        # add this tab with a text edit
+        textEdit = QTextEdit()
+        self.messagesTabWidget.addTab(textEdit, tabName)
+        messagePage = MessagePage(textEdit)
+        messagePage.name = tabName
+        self.directMessagePages[tabName] = messagePage
+        return tabName
+
     
-    def setMessageTabName(self, name, channel):
+    def setChannelMessageTabName(self, name, channel):
         isChannel0 = channel == 0
         self.channelToName[channel] = name
         self.nameToChannel[name] = channel
@@ -536,7 +634,9 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             # add this tab with a text edit
             textEdit = QTextEdit()
             self.messagesTabWidget.addTab(textEdit, name)
-            self.channelTextEdits[channel] = MessagePage(textEdit)
+            self.channelMessagePages[channel] = MessagePage(textEdit)
+        messagePage = self.channelMessagePages[channel]
+        messagePage.name = name
         return
     
     def handleMessage(self, packet):
@@ -548,18 +648,25 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         portnum = decoded.get('portnum', None)
         if portnum != 'TEXT_MESSAGE_APP':
             return
-        if not isBroadcastId(toId):
-            outputLogMessage("ERROR, direct messages unimplemented.", level=logging.ERROR, echoStatus=True)
-            return
-        # this is a channel message
-        channel = packet.get('channel', 0)
         payload = decoded.get('payload', None)
-        if payload:
-            self.displayChannelMessage(payload, fromId, channel, "in")
+        if not isBroadcastId(toId):
+            if convertNodeId(toId) == MeshAppContext.localNodeId and payload:
+                self.displayDirectMessage(payload, fromId, "in")
+        else:
+            # this is a channel message
+            channel = packet.get('channel', 0)
+            if payload:
+                self.displayChannelMessage(payload, fromId, channel, "in")
         return
     
+    def displayDirectMessage (self, payload, remoteId, messageType):
+        tabName = self.getDirectMessageTabName(remoteId)
+        # the tabName is the longName of the node
+        messageText = payload.decode("utf-8")
+        self.directMessagePages[tabName].displayMessage(messageType, messageText, tabName , remoteId)
+            
     def displayChannelMessage(self, payload, fromId, channel, messageType):
-        # TODO Redo this with message objects
+        
         node = MeshAppContext.getNodeById(fromId)
         if node is None:
             longName = 'unknown'
@@ -569,7 +676,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 longName = 'unknown'
 
         messageText = payload.decode("utf-8")
-        self.channelTextEdits[channel].displayMessage(messageType, messageText, longName, fromId)
+        self.channelMessagePages[channel].displayMessage(messageType, messageText, longName, fromId)
         
     
 
@@ -585,7 +692,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             name = f"Ch.{index}"
             if (c.settings and c.settings.name):
                 name = f"Ch.{index} {c.settings.name}"
-                self.setMessageTabName(name, index)
+                self.setChannelMessageTabName(name, index)
             index += 1
         return
     

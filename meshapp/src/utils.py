@@ -188,6 +188,12 @@ def getHomeDirectory():
 def getUserTempDirectory():
     return None
 
+def getLocalUserColor():
+    if MeshAppContext.getConfigOption("GUI:UseDarkStyle"):
+        return "cyan"
+    else:
+        return "blue"
+
 def getTemporaryFilename(base, ext='txt',useOsTempDir=False, dir=None):
 
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M")
@@ -216,15 +222,13 @@ def statusMessageCommon(sb,msg,level):
         MeshAppContext.statusMessageSkip(MeshAppContext.statusMessageSkip - 1)
     
 
-def outputStatusMessageMainWindow(msg,mainTab=True,level=logging.INFO):
+def outputStatusMessageMainWindow(msg,mainTab=False,level=logging.INFO):
     """
     This function only updates the status bar, not the log.
     """
     mw = MeshAppContext.mainWindow
     if (mw is not None) and (mw.mainThread == threading.current_thread()):
-        #maintab is True by default. Messages only display on status bar
-        #when main tab  is exposed. Things like credential test do not
-        #want these other messages seen on status bar, overwrites pass/fail message
+        #By default, always display messages on status bar
         if (not mainTab) or (mainTab and mw.isTabExposed(MeshAppContext.homeTabName)):
             statusMessageCommon(mw.statusbar, msg, level)
         doEventProcessing(force=True)
@@ -315,7 +319,7 @@ class MeshAppContext(object):
     mainApp = None
     logfile = None
     defaultLogger = None
-    defaultVerbosity = 1
+    defaultVerbosity = 0
     systemDefaultColorName = None
     disableEventProcessingFlag = False
     lastPrintTime = 0
@@ -330,16 +334,23 @@ class MeshAppContext(object):
     nodeDb: dict[int, dict] = {}
     # node colors for everthing except local node
     colorIndex = 0
-    nodeColorList = ["green", "darkCyan", "darkMagenta", "gray"]
+    #                  green
+    nodeColorList = ["#2A7822", "#A1A17D", "#45B5CE", "#8D58CC"]
+    #                  lgreen
+    nodeColorListDark =  ["#B2D19B", "#D6D6A7", "#A6E2F0", "#C8A8F0"]
     nodeColorMap: dict[int, str] = {}
     localNodeId = 0
     localNodeLongName = ""
 
     @classmethod
     def getNextNodeColor(self):
-        color = self.nodeColorList[self.colorIndex]
+        if MeshAppContext.getConfigOption("GUI:UseDarkStyle"):
+            colorList = self.nodeColorListDark
+        else:
+            colorList = self.nodeColorList
+        color = colorList[self.colorIndex]
         self.colorIndex += 1
-        if self.colorIndex == len(self.nodeColorList):
+        if self.colorIndex == len(colorList):
             self.colorIndex = 0
         return color
     
@@ -348,7 +359,7 @@ class MeshAppContext(object):
         id = convertNodeId(id)
         if id not in self.nodeColorMap:
             if id == self.localNodeId:
-                self.nodeColorMap[id] = "blue"
+                self.nodeColorMap[id] = getLocalUserColor()
             else:
                 self.nodeColorMap[id] = self.getNextNodeColor()
         return self.nodeColorMap[id]
@@ -537,6 +548,36 @@ class MeshAppContext(object):
         id = convertNodeId(id)
         retVal = self.nodeDb.get(id,None)
         return retVal
+    
+    @classmethod
+    def handleAckPacket(self, packet):
+        if not (packet.get('from',None) == packet.get('to',None) and packet.get('to',None) == self.localNodeId):
+            return
+        priority = packet.get('priority', None)
+        if priority != 'ACK':
+            return
+        decoded = packet.get('decoded', None)
+        if decoded is None:
+            return
+        portnum = decoded.get('portnum', None)
+        if portnum != 'ROUTING_APP':
+            return
+        requestId = decoded.get('requestId', None)
+        if requestId is None:
+            return
+       
+        routing = decoded.get('routing', None)
+        if routing is None:
+            return
+        errorReason = routing.get('errorReason', None)
+        if errorReason is None:
+            return
+        # at this point, have ACK routing packet.
+        # Call the main window to handle this
+        self.mainWindow.handleMessageAck(requestId, errorReason)
+        return
+       
+        
 
     @classmethod
     def updateNodeDbFromPacket(self, packet):
@@ -569,6 +610,8 @@ class MeshAppContext(object):
                     node.longName = user.get('longName', '')
                     node.shortName = user.get('shortName', '')
                     node.role = user.get('role', '')
+                    if self.mainWindow:
+                        self.mainWindow.updateDmTabsComboBox()
 
 
 
