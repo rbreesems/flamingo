@@ -561,6 +561,7 @@ class MeshAppContext(object):
     def handleAckPacket(self, packet):
         if not (packet.get('to',None) == self.localNodeId):
             return
+        fromId = packet.get('from',None)
         #priority = packet.get('priority', None)
         #if priority != 'ACK':
         #    return
@@ -582,7 +583,7 @@ class MeshAppContext(object):
             return
         # at this point, have ACK routing packet.
         # Call the main window to handle this
-        self.mainWindow.handleMessageAck(requestId, errorReason)
+        self.mainWindow.handleMessageAck(requestId, errorReason, fromId)
         return
        
 

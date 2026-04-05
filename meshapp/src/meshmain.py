@@ -20,6 +20,7 @@ from qextrawidgets.core.utils.emoji_fonts import QEmojiFonts
 from qextrawidgets.gui.items.icon_item import QIconItem
 from qextrawidgets.widgets.menus.emoji_picker_menu import QEmojiPickerMenu
 from qextrawidgets.gui.items import QIconCategoryItem
+import qtawesome as qta
 
 from emoji_data_python import emoji_data
 
@@ -237,7 +238,7 @@ def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)conn
 class MessageData(object):
     def __init__(self, messageText, id):
         self.id = id
-        self.fromNodeId = 0  # not sure we need this
+        self.toId = 0 # if this is non-zero, then this is a DM to this id.
         self.messageType = "in"
         self.messageText = messageText
         self.longName = ""   # from longname
@@ -247,6 +248,7 @@ class MessageData(object):
         self.status = None
         self.textEdit = None  # this is the textEdit that this MessageData appears on
         self.fmt = None
+        self.ignoreAck = False  # if True, then ignore any other ack packets arriving for this message
 
     def displayMessageStatus(self, statusText, statusColor=None):
         if statusColor is None:
@@ -287,7 +289,7 @@ class MessagePage(object):
         self.nextMessageId += 1
         return self.nextMessageId
     
-    def displayMessage(self, messageType, messageText, longName, fromId, packetId=None):
+    def displayMessage(self, messageType, messageText, longName, fromId, packetId=None, wantAck=True):
         
         messageData = MessageData(messageText, self.getNextMessageId())
         messageData.messageType = messageType
@@ -362,7 +364,7 @@ class MessagePage(object):
         if messageType == "in":
             # display incoming messages on status bar
             outputStatusMessageMainWindow(f"{self.name}: IN ({longName}): {messageText}")
-        if messageType == "out":
+        if messageType == "out" and wantAck:
             if not (packetId and packetId in MeshAppContext.mainWindow.orphanAcks):
                 messageData.displayMessageStatus("  Waiting on ack")
 
@@ -410,6 +412,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.directMessagePages = {}  # key is always the remote node ID
         self.waitingForAck = {} # key is packet ID, data is MessageData object
         self.orphanAcks = {}  #  for acks not in waitingForAck, value is error reason
+        self.ch0TextEdit.setReadOnly(True)
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -440,15 +443,42 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         #emoji config
         self.emoji_picker_menu = QEmojiPickerMenu(self)
         self.emoji_picker = self.emoji_picker_menu.picker()
+        self.emoji_picker.picked.connect(self._on_emoji_picked)
 
         emoji_picker_view = self.emoji_picker.view()
         emoji_picker_delegate = self.emoji_picker.delegate()
 
-        self.emojisMessageToolButton.setIcon(QThemeResponsiveIcon.fromAwesome("fa6s.face-smile"))
+        self.tapback_menu = QEmojiPickerMenu(self)
+        self.tapback = self.tapback_menu.picker()
+        self.tapback.picked.connect(self._on_tapback_picked)
+
+
+
+        #self.emojisMessageToolButton.setIcon(QThemeResponsiveIcon.fromAwesome("fa6s.face-smile"))
+        if MeshAppContext.getConfigOption('GUI:UseDarkStyle', default=False):
+            button_color = "cyan"
+        else:
+            button_color = "blue"
+        emoji_icon = qta.icon(
+            "fa6s.face-smile",
+            color=button_color
+           )
+        self.emojisMessageToolButton.setIcon(emoji_icon)
+
+        tapback_icon = qta.icon(
+            "fa6s.thumbs-up",
+            color=button_color
+           )
+        self.tapbackMessageToolButton.setIcon(tapback_icon)
+
+
         self.emojisMessageToolButton.setMenu(self.emoji_picker_menu)
         self.emojisMessageToolButton.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
-        self.emoji_picker.picked.connect(self._on_emoji_picked)
+        self.tapbackMessageToolButton.setMenu(self.tapback_menu)
+        self.tapbackMessageToolButton.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+
+        
 
 
     def doOptionInit(self):
@@ -472,6 +502,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     
     def _on_emoji_picked(self, item: QIconItem) -> None:
         self.sendMessageTextEdit.textCursor().insertText(item.data(Qt.ItemDataRole.EditRole))
+
+    def _on_tapback_picked(self, item: QIconItem) -> None:
+        self.doSendMessageCore(item.data(Qt.ItemDataRole.EditRole))
+        return
 
     def addAction(self, item):
         if self.actionQueue.full():
@@ -539,9 +573,9 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     outputLogMessage(s, level=logging.ERROR)
         if len(self.orphanAcks) > 0 and len(self.waitingForAck) > 0:
             foundAck = None
-            for requestId, errorReason in self.orphanAcks.items():
+            for requestId, aDict in self.orphanAcks.items():
                 if requestId in self.waitingForAck:
-                    self.handleMessageAck(requestId, errorReason)
+                    self.handleMessageAck(requestId, aDict['errorReason'], aDict['fromId'])
                     foundAck = requestId
                     break
             if foundAck:
@@ -581,25 +615,44 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.dmTabsComboBox.removeItem(self.dmTabsComboBox.currentIndex())
         return
     
-    def handleMessageAck(self, requestId, errorReason):
+    def handleMessageAck(self, requestId, errorReason, fromId):
 
         messageData = self.waitingForAck.get(requestId, None)
         if messageData is None:
             # save this ack as the ack could come back before we are ready to handle it
-            self.orphanAcks[requestId] = errorReason
+            self.orphanAcks[requestId] = { 'errorReason':errorReason, 'fromId' : fromId }
             return
+        if messageData.ignoreAck:
+            # this is an extra ack, already been acked, ignore
+            self.waitingForAck.pop(requestId, None)
+            return
+            
         statusText = None
         statusColor = getLocalUserColor()
         
         if errorReason == 'NONE':
-            statusText = "   Acknowledged "
+            if messageData.toId and messageData.toId != fromId:
+                # this was DM to node messageData.toId but the ACK packet is from another ode
+                statusText = "  Ack by other"
+            else:
+                statusText = "   Acknowledged "
+                messageData.ignoreAck = True
         elif errorReason == 'MAX_RETRANSMIT':
             statusText = "  Max retransmit "
             statusColor = "red"
+            messageData.ignoreAck = True
+        elif errorReason == 'NO_CHANNEL':
+            statusText = "  No channel "
+            statusColor = "red"
+            messageData.ignoreAck = True
+        else:
+            statusText = "  {errorReason} "
+            statusColor = "red"
+            messageData.ignoreAck = True
         if statusText is None:
             return
         # we got an ack, remove this messageData from the waitingForAck queue
-        self.waitingForAck.pop(requestId)
+        self.waitingForAck.pop(requestId, None)
 
         messageData.displayMessageStatus(statusText, statusColor)
     
@@ -607,9 +660,13 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
         return
 
-    def doSendMessageClicked(self):
+    def doSendMessageClicked(self): 
+         self.doSendMessageCore(self.sendMessageTextEdit.toPlainText())
+         return
+    
+    def doSendMessageCore(self, msg):
 
-        msg = self.sendMessageTextEdit.toPlainText()
+        wantAck = True
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
         if tabName in self.directMessagePages:
             # this is a direct message, get the from ID of the node
@@ -622,18 +679,21 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     pass
             if node is None:
                 outputLogMessage("ERROR: node {tabname} cannot be found, unable to send message.", level=logging.ERROR, echoStatus=True)
-            packet = self.serialInterface.sendText(msg, node.id, wantAck=True, wantResponse=False)
-            messageData = self.directMessagePages[tabName ].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id)
-            self.waitingForAck[packet.id] = messageData
+            packet = self.serialInterface.sendText(msg, node.id, wantAck=wantAck, wantResponse=False)
+            messageData = self.directMessagePages[tabName ].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
+            messageData.toId = node.id
+            outputLogMessage(f"Packet waiting for ack: {packet.id} to node {node.id}")
         else:
             # must be a channel message
             channel = self.nameToChannel[tabName]
-            packet = self.serialInterface.sendText(msg, '^all', wantAck=True, wantResponse=False, channelIndex=channel)
+            packet = self.serialInterface.sendText(msg, '^all', wantAck=wantAck, wantResponse=False, channelIndex=channel)
             # now need to send this to our text edit
-            messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id)
+            messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
+            outputLogMessage(f"Packet waiting for ack: {packet.id}")
+        if wantAck:
             self.waitingForAck[packet.id] = messageData
-        self.sendMessageTextEdit.clear()
-        outputLogMessage(f"Packet waiting for ack: {packet.id}")
+            self.sendMessageTextEdit.clear()
+            
         return
 
 
@@ -645,6 +705,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
     def addDirectMessageTab(self, tabName):
         textEdit = QTextEdit()
+        textEdit.setReadOnly(True)
         self.messagesTabWidget.addTab(textEdit, tabName)
         messagePage = MessagePage(textEdit)
         messagePage.name = tabName
@@ -681,6 +742,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     return  # this tab already exists
             # add this tab with a text edit
             textEdit = QTextEdit()
+            textEdit.setReadOnly(True)
             self.messagesTabWidget.addTab(textEdit, name)
             self.channelMessagePages[channel] = MessagePage(textEdit)
         messagePage = self.channelMessagePages[channel]

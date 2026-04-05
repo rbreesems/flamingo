@@ -204,6 +204,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.ch0TextEdit = QTextEdit(self.ch0Tab)
         self.ch0TextEdit.setObjectName(u"ch0TextEdit")
+        self.ch0TextEdit.setAcceptDrops(False)
+        self.ch0TextEdit.setReadOnly(True)
 
         self.verticalLayout_7.addWidget(self.ch0TextEdit)
 
@@ -237,6 +239,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_6.addWidget(self.emojisMessageToolButton)
 
+        self.tapbackMessageToolButton = QToolButton(self.groupBox)
+        self.tapbackMessageToolButton.setObjectName(u"tapbackMessageToolButton")
+
+        self.horizontalLayout_6.addWidget(self.tapbackMessageToolButton)
+
         self.charCountLineEdit = QLineEdit(self.groupBox)
         self.charCountLineEdit.setObjectName(u"charCountLineEdit")
 
@@ -264,10 +271,11 @@ class Ui_MainWindow(object):
         self.horizontalLayout_6.setStretch(1, 1)
         self.horizontalLayout_6.setStretch(2, 1)
         self.horizontalLayout_6.setStretch(3, 1)
-        self.horizontalLayout_6.setStretch(4, 5)
-        self.horizontalLayout_6.setStretch(5, 1)
-        self.horizontalLayout_6.setStretch(6, 3)
-        self.horizontalLayout_6.setStretch(7, 5)
+        self.horizontalLayout_6.setStretch(4, 2)
+        self.horizontalLayout_6.setStretch(5, 5)
+        self.horizontalLayout_6.setStretch(6, 1)
+        self.horizontalLayout_6.setStretch(7, 3)
+        self.horizontalLayout_6.setStretch(8, 5)
 
         self.verticalLayout_4.addLayout(self.horizontalLayout_6)
 
@@ -586,9 +594,13 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.clearMessagePushButton.setText(QCoreApplication.translate("MainWindow", u"Clear", None))
 #if QT_CONFIG(tooltip)
-        self.emojisMessageToolButton.setToolTip(QCoreApplication.translate("MainWindow", u"Emoji Picker", None))
+        self.emojisMessageToolButton.setToolTip(QCoreApplication.translate("MainWindow", u"Add an emoji to the send message", None))
 #endif // QT_CONFIG(tooltip)
         self.emojisMessageToolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
+#if QT_CONFIG(tooltip)
+        self.tapbackMessageToolButton.setToolTip(QCoreApplication.translate("MainWindow", u"Tapback - sends a single emoji to the current message tab", None))
+#endif // QT_CONFIG(tooltip)
+        self.tapbackMessageToolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
 #if QT_CONFIG(tooltip)
         self.charCountLineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Message byte count", None))
 #endif // QT_CONFIG(tooltip)

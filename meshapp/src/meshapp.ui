@@ -153,7 +153,14 @@
              </attribute>
              <layout class="QVBoxLayout" name="verticalLayout_7">
               <item>
-               <widget class="QTextEdit" name="ch0TextEdit"/>
+               <widget class="QTextEdit" name="ch0TextEdit">
+                <property name="acceptDrops">
+                 <bool>false</bool>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>
@@ -169,7 +176,7 @@
               <widget class="QTextEdit" name="sendMessageTextEdit"/>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="1,1,1,1,5,1,3,5">
+              <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="1,1,1,1,2,5,1,3,5">
                <item>
                 <widget class="QPushButton" name="sendMessagePushButton">
                  <property name="toolTip">
@@ -193,7 +200,17 @@
                <item>
                 <widget class="QToolButton" name="emojisMessageToolButton">
                  <property name="toolTip">
-                  <string>Emoji Picker</string>
+                  <string>Add an emoji to the send message</string>
+                 </property>
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="tapbackMessageToolButton">
+                 <property name="toolTip">
+                  <string>Tapback - sends a single emoji to the current message tab</string>
                  </property>
                  <property name="text">
                   <string>...</string>
