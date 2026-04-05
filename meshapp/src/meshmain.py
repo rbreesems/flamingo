@@ -246,6 +246,30 @@ class MessageData(object):
         self.statusCursor = 0 # beginning of status line
         self.status = None
         self.textEdit = None  # this is the textEdit that this MessageData appears on
+        self.fmt = None
+
+    def displayMessageStatus(self, statusText, statusColor=None):
+        if statusColor is None:
+            statusColor = getLocalUserColor()
+        # now need to display the message text
+        cursor = self.textEdit.textCursor()
+        cursor.setPosition(self.statusCursor)
+        cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
+        cursor.insertText(statusText)
+
+        # Do formatting
+        newSize = getStatusFontSize(self.textEdit)
+        if self.fmt is None:
+            self.fmt = QTextCharFormat()
+        self.fmt.setFontPointSize(newSize)
+        self.fmt.setFontUnderline(True)
+        #self.fmt.setFontWeight(QFont.Weight.Bold)
+        self.fmt.setForeground(QColor(statusColor))
+        cursor.setPosition(self.statusCursor+2)
+        cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
+        cursor.setCharFormat(self.fmt)
+
+        return
 
 class MessagePage(object):
 
@@ -254,7 +278,6 @@ class MessagePage(object):
         self.cursorPosition = 0
         self.messages = []  # list of message objects
         self.nextMessageId = 0
-        #self.statusLine = "#E#0#t                   "
         self.eotMarker = "#E_0?+"
         self.statusLine = "                             "
         self.name = ""  #tab name
@@ -264,7 +287,7 @@ class MessagePage(object):
         self.nextMessageId += 1
         return self.nextMessageId
     
-    def displayMessage(self, messageType, messageText, longName, fromId):
+    def displayMessage(self, messageType, messageText, longName, fromId, packetId=None):
         
         messageData = MessageData(messageText, self.getNextMessageId())
         messageData.messageType = messageType
@@ -273,10 +296,12 @@ class MessagePage(object):
         self.messages.append(messageData)
         messageData.startCursor = self.cursorPosition
         if messageType == "in":
+            statusLine = self.statusLine
             preamble = f"IN ({longName})\n{messageText}\n"
         else:
+            statusLine = self.statusLine
             preamble = f"OUT ({longName})\n{messageText}\n"
-        msgEnd = f"{self.eotMarker}{self.statusLine}\n"
+        msgEnd = f"{self.eotMarker}{statusLine}\n"
         totalMessage = f"{preamble}{msgEnd}"
         messageLength = len(totalMessage)
             
@@ -307,7 +332,7 @@ class MessagePage(object):
             pos += 1
         if foundEot:
             messageData.statusCursor = pos - len(self.eotMarker)  # beginning of status line
-            messageData.endCursor =  pos + len(self.statusLine)+1
+            messageData.endCursor =  pos + len(statusLine)+1
             self.cursorPosition = messageData.endCursor+1
         else:
             # did not find EOT. A problem, use default
@@ -318,6 +343,7 @@ class MessagePage(object):
         cursor.setPosition(messageData.statusCursor)
         cursor.setPosition(messageData.statusCursor+len(self.eotMarker), QTextCursor.KeepAnchor)
         cursor.insertText("      ")
+        
         
         # do formatting
         nodeColor = MeshAppContext.getNodeColor(fromId)
@@ -336,8 +362,13 @@ class MessagePage(object):
         if messageType == "in":
             # display incoming messages on status bar
             outputStatusMessageMainWindow(f"{self.name}: IN ({longName}): {messageText}")
-        return messageData
+        if messageType == "out":
+            if not (packetId and packetId in MeshAppContext.mainWindow.orphanAcks):
+                messageData.displayMessageStatus("  Waiting on ack")
 
+        self.textEdit.verticalScrollBar().setValue(self.textEdit.verticalScrollBar().maximum())
+        return messageData
+    
 
 class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
@@ -386,7 +417,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.widgetScalingComboBox.setCurrentIndex(0)
 
 
-        # Config
+        # Connect signals
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
         self.autoConnectSerialCheckBox.clicked.connect(self.doAutoConnectSerialCheckBox)
         self.enableDeviceLogEchoCheckBox.clicked.connect(self.doEnableDeviceLogEchoCheckBox)
@@ -398,8 +429,9 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.clearMessagePushButton.clicked.connect(lambda : self.sendMessageTextEdit.clear())
         self.sendMessagePushButton.clicked.connect(self.doSendMessageClicked)
         self.mainTabWidget.currentChanged.connect(self.doMainTabWidgetCurrentChanged)
-        #self.emojisMessagePushButton.clicked.connect(self.doEmojisMessagePushButton)
-        # Init fields
+        self.addDmTabPushButton.clicked.connect(self.doAddDmTabPushButton)
+        
+        # Init fields from saved options
         self.doOptionInit()
         # do not connect this until spin Box has been initialized
         self.fontDpiSpinBox.valueChanged.connect(self.doFontDpiSpinBox)
@@ -538,6 +570,16 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             for name in nameList:
                 if not (name in dmSet):
                     self.dmTabsComboBox.addItem(name)
+
+    def doAddDmTabPushButton(self):
+        if self.dmTabsComboBox.count() == 0:
+            return
+        nodeLongname = self.dmTabsComboBox.currentText()
+        if nodeLongname not in self.directMessagePages:
+            # add a tab
+            self.addDirectMessageTab(nodeLongname)
+            self.dmTabsComboBox.removeItem(self.dmTabsComboBox.currentIndex())
+        return
     
     def handleMessageAck(self, requestId, errorReason):
 
@@ -548,47 +590,50 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             return
         statusText = None
         statusColor = getLocalUserColor()
+        
         if errorReason == 'NONE':
-            statusText = "  Acknowledged"
+            statusText = "   Acknowledged "
         elif errorReason == 'MAX_RETRANSMIT':
-            statusText = "  Max retransmit"
+            statusText = "  Max retransmit "
             statusColor = "red"
         if statusText is None:
             return
         # we got an ack, remove this messageData from the waitingForAck queue
         self.waitingForAck.pop(requestId)
-        # now need to display the message text
-        cursor = messageData.textEdit.textCursor()
-        cursor.setPosition(messageData.statusCursor)
-        cursor.setPosition(messageData.statusCursor+len(statusText), QTextCursor.KeepAnchor)
-        cursor.insertText(statusText)
 
-        # Do formatting
-        newSize = getStatusFontSize(messageData.textEdit)
-        self.fmt = QTextCharFormat()
-        self.fmt.setFontPointSize(newSize)
-        self.fmt.setFontUnderline(True)
-        #self.fmt.setFontWeight(QFont.Weight.Bold)
-        self.fmt.setForeground(QColor(statusColor))
-        cursor.setPosition(messageData.statusCursor+2)
-        cursor.setPosition(messageData.statusCursor+len(statusText), QTextCursor.KeepAnchor)
-        cursor.setCharFormat(self.fmt)
+        messageData.displayMessageStatus(statusText, statusColor)
+    
+        
 
         return
 
     def doSendMessageClicked(self):
 
-         
-        #TODO Extend for direct messages
         msg = self.sendMessageTextEdit.toPlainText()
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
-        channel = self.nameToChannel[tabName]
-        packet = self.serialInterface.sendText(msg, '^all', wantAck=True, wantResponse=False, channelIndex=channel)
-        # now need to send this to our text edit
-        outputLogMessage(f"Out packet id: {packet.id}")
-        messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId)
-        self.waitingForAck[packet.id] = messageData
+        if tabName in self.directMessagePages:
+            # this is a direct message, get the from ID of the node
+            node = MeshAppContext.getNodeByLongname(tabName)
+            if node is None:
+                # this tab name may actually be an ID, try this instead
+                try:
+                    node = MeshAppContext.getNodeById(int(tabName))
+                except:
+                    pass
+            if node is None:
+                outputLogMessage("ERROR: node {tabname} cannot be found, unable to send message.", level=logging.ERROR, echoStatus=True)
+            packet = self.serialInterface.sendText(msg, node.id, wantAck=True, wantResponse=False)
+            messageData = self.directMessagePages[tabName ].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id)
+            self.waitingForAck[packet.id] = messageData
+        else:
+            # must be a channel message
+            channel = self.nameToChannel[tabName]
+            packet = self.serialInterface.sendText(msg, '^all', wantAck=True, wantResponse=False, channelIndex=channel)
+            # now need to send this to our text edit
+            messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id)
+            self.waitingForAck[packet.id] = messageData
         self.sendMessageTextEdit.clear()
+        outputLogMessage(f"Packet waiting for ack: {packet.id}")
         return
 
 
@@ -597,6 +642,14 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if count != 0:
             count -= 1
         self.charCountLineEdit.setText(f"{count}")
+
+    def addDirectMessageTab(self, tabName):
+        textEdit = QTextEdit()
+        self.messagesTabWidget.addTab(textEdit, tabName)
+        messagePage = MessagePage(textEdit)
+        messagePage.name = tabName
+        self.directMessagePages[tabName] = messagePage
+        return
 
     def getDirectMessageTabName(self, remoteId):
         # this will add a message data tab if needed based on remote ID
@@ -609,13 +662,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             if self.messagesTabWidget.tabText(i) == tabName:
                 return tabName # this tab already exists
         # add this tab with a text edit
-        textEdit = QTextEdit()
-        self.messagesTabWidget.addTab(textEdit, tabName)
-        messagePage = MessagePage(textEdit)
-        messagePage.name = tabName
-        self.directMessagePages[tabName] = messagePage
+        self.addDirectMessageTab(tabName)
         return tabName
-
     
     def setChannelMessageTabName(self, name, channel):
         isChannel0 = channel == 0
@@ -781,26 +829,29 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
 def initStyle(app):
 
+    exePath = getExecutablePath()
+    exePath = exePath.replace('\\', '/')  # change to posix path
     if MeshAppContext.getConfigOption('GUI:UseDarkStyle', default=False):
-        exePath = getExecutablePath()
-        exePath = exePath.replace('\\', '/')  # change to posix path
         stylePath = posixpath.join(exePath,"dark.stylesheet")
-        darkStyle = None
-        if posixpath.isfile(stylePath):
-            try:
-                infile = open(stylePath, 'r')
-                lines = infile.readlines()
-                infile.close()
-                darkStyle = "".join(lines)
-            except Exception as e:
-                s = "ERROR: Error style sheet: %s, error: %s/%s " % (stylePath, sys.exc_info()[0], e)
-                outputLogMessage(s, level=logging.ERROR)
-        if darkStyle:
-            try:
-                app.setStyleSheet(darkStyle)
-            except Exception as e:
-                s = "ERROR: Error applying dark style sheet, error: %s/%s " % (sys.exc_info()[0], e)
-                outputLogMessage(s, level=logging.ERROR)
+    else:
+        stylePath = posixpath.join(exePath,"default.stylesheet")
+   
+    style = None
+    if posixpath.isfile(stylePath):
+        try:
+            infile = open(stylePath, 'r')
+            lines = infile.readlines()
+            infile.close()
+            style = "".join(lines)
+        except Exception as e:
+            s = "ERROR: Error style sheet: %s, error: %s/%s " % (stylePath, sys.exc_info()[0], e)
+            outputLogMessage(s, level=logging.ERROR)
+    if style:
+        try:
+            app.setStyleSheet(style)
+        except Exception as e:
+            s = "ERROR: Error applying style sheet, error: %s/%s " % (sys.exc_info()[0], e)
+            outputLogMessage(s, level=logging.ERROR)
 
 def meshappStart():
     """

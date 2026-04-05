@@ -398,6 +398,7 @@ QTabBar::tab:selected
 {
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
+    text-decoration: underline;
     margin-bottom: 0px;
 }
 

@@ -542,6 +542,7 @@ class MeshAppContext(object):
         if id not in self.nodeDb:
             self.addNodeToDb(id, Node(id=id))
         self.nodeDb[id].lastUpdate = time.time()
+        return
 
     @classmethod
     def getNodeById(self,id):
@@ -550,12 +551,19 @@ class MeshAppContext(object):
         return retVal
     
     @classmethod
+    def getNodeByLongname(self, longName):
+        for node in self.nodeDb.values():
+            if node.longName == longName:
+                return node
+        return None
+    
+    @classmethod
     def handleAckPacket(self, packet):
-        if not (packet.get('from',None) == packet.get('to',None) and packet.get('to',None) == self.localNodeId):
+        if not (packet.get('to',None) == self.localNodeId):
             return
-        priority = packet.get('priority', None)
-        if priority != 'ACK':
-            return
+        #priority = packet.get('priority', None)
+        #if priority != 'ACK':
+        #    return
         decoded = packet.get('decoded', None)
         if decoded is None:
             return
@@ -577,7 +585,6 @@ class MeshAppContext(object):
         self.mainWindow.handleMessageAck(requestId, errorReason)
         return
        
-        
 
     @classmethod
     def updateNodeDbFromPacket(self, packet):
@@ -610,27 +617,8 @@ class MeshAppContext(object):
                     node.longName = user.get('longName', '')
                     node.shortName = user.get('shortName', '')
                     node.role = user.get('role', '')
+                    outputLogMessage(f"NODEINFO received:  { user.get('shortName', '')} / {user.get('longName', '')}")
                     if self.mainWindow:
                         self.mainWindow.updateDmTabsComboBox()
-
-
-
-
-
-            
-
-
-
-        
-        
-
-    
-
-
-
-
-
-
-
 
 

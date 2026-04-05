@@ -1,0 +1,31 @@
+/* Style for all tabs */
+QTabBar::tab {
+    color: gray;
+    font-weight: normal;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 3px;
+    padding-bottom: 2px;
+    margin-right: -1px;
+}
+
+/* Style for the currently selected tab */
+QTabBar::tab:selected {
+    text-decoration: underline;
+    color: black;
+    /* font-weight: bold; */
+/*    background: #4A90E2;*/
+}
+
+/* Style when hovering over a tab */
+QTabBar::tab:hover {
+    color: gray;
+    background: lightgray;
+}
+
+/* Style for tabs that are NOT selected */
+QTabBar::tab:!selected {
+    color: gray;
+    font-weight: normal;
+    margin-top: 2px; /* Makes unselected tabs appear smaller */
+}
