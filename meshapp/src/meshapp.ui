@@ -370,6 +370,57 @@
              </widget>
             </item>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,1,1,3,10">
+              <item>
+               <widget class="QCheckBox" name="autoTapbackCheckBox">
+                <property name="toolTip">
+                 <string>Enable channel monitoring for auto response</string>
+                </property>
+                <property name="text">
+                 <string>Enable Auto Response</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="autoTapbackChannelSpinBox">
+                <property name="toolTip">
+                 <string>Channel to monitor for auto response</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>Channel</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="autoTapbackLineEdit">
+                <property name="toolTip">
+                 <string>Keyword (not case sensitive) that triggers auto response, must be first word in messsage. </string>
+                </property>
+                <property name="placeholderText">
+                 <string>keyword</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_6">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
              <spacer name="verticalSpacer_4">
               <property name="orientation">
                <enum>Qt::Vertical</enum>

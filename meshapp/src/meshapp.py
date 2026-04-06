@@ -347,6 +347,40 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.enableDeviceLogEchoCheckBox)
 
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.autoTapbackCheckBox = QCheckBox(self.optionsGeneralTab)
+        self.autoTapbackCheckBox.setObjectName(u"autoTapbackCheckBox")
+
+        self.horizontalLayout_7.addWidget(self.autoTapbackCheckBox)
+
+        self.autoTapbackChannelSpinBox = QSpinBox(self.optionsGeneralTab)
+        self.autoTapbackChannelSpinBox.setObjectName(u"autoTapbackChannelSpinBox")
+
+        self.horizontalLayout_7.addWidget(self.autoTapbackChannelSpinBox)
+
+        self.label_3 = QLabel(self.optionsGeneralTab)
+        self.label_3.setObjectName(u"label_3")
+
+        self.horizontalLayout_7.addWidget(self.label_3)
+
+        self.autoTapbackLineEdit = QLineEdit(self.optionsGeneralTab)
+        self.autoTapbackLineEdit.setObjectName(u"autoTapbackLineEdit")
+
+        self.horizontalLayout_7.addWidget(self.autoTapbackLineEdit)
+
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_7.addItem(self.horizontalSpacer_6)
+
+        self.horizontalLayout_7.setStretch(0, 1)
+        self.horizontalLayout_7.setStretch(1, 1)
+        self.horizontalLayout_7.setStretch(2, 1)
+        self.horizontalLayout_7.setStretch(3, 3)
+        self.horizontalLayout_7.setStretch(4, 10)
+
+        self.verticalLayout.addLayout(self.horizontalLayout_7)
+
         self.verticalSpacer_4 = QSpacerItem(20, 439, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout.addItem(self.verticalSpacer_4)
@@ -628,6 +662,18 @@ class Ui_MainWindow(object):
         self.enableDeviceLogEchoCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Enable echo of device debug output to GUI - warning - adversely affects performance!", None))
 #endif // QT_CONFIG(tooltip)
         self.enableDeviceLogEchoCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable Device Log Echo", None))
+#if QT_CONFIG(tooltip)
+        self.autoTapbackCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Enable channel monitoring for auto response", None))
+#endif // QT_CONFIG(tooltip)
+        self.autoTapbackCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable Auto Response", None))
+#if QT_CONFIG(tooltip)
+        self.autoTapbackChannelSpinBox.setToolTip(QCoreApplication.translate("MainWindow", u"Channel to monitor for auto response", None))
+#endif // QT_CONFIG(tooltip)
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Channel", None))
+#if QT_CONFIG(tooltip)
+        self.autoTapbackLineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Keyword (not case sensitive) that triggers auto response, must be first word in messsage. ", None))
+#endif // QT_CONFIG(tooltip)
+        self.autoTapbackLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"keyword", None))
         self.optionsTabWidget.setTabText(self.optionsTabWidget.indexOf(self.optionsGeneralTab), QCoreApplication.translate("MainWindow", u"General", None))
 #if QT_CONFIG(tooltip)
         self.useDarkStylelCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Takes effect on restart", None))

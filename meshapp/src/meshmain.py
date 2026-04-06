@@ -402,6 +402,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.count = 0
         self.channelToName = {}
         self.nameToChannel = {}
+        self.autoTapbackMessage = emoji.emojize(':thumbs_up:')
         
         # channelMessagePages are Message pages indexed by channel number
         # directMessagePages are Message pages indexed by from nodeId
@@ -419,6 +420,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.widgetScalingComboBox.addItem(value)
         self.widgetScalingComboBox.setCurrentIndex(0)
 
+       
+
 
         # Connect signals
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
@@ -433,6 +436,14 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.sendMessagePushButton.clicked.connect(self.doSendMessageClicked)
         self.mainTabWidget.currentChanged.connect(self.doMainTabWidgetCurrentChanged)
         self.addDmTabPushButton.clicked.connect(self.doAddDmTabPushButton)
+        self.autoTapbackCheckBox.clicked.connect(lambda x : MeshAppContext.setConfigOption('General:AutoTapback', self.autoTapbackCheckBox.isChecked() ))
+        self.autoTapbackLineEdit.editingFinished.connect(
+            lambda : MeshAppContext.setConfigOption('General:AutoTapbackKeyword', self.autoTapbackLineEdit.text())
+            if self.autoTapbackLineEdit.text() else "")
+        self.autoTapbackChannelSpinBox.valueChanged.connect(
+            lambda x : MeshAppContext.setConfigOption('General:AutoTapbackChannel', x)
+        )
+        
         
         # Init fields from saved options
         self.doOptionInit()
@@ -497,6 +508,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if index == -1:
             index = 0
         self.widgetScalingComboBox.setCurrentIndex(index)
+
+        self.autoTapbackChannelSpinBox.setMinimum(0)
+        self.autoTapbackChannelSpinBox.setMaximum(7)
+        self.autoTapbackChannelSpinBox.setValue(MeshAppContext.getConfigOption('General:AutoTapbackChannel', default=0))
+        self.autoTapbackCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoTapback', default=False))
+        self.autoTapbackLineEdit.setText(MeshAppContext.getConfigOption('General:AutoTapbackKeyword', default="response"))
 
         return
     
@@ -664,7 +681,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
          self.doSendMessageCore(self.sendMessageTextEdit.toPlainText())
          return
     
-    def doSendMessageCore(self, msg):
+    def doSendMessageCore(self, msg, clearText=True):
 
         wantAck = True
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
@@ -692,6 +709,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             outputLogMessage(f"Packet waiting for ack: {packet.id}")
         if wantAck:
             self.waitingForAck[packet.id] = messageData
+        if clearText:
             self.sendMessageTextEdit.clear()
             
         return
@@ -767,6 +785,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             channel = packet.get('channel', 0)
             if payload:
                 self.displayChannelMessage(payload, fromId, channel, "in")
+                
+
         return
     
     def displayDirectMessage (self, payload, remoteId, messageType):
@@ -787,8 +807,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
         messageText = payload.decode("utf-8")
         self.channelMessagePages[channel].displayMessage(messageType, messageText, longName, fromId)
-        
-    
+        if (MeshAppContext.getConfigOption('General:AutoTapback', default=False) and
+           MeshAppContext.getConfigOption('General:AutoTapbackChannel', default=0) == channel ) :
+            keyword = MeshAppContext.getConfigOption('General:AutoTapbackKeyword', default=False)
+            words = messageText.split()
+            if len(words) > 0 and words[0].lower() == keyword.lower():
+                self.doSendMessageCore(self.autoTapbackMessage, clearText=False)
 
     def addChannels(self):
         """
