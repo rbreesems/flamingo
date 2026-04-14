@@ -16,12 +16,12 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
-    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGroupBox,
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
     QMainWindow, QMenu, QMenuBar, QPushButton,
     QSizePolicy, QSpacerItem, QSpinBox, QStatusBar,
-    QTabWidget, QTextEdit, QToolButton, QVBoxLayout,
-    QWidget)
+    QTabWidget, QTextEdit, QToolButton, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -125,13 +125,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addWidget(self.clearCurrentLogWindowPushButton)
 
-        self.line = QFrame(self.homeTab)
-        self.line.setObjectName(u"line")
-        self.line.setFrameShape(QFrame.Shape.VLine)
-        self.line.setFrameShadow(QFrame.Shadow.Sunken)
-
-        self.horizontalLayout_5.addWidget(self.line)
-
         self.connectDevicePushButton = QPushButton(self.homeTab)
         self.connectDevicePushButton.setObjectName(u"connectDevicePushButton")
 
@@ -147,18 +140,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addWidget(self.isConnectedCheckBox)
 
-        self.connectedDeviceLineEdit = QLineEdit(self.homeTab)
-        self.connectedDeviceLineEdit.setObjectName(u"connectedDeviceLineEdit")
-        self.connectedDeviceLineEdit.setAcceptDrops(False)
-        self.connectedDeviceLineEdit.setReadOnly(True)
-
-        self.horizontalLayout_5.addWidget(self.connectedDeviceLineEdit)
-
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_5.addItem(self.horizontalSpacer)
 
-        self.horizontalLayout_5.setStretch(6, 6)
+        self.horizontalLayout_5.setStretch(0, 1)
+        self.horizontalLayout_5.setStretch(1, 1)
+        self.horizontalLayout_5.setStretch(2, 2)
+        self.horizontalLayout_5.setStretch(3, 1)
+        self.horizontalLayout_5.setStretch(4, 10)
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_5)
 
@@ -288,6 +278,74 @@ class Ui_MainWindow(object):
         self.verticalLayout_6.addLayout(self.verticalLayout_5)
 
         self.mainTabWidget.addTab(self.messagesTab, "")
+        self.tab = QWidget()
+        self.tab.setObjectName(u"tab")
+        self.verticalLayout_8 = QVBoxLayout(self.tab)
+        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.horizontalLayout_12 = QHBoxLayout()
+        self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
+        self.nodesOpenOneLevelPushButton = QPushButton(self.tab)
+        self.nodesOpenOneLevelPushButton.setObjectName(u"nodesOpenOneLevelPushButton")
+
+        self.horizontalLayout_12.addWidget(self.nodesOpenOneLevelPushButton)
+
+        self.nodesCloseAllPushButton = QPushButton(self.tab)
+        self.nodesCloseAllPushButton.setObjectName(u"nodesCloseAllPushButton")
+
+        self.horizontalLayout_12.addWidget(self.nodesCloseAllPushButton)
+
+        self.horizontalLayout_10 = QHBoxLayout()
+        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
+        self.label_4 = QLabel(self.tab)
+        self.label_4.setObjectName(u"label_4")
+
+        self.horizontalLayout_10.addWidget(self.label_4)
+
+        self.nodesFilterLineEdit = QLineEdit(self.tab)
+        self.nodesFilterLineEdit.setObjectName(u"nodesFilterLineEdit")
+
+        self.horizontalLayout_10.addWidget(self.nodesFilterLineEdit)
+
+
+        self.horizontalLayout_12.addLayout(self.horizontalLayout_10)
+
+        self.horizontalLayout_11 = QHBoxLayout()
+        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
+        self.label_5 = QLabel(self.tab)
+        self.label_5.setObjectName(u"label_5")
+
+        self.horizontalLayout_11.addWidget(self.label_5)
+
+        self.nodesSortByComboBox = QComboBox(self.tab)
+        self.nodesSortByComboBox.setObjectName(u"nodesSortByComboBox")
+
+        self.horizontalLayout_11.addWidget(self.nodesSortByComboBox)
+
+
+        self.horizontalLayout_12.addLayout(self.horizontalLayout_11)
+
+        self.horizontalSpacer_7 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_12.addItem(self.horizontalSpacer_7)
+
+        self.horizontalLayout_12.setStretch(0, 1)
+        self.horizontalLayout_12.setStretch(1, 1)
+        self.horizontalLayout_12.setStretch(2, 2)
+        self.horizontalLayout_12.setStretch(3, 2)
+        self.horizontalLayout_12.setStretch(4, 5)
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout_12)
+
+        self.nodesTreeWidget = QTreeWidget(self.tab)
+        __qtreewidgetitem = QTreeWidgetItem()
+        __qtreewidgetitem.setText(0, u"1")
+        self.nodesTreeWidget.setHeaderItem(__qtreewidgetitem)
+        self.nodesTreeWidget.setObjectName(u"nodesTreeWidget")
+        self.nodesTreeWidget.header().setVisible(False)
+
+        self.verticalLayout_8.addWidget(self.nodesTreeWidget)
+
+        self.mainTabWidget.addTab(self.tab, "")
         self.settingsTab = QWidget()
         self.settingsTab.setObjectName(u"settingsTab")
         self.horizontalLayout_2 = QHBoxLayout(self.settingsTab)
@@ -613,7 +671,6 @@ class Ui_MainWindow(object):
         self.comPortComboBox.setToolTip(QCoreApplication.translate("MainWindow", u"Detected COM Ports", None))
 #endif // QT_CONFIG(tooltip)
         self.isConnectedCheckBox.setText(QCoreApplication.translate("MainWindow", u"isConnected", None))
-        self.connectedDeviceLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"connectedDevice", None))
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.sysLogTab), QCoreApplication.translate("MainWindow", u"SysLog", None))
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.deviceLogTab), QCoreApplication.translate("MainWindow", u"DeviceLog", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.homeTab), QCoreApplication.translate("MainWindow", u"Home", None))
@@ -647,6 +704,15 @@ class Ui_MainWindow(object):
         self.dmTabsComboBox.setToolTip(QCoreApplication.translate("MainWindow", u"Node choice", None))
 #endif // QT_CONFIG(tooltip)
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.messagesTab), QCoreApplication.translate("MainWindow", u"Messages", None))
+        self.nodesOpenOneLevelPushButton.setText(QCoreApplication.translate("MainWindow", u"Open One Level", None))
+        self.nodesCloseAllPushButton.setText(QCoreApplication.translate("MainWindow", u"Close All", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Filter", None))
+#if QT_CONFIG(tooltip)
+        self.nodesFilterLineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Filter node long names by regular expression", None))
+#endif // QT_CONFIG(tooltip)
+        self.nodesFilterLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"reg expression", None))
+        self.label_5.setText(QCoreApplication.translate("MainWindow", u"Sort By", None))
+        self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Nodes", None))
         self.configLoadPushButton.setText(QCoreApplication.translate("MainWindow", u"Load Config", None))
         self.configSavePushButton.setText(QCoreApplication.translate("MainWindow", u"Save Config", None))
         self.configSaveAsPushButton.setText(QCoreApplication.translate("MainWindow", u"Save Config as...", None))

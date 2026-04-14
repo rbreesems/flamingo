@@ -10,7 +10,7 @@ import time
 import html
 import io
 from utils import *
-import meshtastic
+import meshtastic.mesh_interface
 import queue
 import meshtastic.serial_interface
 from pubsub import pub
@@ -217,8 +217,6 @@ def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (
     MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.addChannels])
     outputLogMessage(f"Connected to meshtastic device: {shortName}", echoStatus=True)
     MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(True)
-    
-    MeshAppContext.mainWindow.connectedDeviceLineEdit.setText(f"{shortName} ({longName})")
     MeshAppContext.addLocalNodeToDb()
    
 def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
@@ -226,7 +224,6 @@ def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)conn
     outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
     MeshAppContext.isMeshConnected = False
     MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(False)
-    MeshAppContext.mainWindow.connectedDeviceLineEdit.clear()
     if MeshAppContext.mainWindow.debugStream is not None:
         try:
             MeshAppContext.mainWindow.serialInterface = None
@@ -234,6 +231,14 @@ def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)conn
             MeshAppContext.mainWindow.debugStream = None
         except:
             pass
+
+def doTraceRoute(node):
+    try:
+         MeshAppContext.mainWindow.serialInterface.sendTraceRoute(node.id, MeshAppContext.getMaxHopLimitForTraceRoute())
+         outputLogMessage("Trace Route wait is finished")
+    except Exception as e:
+        outputLogMessage("ERROR: Traceroute error, {str(e)}", level=logging.ERROR, echoStatus=True)
+    return
 
 class MessageData(object):
     def __init__(self, messageText, id):
@@ -384,6 +389,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         super(MeshMainWindow,self).__init__(parent)
         self.setupUi(self)
         self.mainThread = threading.current_thread()  #use this to keep track of main thread
+        self.baseTitle = "Flamingo MeshApp"
+        
 
         self.idleTimer = QtCore.QTimer()
         self.idleTimer.setInterval(200)  # poll every 200 ms for events
@@ -397,12 +404,16 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         pub.subscribe(onReceive, "meshtastic.receive")
         pub.subscribe(onConnectionEstablished, "meshtastic.connection.established")
         pub.subscribe(onConnectionLost, "meshtastic.connection.lost")
+        self.activeTraceRoute = None
         self.debugStream = None
         self.serialInterface = None  # value returned by meshtastic.serial_interface.SerialInterface
         self.count = 0
         self.channelToName = {}
         self.nameToChannel = {}
         self.autoTapbackMessage = emoji.emojize(':thumbs_up:')
+        self.itemsOpenedLimit = 1000
+        self.itemsClosedLimit = 5000
+        self.nodeListIsExpanded = False
         
         # channelMessagePages are Message pages indexed by channel number
         # directMessagePages are Message pages indexed by from nodeId
@@ -420,8 +431,9 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.widgetScalingComboBox.addItem(value)
         self.widgetScalingComboBox.setCurrentIndex(0)
 
-       
-
+        for value in ['longName', 'lastUpdate', 'batteryLevel']:
+            self.nodesSortByComboBox.addItem(value)
+        self.nodesSortByComboBox.setCurrentIndex(0)
 
         # Connect signals
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
@@ -443,10 +455,24 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.autoTapbackChannelSpinBox.valueChanged.connect(
             lambda x : MeshAppContext.setConfigOption('General:AutoTapbackChannel', x)
         )
+        self.nodesFilterLineEdit.textChanged.connect(self.updateNodeListOnSortFilterChange)
+
         
         
         # Init fields from saved options
         self.doOptionInit()
+
+        # Configure Nodes tab
+        self.nodesTreeWidget.setMouseTracking(True)
+        self.nodesOpenOneLevelPushButton.clicked.connect(self.doNodeOpenOneLevel)
+        self.nodesCloseAllPushButton.clicked.connect(self.doNodeCloseAll)
+        
+        self.updateNodesTab()
+        self.nodesSortByComboBox.currentIndexChanged.connect(self.updateNodeListOnSortFilterChange)
+        self.nodesTreeWidget.contextMenuEvent = self.nodesTreeWidgetContextMenuEvent
+
+
+
         # do not connect this until spin Box has been initialized
         self.fontDpiSpinBox.valueChanged.connect(self.doFontDpiSpinBox)
         self.widgetScalingComboBox.currentIndexChanged.connect(self.doWidgetScalingComboBox)
@@ -462,6 +488,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.tapback_menu = QEmojiPickerMenu(self)
         self.tapback = self.tapback_menu.picker()
         self.tapback.picked.connect(self._on_tapback_picked)
+
+        
 
 
 
@@ -489,8 +517,305 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.tapbackMessageToolButton.setMenu(self.tapback_menu)
         self.tapbackMessageToolButton.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
-        
+    # Nodes tab
 
+    def nodesTreeWidgetContextMenuEvent(self, event):
+        """
+        Context menu is displayed on right  click
+        """
+        itemList = getGetSelectedItemsFromWidget(self.nodesTreeWidget)
+        if len(itemList) != 1:
+            return
+        itemText = itemList[0].text(0)
+        words = itemText.split()
+        if len(words) != 2:
+            return
+        
+        nodeName = words[0]
+        nodeId = convertNodeId(words[1])
+        node = MeshAppContext.getNodeById(nodeId)
+        if node is None:
+            return
+        if nodeId == MeshAppContext.localNodeId:
+            # no menu items for local node
+            outputStatusMessageMainWindow(f"No menu action items for connected node: {nodeName}")
+            return
+        
+        if self.activeTraceRoute:
+            # no menu items a traceroute is active
+            outputStatusMessageMainWindow(f"Still waiting on last traceroute")
+            return
+
+        
+        menu = QMenu()
+        traceRouteAction = menu.addAction("Trace Route")
+        selectedAction = menu.exec_(event.globalPos())
+
+        if selectedAction is None:
+            return
+
+        if selectedAction == traceRouteAction:
+            outputStatusMessageMainWindow(f"Sending Trace Route to {nodeName}")
+            aThread = threading.Thread(target=doTraceRoute, args=[node])
+            aThread.start()
+            self.activeTraceRoute = node.id
+            return
+        
+        return
+    
+
+    def updateNodeListOnSortFilterChange(self):
+        try:
+            text = self.nodesFilterLineEdit.text()
+            nodeList = MeshAppContext.getNodeList(filter=text,sort=self.nodesSortByComboBox.currentText())
+            self.updateNodesByNameForWidget(self.nodesTreeWidget, nodeList, 'nodes')
+            if self.nodeListIsExpanded:
+                self.doNodeOpenOneLevel()
+        except Exception as e:
+            outputLogMessage("ERROR, unexpected error in updating node view information, error: %s/%s" % (sys.exc_info()[0], e),level=logging.ERROR)
+            outputStackTrace(sys.exc_info()[2])
+
+        return
+
+
+    def updateNodesByNameForWidget(self,targetWidget, nodeList, view, quiet=False,flags=None):
+        """
+        Update the list of nodes arranged by name in the nodes tab.
+        """
+        defaultFont, defaultBgBrush, defaultFgBrush = self.getTreeWidgetSettings()
+        if len(nodeList) == 0:
+            return
+        self.nodesTreeWidget.clear()
+
+        nodesTopElement = None
+        
+        for node in nodeList:
+            nodeName = node.getDisplayName()
+            if nodeName == str(node.id):
+                header = nodeName
+            else:
+                header = nodeName + "  " + str(node.id)
+            description = node.description()
+            if nodesTopElement is not None:
+                nodeLine = QTreeWidgetItem(nodesTopElement, [header])
+            else:
+                nodeLine = QTreeWidgetItem(targetWidget, [header])
+            setDisplayItemDefaults(nodeLine, font=defaultFont, bg=defaultBgBrush, fg=defaultFgBrush)
+            if  flags is not None:
+                nodeLine.setFlags(flags)
+            self.addMoreLineItems(nodeLine, description,font=defaultFont,fg=defaultFgBrush,bg=defaultBgBrush)
+
+    def updateNodesTab(self):
+        self.nodesTreeWidget.clear()
+        flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+        try:
+            text = self.nodesFilterLineEdit.text()
+            nodeList = MeshAppContext.getNodeList(filter=text,sort=self.nodesSortByComboBox.currentText())
+            self.updateNodesByNameForWidget(self.nodesTreeWidget, nodeList, 'nodes', flags=flags)
+            if self.nodeListIsExpanded:
+                self.doNodeOpenOneLevel()
+        except Exception as e:
+            outputLogMessage("ERROR, unexpected error in updating node view information, error: %s/%s" % (sys.exc_info()[0], e),level=logging.ERROR)
+            outputStackTrace(sys.exc_info()[2])
+        
+        return
+
+    def expandRecurse(self,parent, itemsTraversed, isInvisibleRoot=False):
+        """
+        Recursive function that expands items under a displayed item in the Nodes tab.
+        """
+
+        if not isInvisibleRoot and not parent.isExpanded():
+            if parent.childCount() != 0:
+                parent.setExpanded(True)
+            return itemsTraversed,False
+        else:
+            childCount = parent.childCount()
+            i = 0
+            while i != childCount:
+                child = parent.child(i)
+                itemsTraversed,doAbort = self.expandRecurse(child, itemsTraversed+1)
+                if itemsTraversed > self.itemsOpenedLimit or doAbort:
+                    return itemsTraversed,True
+                i = i + 1
+
+        return itemsTraversed,False
+
+    def doOpenOneLevelPushButtonCommon(self, button, currentTreeWidget, statusMethod=None, isInvisibleRoot=False):
+
+        if statusMethod is None:
+            statusMethod = outputStatusMessageMainWindow
+        button.setEnabled(False)
+        button.setEnabled(False)
+        if currentTreeWidget:
+            if statusMethod:
+                statusMethod("\'Open One Level\' action started...")
+            itemsTraversed, expandRecurseAbort = self.expandRecurse(currentTreeWidget, 0, isInvisibleRoot)
+            if statusMethod:
+                if expandRecurseAbort :
+                    statusMethod("Item traversal limit exceeded for \'Open One Level\' action, try a smaller range")
+                else:
+                    statusMethod("\'Open One Level\' action started...Finished.")
+        else:
+            if statusMethod:
+                statusMethod("No item selected \'Open One Level\' action")
+        button.setEnabled(True)
+        button.setEnabled(True)
+        self.ignoreNodeItemExpanded = False
+
+    def doOpenOneLevel(self, targetWidget, statusMethod=None):
+        for i in range(0, targetWidget.topLevelItemCount()):
+            thisItem = targetWidget.topLevelItem(i)
+            self.doOpenOneLevelPushButtonCommon(
+                self.nodesOpenOneLevelPushButton,
+                thisItem,
+                statusMethod=statusMethod
+            )
+
+    def doNodeOpenOneLevel(self):
+        self.ignoreItemExpanded = True
+        self.nodeListIsExpanded = True
+        self.doOpenOneLevel(self.nodesTreeWidget)
+        self.ignoreItemExpanded = False
+
+    def closeRecurse(self,parent, itemsTraversed, isInvisibleRoot=False):
+        """
+        Recursive function that closes items under a displayed item in the Nodes tab.
+        :param isInvisibleRoot: specifies whether to skip checking the initial tree widget item's
+                                expanded state.
+        """
+
+        if isInvisibleRoot or parent.isExpanded():
+            childCount = parent.childCount()
+            i = 0
+            itemsTraversed = itemsTraversed+1
+            while i != childCount:
+                child = parent.child(i)
+                if child.childCount != 0:
+                    itemsTraversed, doAbort = self.closeRecurse(child,itemsTraversed)
+                if itemsTraversed > self.itemsClosedLimit or doAbort:
+                    return itemsTraversed, True
+                i = i + 1
+            parent.setExpanded(False)
+        return itemsTraversed, False
+
+
+    def doCloseAllPushButtonCommon(self, button, currentTreeWidget, statusMethod=None, isInvisibleRoot=False):
+        if statusMethod is None:
+            statusMethod = outputStatusMessageMainWindow
+
+        button.setEnabled(False)
+        button.setEnabled(False)
+        if currentTreeWidget:
+            statusMethod("\'Close All\' action started...")
+            itemsTraversed, closeRecurseAbort = self.closeRecurse(currentTreeWidget, 0, isInvisibleRoot)
+            if closeRecurseAbort:
+                statusMethod("Item traversal limit exceeded for \'Close All\' action, try a smaller range")
+            else:
+                statusMethod("\'Close All\' action started...Finished.")
+        else:
+            statusMethod("No item selected \'Close All\' action")
+        button.setEnabled(True)
+        button.setEnabled(True)
+
+    def doCloseAll(self, targetWidget, statusMethod=None):
+        for i in range(0, targetWidget.topLevelItemCount()):
+            thisItem = targetWidget.topLevelItem(i)
+            self.doCloseAllPushButtonCommon(
+                self.nodesCloseAllPushButton,
+                thisItem,
+                statusMethod=statusMethod
+            )
+
+    def doNodeCloseAll(self):
+        self.doCloseAll(self.nodesTreeWidget)
+        self.nodeListIsExpanded = False
+
+    def getTreeWidgetSettings(self):
+        defaultFontString = MeshAppContext.getConfigOption('GUI:TreeWidgetFont', default=None)
+        if defaultFontString is not None:
+            defaultFont = self.font()
+            defaultFont.fromString(defaultFontString)
+        else:
+            defaultFont = None
+        defaultBgColor = MeshAppContext.getConfigOption('GUI:TreeWidgetBgFontColor', default=None)
+        if defaultBgColor is not None:
+            defaultBgBrush = QBrush(QColor(defaultBgColor))
+        else:
+            defaultBgBrush = None
+        defaultFgColor = MeshAppContext.getConfigOption('GUI:TreeWidgetFgFontColor', default=None)
+        if defaultFgColor is not None:
+            defaultFgBrush = QBrush(QColor(defaultFgColor))
+        else:
+            defaultFgBrush = None
+
+        return defaultFont,defaultBgBrush,defaultFgBrush
+
+    def addMoreLineItems(self, heading, description,font=None,fg=None,bg=None):
+        """
+        Utility function for adding more items to the item list displayed in the View Devices tab.
+        Items are enabled and selectable, but not draggable.
+        """
+        for d in description:
+            if len(d) == 1:
+                item = QTreeWidgetItem(heading, d)
+                setDisplayItemDefaults(item, font=font, bg=bg, fg=fg)
+                item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            else:
+                subheading = QTreeWidgetItem(heading, d.pop(0))
+                setDisplayItemDefaults(subheading, font=font, bg=bg, fg=fg)
+                subheading.setFlags(QtCore.Qt.ItemIsSelectable |QtCore.Qt.ItemIsEnabled )
+                self.addMoreLineItems(subheading, d, font=font,fg=fg,bg=bg)
+            doEventProcessing()
+
+    def updateNodeItemDescription(self,nodeItem,node):
+        """
+        Update this node item description
+        :return:
+        """
+
+        # delete the children of the nodeItem before adding more.
+        i = 0
+        childList = []
+        while i != nodeItem.childCount():
+            childList.append(nodeItem.child(i))
+            i += 1
+        # now delete children
+        for child in childList:
+            nodeItem.removeChild(child)
+        # now we have to update the current item node text with new items
+        defaultFont, defaultBgBrush, defaultFgBrush = self.getTreeWidgetSettings()
+        description = node.description()
+        setDisplayItemDefaults(nodeItem, font=defaultFont, bg=defaultBgBrush, fg=defaultFgBrush)
+        self.addMoreLineItems(nodeItem, description, font=defaultFont, fg=defaultFgBrush, bg=defaultBgBrush)
+        return
+
+    def updateNodeTreeWidgets(self,node):
+        """
+        This nodeId info has been changed, so update the node list for this  node.
+        Search for this nodeId in the tree widget
+        :param nodeId:
+        :return:
+        """
+       
+        #now do the same for the editor node tree widget.
+        targetWidget = self.nodesTreeWidget
+        for i in range(0, targetWidget.topLevelItemCount()):
+            # get toplevel item
+            thisItem = targetWidget.topLevelItem(i)
+            data = thisItem.data(0, 0)
+            words = data.split()
+            id = words[len(words) - 1]
+            if id == node.id:
+                self.updateNodeItemDescription(thisItem, node)
+                break
+
+        
+    def setMyWindowTitle(self):
+        if  MeshAppContext.isMeshConnected:
+            self.setWindowTitle(f"{self.baseTitle} - {MeshAppContext.localNodeLongName}")
+        else:
+            self.setWindowTitle(f"{self.baseTitle} - disconnected")
 
     def doOptionInit(self):
         self.logDirLineEdit.setText(MeshAppContext.getConfigOption('General:LogDirectory', default=''))
@@ -603,6 +928,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     def doMainTabWidgetCurrentChanged(self, index):
         if self.mainTabWidget.tabText(index) == "Messages":
             self.updateDmTabsComboBox()
+        elif self.mainTabWidget.tabText(index) == "Nodes":
+            self.updateNodesTab()
 
     def updateDmTabsComboBox(self):
         # only update if we are connected
@@ -903,6 +1230,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.connectDevicePushButton.setDisabled(False)
             self.sendMessagePushButton.setEnabled(False)
             self.comPortComboBox.setDisabled(False)
+
+        self.setMyWindowTitle()
         return
     
     def closeEvent(self, event):

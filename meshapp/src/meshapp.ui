@@ -29,7 +29,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0,0,0,0,6">
+         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="1,1,2,1,10">
           <item>
            <widget class="QPushButton" name="clearCurrentLogWindowPushButton">
             <property name="toolTip">
@@ -37,13 +37,6 @@
             </property>
             <property name="text">
              <string>Clear</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="Line" name="line">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
             </property>
            </widget>
           </item>
@@ -68,19 +61,6 @@
            <widget class="QCheckBox" name="isConnectedCheckBox">
             <property name="text">
              <string>isConnected</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="connectedDeviceLineEdit">
-            <property name="acceptDrops">
-             <bool>false</bool>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-            <property name="placeholderText">
-             <string>connectedDevice</string>
             </property>
            </widget>
           </item>
@@ -276,6 +256,91 @@
            </widget>
           </item>
          </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Nodes</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="1,1,2,2,5">
+          <item>
+           <widget class="QPushButton" name="nodesOpenOneLevelPushButton">
+            <property name="text">
+             <string>Open One Level</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="nodesCloseAllPushButton">
+            <property name="text">
+             <string>Close All</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <item>
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>Filter</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="nodesFilterLineEdit">
+              <property name="toolTip">
+               <string>Filter node long names by regular expression</string>
+              </property>
+              <property name="placeholderText">
+               <string>reg expression</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <item>
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Sort By</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="nodesSortByComboBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_7">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTreeWidget" name="nodesTreeWidget">
+          <attribute name="headerVisible">
+           <bool>false</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string notr="true">1</string>
+           </property>
+          </column>
+         </widget>
         </item>
        </layout>
       </widget>

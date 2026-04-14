@@ -13,9 +13,11 @@ import logging
 import serial
 import yaml
 import re
+import traceback
 from copy import deepcopy
 from deepdiff import DeepDiff
 from default_config import defaultConfigYml
+from operator import attrgetter
 
 
 
@@ -138,6 +140,31 @@ def listSerialPorts():
         return []
     return [describeSerialPort(port) for port in list_ports.comports()]
 
+def setDisplayItemDefaults(item,font=None,bg=None,fg=None):
+    """
+    Set values for a display item
+    :param item:
+    :param font:
+    :param bg:
+    :param fg:
+    :return:
+    """
+    if font is not None:
+        item.setFont(0, font)
+    if fg is not None:
+        item.setForeground(0, fg)
+    if bg is not None:
+        item.setBackground(0, bg)
+
+def outputStackTrace(tb):
+    """
+    This function outputs the stack trace.
+
+    """
+    outputLogMessage("ERROR, Unexpected system error, stack traceback follows", level=logging.ERROR)
+    lines = traceback.format_list(traceback.extract_tb(tb))
+    for line in lines:
+        outputLogMessage(line,level=logging.ERROR)
 
 def doEventProcessing(force=False):
     """
@@ -193,6 +220,18 @@ def getLocalUserColor():
         return "cyan"
     else:
         return "blue"
+    
+def getGetSelectedItemsFromWidget(targetWidget):
+    selectedItems = []
+    for i in range(0,targetWidget.topLevelItemCount()):
+        # get toplevel item
+        thisItem = targetWidget.topLevelItem(i)
+        if thisItem.isSelected():
+            selectedItems.append(thisItem)
+        #if thisItem.isExpanded() and thisItem.childCount() != 0:
+        #    getGetSelectedItemsFromWidgetBase(thisItem,selectedItems)
+
+    return selectedItems
 
 def getTemporaryFilename(base, ext='txt',useOsTempDir=False, dir=None):
 
@@ -295,15 +334,55 @@ class Node(object):
         self.batteryLevel = 0
         self.voltage = 0
         self.uptimeSeconds = 0
-        self.lastUpdate = time.time()
+        self.lastUpdate = 0
+        self.lastUpdateFmt = ""
+        self.traceRoutes = []
 
-   
+    def updateNodeTimeStamp(self):
+        self.lastUpdate = time.time()
+        self.lastUpdateFmt = f"{datetime.now(): %H:%M:%S %m-%d-%Y}"
+
+
+    def getDisplayName(self):
+        if self.longName:
+            return self.longName
+        else:
+            return str(self.id)
 
     def toDict(self):
         aDict = {}
         for attr, value in vars(self).items():
+            if attr == 'traceRoutes':
+                continue
             aDict[attr] = value
         return aDict
+    
+    def description(self):
+
+        desc = []
+        attrList = list(vars(self).keys())
+        attrList.sort()
+        for attr in attrList:
+            value = getattr(self, attr)
+            if attr == 'traceRoutes' and len(value) > 0:
+                for traceRoute in value:
+                    trList = [[f"Traceroute {traceRoute[0]} "]]
+                    pair = traceRoute[1]
+                    fwdHops = pair[0][0]
+                    nodeHops = pair[0][1]
+                    fwdList = [[fwdHops]]
+                    for nodeHop in nodeHops:
+                        fwdList.append([nodeHop])
+                    #fwdList.append(nodeHops)
+                    trList.append(fwdList)
+                    #backList = [[pair[1][0]]]
+                    #backList.append(pair[1][1])
+                    
+                    #trList.append(backList)
+                    desc.append(trList)
+            else:
+                desc.append([f"{attr} : {value}"])
+        return desc
 
 
 class ActionItem(object): 
@@ -485,6 +564,30 @@ class MeshAppContext(object):
         return posixpath.join(self.getConfigDirPath(), 'meshapp_nodedb.yml')
     
     @classmethod
+    def getNodeList(self, filter=None, sort=None):
+        nodeList =  []
+        pat = None
+        if filter:
+            try:
+                pat = re.compile(filter)
+            except:
+                pat = None
+        for node in self.nodeDb.values():
+            if pat:
+                if re.match(pat, node.longName):
+                    nodeList.append(node)
+            else:
+                nodeList.append(node)
+        if sort:
+            nodeList = sorted(nodeList, key=attrgetter(sort))
+        return nodeList
+    
+  
+    @classmethod
+    def getNodeCount(self):
+        return len(self.nodeDb)
+    
+    @classmethod
     def loadNodeDb(self):
         nodedbFilePath = self.getNodeDbFilePath()
         if not posixpath.isfile(nodedbFilePath):
@@ -511,7 +614,10 @@ class MeshAppContext(object):
             print("ERROR: Unexpected error writing yml file: %s, %s/%s" % (nodedbFilePath, sys.exc_info()[0], e))
             return
         
-       
+    @classmethod
+    def getMaxHopLimitForTraceRoute(self):
+        return 18
+        
     @classmethod
     def addLocalNodeToDb(self):
         """
@@ -529,6 +635,7 @@ class MeshAppContext(object):
             newNode.longName = user.get('longName','')
             newNode.shortName = user.get('shortName','')
             self.localNodeLongName = newNode.longName
+        self.updateNodeTimeStamp(id)
 
     @classmethod
     def addEmptyNode(self,id):
@@ -547,6 +654,8 @@ class MeshAppContext(object):
     @classmethod
     def getNodeById(self,id):
         id = convertNodeId(id)
+        if isBroadcastId(id):
+            return None
         retVal = self.nodeDb.get(id,None)
         return retVal
     
@@ -585,7 +694,12 @@ class MeshAppContext(object):
         # Call the main window to handle this
         self.mainWindow.handleMessageAck(requestId, errorReason, fromId)
         return
-       
+    
+    @classmethod
+    def updateNodeTimeStamp(self, id):
+        node = self.getNodeById(id)
+        if node:
+            node.updateNodeTimeStamp()
 
     @classmethod
     def updateNodeDbFromPacket(self, packet):
@@ -595,6 +709,8 @@ class MeshAppContext(object):
         toId = packet.get('to',None)
         if toId:
             self.addEmptyNode(toId)
+        self.updateNodeTimeStamp(fromId)
+        self.updateNodeTimeStamp(toId)
         decoded = packet.get('decoded', None)
         if decoded is None:
             return
@@ -615,11 +731,69 @@ class MeshAppContext(object):
                 id = user.get('id',None)
                 if id:
                     node = self.getNodeById(id)
-                    node.longName = user.get('longName', '')
-                    node.shortName = user.get('shortName', '')
-                    node.role = user.get('role', '')
-                    outputLogMessage(f"NODEINFO received:  { user.get('shortName', '')} / {user.get('longName', '')}")
-                    if self.mainWindow:
-                        self.mainWindow.updateDmTabsComboBox()
+                    if node:
+                        node.longName = user.get('longName', '')
+                        node.shortName = user.get('shortName', '')
+                        node.role = user.get('role', '')
+                        outputLogMessage(f"NODEINFO received:  { user.get('shortName', '')} / {user.get('longName', '')}")
+                        if self.mainWindow:
+                            self.mainWindow.updateDmTabsComboBox()
+                            self.mainWindow.updateNodesTab()
+
+        elif portnum == 'TRACEROUTE_APP' and self.mainWindow.activeTraceRoute:
+            # parse and save the traceroute
+            trDict = decoded.get('traceroute', None)
+            endNode = self.getNodeById(self.mainWindow.activeTraceRoute)
+            if trDict and endNode:
+                route = trDict.get('route', None)
+                snrTowards = trDict.get('snrTowards', None)
+                routeBack = trDict.get('routeBack', None)
+                snrBack = trDict.get('snrBack', None)
+                forwardPath = ""
+                backwardPath = ""
+                startNode = self.localNodeLongName
+                if snrTowards:
+                    if route is None:
+                        # special case, 0 hop
+                        hops = 0
+                        snr = snrTowards[0]/4
+                        forwardPath = [f"Forward ({hops} hops)", [f"{startNode}", f"{endNode.longName} ({snr:.2f}dB)"]]
+                    else:
+                        hops = len(route)
+                        forwardPath = [f"Forward ({hops} hops)"]
+                        nodeList = [f"{startNode}"]
+                        for i in range(0, len(route)):
+                            node = self.getNodeById(route[i])
+                            if node:
+                                snr = snrTowards[i]/4
+                                nodeList.append(f" {node.longName}  ({snr:.2f}dB)")
+                        # add in the last node
+                        snr = snrTowards[len(snrTowards)-1]/4
+                        nodeList.append(f"{endNode.longName}  ({snr:.2f}dB)")
+                        forwardPath.append(nodeList)
+                if snrBack:
+                    if routeBack is None:
+                        # special case, 0 hop
+                        hops = 0
+                        snr = snrTowards[0]/4
+                        backwardPath = [f"Backward ({hops} hops)", [f"{endNode.longName}", f"{startNode} ({snr:.2f}dB)"]]
+                    else:
+                        hops = len(routeBack)
+                        backwardPath = [f"Backward ({hops} hops)"]
+                        nodeList = [f"{endNode.longName}"]
+                        for i in range(0, len(routeBack)):
+                            node = self.getNodeById(routeBack[i])
+                            if node:
+                                snr = snrTowards[i]/4
+                                nodeList.append(f"{node.longName}  ({snr:.2f}dB)")
+                        # add in the last node
+                        snr = snrBack[len(snrBack)-1]/4
+                        nodeList.append(f"{startNode}  ({snr:.2f}dB)")
+                        backwardPath.append(nodeList)
+                # Add this traceroute
+                self.mainWindow.activeTraceRoute = None
+                endNode.traceRoutes.insert(0,[endNode.lastUpdateFmt,[forwardPath,backwardPath]])
+            return
+
 
 
