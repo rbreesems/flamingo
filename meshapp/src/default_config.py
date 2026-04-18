@@ -3,7 +3,7 @@
 defaultConfigYml = """
 General:
   AutoConnect: true
-  LogDirectory: D:/meshtastic/logs/meshapp_logs
+  LogDirectory: ""
   EnableDeviceLogEcho: false
   AutoTapback: false
   AutoTapbackKeyword: response
