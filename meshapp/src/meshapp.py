@@ -140,15 +140,21 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_5.addWidget(self.isConnectedCheckBox)
 
+        self.closeConnectionDevicePushButton = QPushButton(self.homeTab)
+        self.closeConnectionDevicePushButton.setObjectName(u"closeConnectionDevicePushButton")
+
+        self.horizontalLayout_5.addWidget(self.closeConnectionDevicePushButton)
+
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_5.addItem(self.horizontalSpacer)
 
         self.horizontalLayout_5.setStretch(0, 1)
-        self.horizontalLayout_5.setStretch(1, 1)
+        self.horizontalLayout_5.setStretch(1, 2)
         self.horizontalLayout_5.setStretch(2, 2)
         self.horizontalLayout_5.setStretch(3, 1)
-        self.horizontalLayout_5.setStretch(4, 10)
+        self.horizontalLayout_5.setStretch(4, 1)
+        self.horizontalLayout_5.setStretch(5, 10)
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_5)
 
@@ -404,6 +410,11 @@ class Ui_MainWindow(object):
         self.enableDeviceLogEchoCheckBox.setObjectName(u"enableDeviceLogEchoCheckBox")
 
         self.verticalLayout.addWidget(self.enableDeviceLogEchoCheckBox)
+
+        self.enableEnterToSendCheckBox = QCheckBox(self.optionsGeneralTab)
+        self.enableEnterToSendCheckBox.setObjectName(u"enableEnterToSendCheckBox")
+
+        self.verticalLayout.addWidget(self.enableEnterToSendCheckBox)
 
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
@@ -671,6 +682,10 @@ class Ui_MainWindow(object):
         self.comPortComboBox.setToolTip(QCoreApplication.translate("MainWindow", u"Detected COM Ports", None))
 #endif // QT_CONFIG(tooltip)
         self.isConnectedCheckBox.setText(QCoreApplication.translate("MainWindow", u"isConnected", None))
+#if QT_CONFIG(tooltip)
+        self.closeConnectionDevicePushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Close the connected interface.", None))
+#endif // QT_CONFIG(tooltip)
+        self.closeConnectionDevicePushButton.setText(QCoreApplication.translate("MainWindow", u"Close Interface", None))
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.sysLogTab), QCoreApplication.translate("MainWindow", u"SysLog", None))
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.deviceLogTab), QCoreApplication.translate("MainWindow", u"DeviceLog", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.homeTab), QCoreApplication.translate("MainWindow", u"Home", None))
@@ -728,6 +743,10 @@ class Ui_MainWindow(object):
         self.enableDeviceLogEchoCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Enable echo of device debug output to GUI - warning - adversely affects performance!", None))
 #endif // QT_CONFIG(tooltip)
         self.enableDeviceLogEchoCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable Device Log Echo", None))
+#if QT_CONFIG(tooltip)
+        self.enableEnterToSendCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"If checked, then ENTER will send message", None))
+#endif // QT_CONFIG(tooltip)
+        self.enableEnterToSendCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable ENTER to Send Message", None))
 #if QT_CONFIG(tooltip)
         self.autoTapbackCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Enable channel monitoring for auto response", None))
 #endif // QT_CONFIG(tooltip)

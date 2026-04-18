@@ -8,6 +8,7 @@ General:
   AutoTapback: false
   AutoTapbackKeyword: response
   AutoTapbackChannel: 0
+  UseEnterToSend: false
 GUI:
   UseDarkStyle: false
   EnableFontScaling: false

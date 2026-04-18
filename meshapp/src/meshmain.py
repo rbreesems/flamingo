@@ -242,13 +242,17 @@ def onReceive(packet, interface): # called when a packet arrives
 
 def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
+    if  MeshAppContext.mainWindow.serialInterface is None:
+        commPort = MeshAppContext.mainWindow.comPortComboBox.currentText()
+        outputLogMessage("ERROR: unable to connect to device on COMM port {commPort}. Try re-connecting or power cycling the attached device.", level=logging.ERROR, echoStatus=True)
+        return
     shortName = MeshAppContext.mainWindow.serialInterface.getShortName()
     longName = MeshAppContext.mainWindow.serialInterface.getLongName()
     MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.addChannels])
     outputLogMessage(f"Connected to meshtastic device: {shortName}", echoStatus=True)
     MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(True)
     MeshAppContext.addLocalNodeToDb()
-   
+
 def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
     outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
@@ -465,11 +469,15 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.nodesSortByComboBox.addItem(value)
         self.nodesSortByComboBox.setCurrentIndex(0)
 
+        self.closeConnectionDevicePushButton.setDisabled(True)  # only enabled when connected
+
         # Connect signals
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
         self.autoConnectSerialCheckBox.clicked.connect(self.doAutoConnectSerialCheckBox)
+        self.enableEnterToSendCheckBox.clicked.connect(lambda x : MeshAppContext.setConfigOption('General:UseEnterToSend', self.enableEnterToSendCheckBox.isChecked() ))
         self.enableDeviceLogEchoCheckBox.clicked.connect(self.doEnableDeviceLogEchoCheckBox)
         self.connectDevicePushButton.clicked.connect(self.doConnectDevicePushButton)
+        self.closeConnectionDevicePushButton.clicked.connect(self.doCloseConnectionDevicePushButton)
         self.isConnectedCheckBox.stateChanged.connect(self.doIsConnectedCheckBoxStateChange)
         self.useDarkStylelCheckBox.clicked.connect(self.doUseDarkStylelCheckBox)
         self.enableFontScalingCheckBox.clicked.connect(self.doEnableFontScalingCheckBox)
@@ -899,6 +907,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     def doOptionInit(self):
         self.logDirLineEdit.setText(MeshAppContext.getConfigOption('General:LogDirectory', default=''))
         self.autoConnectSerialCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoConnect', default=False))
+        self.enableEnterToSendCheckBox.setChecked(MeshAppContext.getConfigOption('General:UseEnterToSend', default=False))
         self.enableDeviceLogEchoCheckBox.setChecked(MeshAppContext.getConfigOption('General:EnableDeviceLogEcho', default=False))
         self.connectDevicePushButton.setDisabled(self.autoConnectSerialCheckBox.isChecked())
         MeshAppContext.deviceLogEchoEnabled = self.enableDeviceLogEchoCheckBox.isChecked()
@@ -1089,6 +1098,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     
     def doSendMessageCore(self, msg, clearText=True):
 
+        if len(msg) > 200:
+            msg = msg[0:199]
         wantAck = True
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
         if tabName in self.directMessagePages:
@@ -1128,6 +1139,15 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if count != 0:
             count -= 1
         self.charCountLineEdit.setText(f"{count}")
+        if count > 200:
+            outputLogMessage("ERROR: Send text byte count exceeded. The message will be clipped to 200 bytes.", level=logging.ERROR, echoStatus=True)
+        else:
+            self.statusbar.clearMessage()
+        if count != 0 and MeshAppContext.getConfigOption('General:UseEnterToSend', default=False):
+            text = self.sendMessageTextEdit.toPlainText()
+            if text[len(text)-1] == "\n":
+                self.doSendMessageCore(text[0:len(text)-1])
+
 
     def addDirectMessageTab(self, tabName):
         textEdit = QTextEdit()
@@ -1285,6 +1305,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
     def doAutoConnectSerialCheckBox(self):
         MeshAppContext.setConfigOption('General:AutoConnect', self.autoConnectSerialCheckBox.isChecked())
+        self.connectDevicePushButton.setDisabled(self.autoConnectSerialCheckBox.isChecked())
         
     def doEnableDeviceLogEchoCheckBox(self):
         MeshAppContext.setConfigOption('General:EnableDeviceLogEcho', self.enableDeviceLogEchoCheckBox.isChecked())
@@ -1305,10 +1326,18 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     def doConnectDevicePushButton(self):
         comPort = self.comPortComboBox.currentText()
         try:
-            interface = meshtastic.serial_interface.SerialInterface(devPath=comPort)
+            self.serialInterface = meshtastic.serial_interface.SerialInterface(devPath=comPort)
             MeshAppContext.isMeshConnected = True
         except Exception as e:
             outputLogMessage(f"ERROR: error in connecting serial device {sys.exc_info()[0]}/{e}", level=logging.ERROR, echoStatus=True)
+
+    def doCloseConnectionDevicePushButton(self):
+        if self.serialInterface:
+            try:
+                self.serialInterface.close()
+                MeshAppContext.isMeshConnected = False
+            except Exception as e:
+                outputLogMessage(f"ERROR: error while disconnecting interface {sys.exc_info()[0]}/{e}", level=logging.ERROR, echoStatus=True)
 
     def doIsConnectedCheckBoxStateChange(self, state):
         if state == Qt.CheckState.Checked.value:
@@ -1317,11 +1346,13 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.connectDevicePushButton.setDisabled(True)
             self.sendMessagePushButton.setEnabled(True)
             self.comPortComboBox.setDisabled(True)
+            self.closeConnectionDevicePushButton.setDisabled(False)
         else:
             MeshAppContext.isMeshConnected = False
             self.connectDevicePushButton.setDisabled(False)
             self.sendMessagePushButton.setEnabled(False)
             self.comPortComboBox.setDisabled(False)
+            self.closeConnectionDevicePushButton.setDisabled(True)
 
         self.setMyWindowTitle()
         return

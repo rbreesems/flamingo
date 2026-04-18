@@ -29,7 +29,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="1,1,2,1,10">
+         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="1,2,2,1,1,10">
           <item>
            <widget class="QPushButton" name="clearCurrentLogWindowPushButton">
             <property name="toolTip">
@@ -61,6 +61,16 @@
            <widget class="QCheckBox" name="isConnectedCheckBox">
             <property name="text">
              <string>isConnected</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="closeConnectionDevicePushButton">
+            <property name="toolTip">
+             <string>Close the connected interface.</string>
+            </property>
+            <property name="text">
+             <string>Close Interface</string>
             </property>
            </widget>
           </item>
@@ -431,6 +441,16 @@
               </property>
               <property name="text">
                <string>Enable Device Log Echo</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="enableEnterToSendCheckBox">
+              <property name="toolTip">
+               <string>If checked, then ENTER will send message</string>
+              </property>
+              <property name="text">
+               <string>Enable ENTER to Send Message</string>
               </property>
              </widget>
             </item>
