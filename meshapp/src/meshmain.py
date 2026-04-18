@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-
+BuildNumber = 1.0
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -66,6 +66,26 @@ def getStatusFontSize(textEdit):
     baseSize =  textEdit.font().pointSize()
     newSize = float(baseSize) * 0.8
     return newSize
+
+class MenuWithToolTips(QMenu):
+    def __init__(self, *args, **kwargs):
+        super(MenuWithToolTips, self).__init__(*args, **kwargs)
+        self.installEventFilter(self)
+
+    def eventFilter(self, target, evt):
+        if evt.type() == QEvent.ToolTip:
+            action = self.actionAt(evt.pos())
+            if action:
+                toolTip = action.toolTip()
+                if toolTip:
+                    QToolTip.showText(self.cursor().pos(),toolTip,self)
+            return True
+        return False
+
+    def addMenuWithToolTips(self,title):
+        newMenu = MenuWithToolTips(title)
+        self.addMenu(newMenu)
+        return newMenu
 
 
 class StreamToLogger(object):
@@ -198,8 +218,18 @@ def configureLogging(logfile=None):
     sl = StreamToLogger()
     sys.stderr = sl  # redirect stderr to our log file
 
-
-
+    MeshAppContext.messageLogger = logging.getLogger('nodeMessages')
+    MeshAppContext.messageLogger.setLevel(logging.DEBUG)
+    MeshAppContext.messageLogger.propagate = False
+    if logdir != '':
+        logfile = getTemporaryFilename('meshappNodeMessages_',dir=logdir)
+    else:
+        logfile = getTemporaryFilename('meshappNodeMessages_',useOsTempDir=True)
+    fh = MeshappLoggerFileHandler(logfile,mode='w', encoding='utf-8')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    MeshAppContext.messageLogger.addHandler(fh)
+    MeshAppContext.messageLogFile = logfile
     return logfile
 
 
@@ -235,9 +265,9 @@ def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)conn
 def doTraceRoute(node):
     try:
          MeshAppContext.mainWindow.serialInterface.sendTraceRoute(node.id, MeshAppContext.getMaxHopLimitForTraceRoute())
-         outputLogMessage("Trace Route wait is finished")
+         outputLogMessage(f"Trace Route wait for node {node.longName} is finished. ", echoStatus=True)
     except Exception as e:
-        outputLogMessage("ERROR: Traceroute error, {str(e)}", level=logging.ERROR, echoStatus=True)
+        outputLogMessage(f"ERROR: Traceroute error, {str(e)}", level=logging.ERROR, echoStatus=True)
     return
 
 class MessageData(object):
@@ -431,7 +461,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.widgetScalingComboBox.addItem(value)
         self.widgetScalingComboBox.setCurrentIndex(0)
 
-        for value in ['longName', 'lastUpdate', 'batteryLevel']:
+        for value in ['longName', 'lastUpdate', 'batteryLevel', 'hops']:
             self.nodesSortByComboBox.addItem(value)
         self.nodesSortByComboBox.setCurrentIndex(0)
 
@@ -516,6 +546,55 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
         self.tapbackMessageToolButton.setMenu(self.tapback_menu)
         self.tapbackMessageToolButton.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+
+        self.actionsMenuData = [
+                         {'text': 'Close',
+                          'method': self.doClose,
+                          'toolTip': 'Close',
+                          'statusTip': 'Close'
+                          },
+        ]
+
+        self.menus = {}
+        self.menubar.clear()
+        self.menubar.addMenu(self.createMenu('Actions',self.actionsMenuData))
+
+
+    def doClose(self):
+        self.close()
+        return
+    
+    def createMenu(self,name,menuData):
+        #aMenu = QMenu(name)
+        aMenu = MenuWithToolTips(name)
+        self.menus[name] = aMenu
+        for item in menuData:
+            if isinstance(item,str) and item =='bar':
+                aMenu.addSeparator()
+            elif isinstance(item,dict):
+                itemName = item['text']
+                subMenu = item.get('subMenu',None)
+                if subMenu:
+                    aMenu.addMenu(self.createMenu(itemName,subMenu))
+                else:
+                    action = aMenu.addAction(itemName)
+                    #isCheckable = item.get('isCheckable',False)
+                    #action.setCheckable(isCheckable)
+                    #if isCheckable:
+                    #    configOption = item.get('configOption',None)
+                    #    if isinstance(configOption,str):
+                    #        action.setChecked(getGlobalConfigData().getSimpleConfigOption(configOption,False))
+                    #        #save this action so set checked/unchecked later
+                    #        self.checkableActions[configOption] = action
+
+                    if item.get('toolTip', None):
+                        action.setToolTip(item.get('toolTip'))
+                    if item.get('statusTip', None):
+                        action.setStatusTip(item.get('statusTip'))
+                    if 'method' in item:
+                        action.triggered.connect(item['method'])
+
+        return aMenu
 
     # Nodes tab
 
@@ -861,7 +940,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         """
         # Print welcome
         if not MeshAppContext.welcomeShown:
-            outputLogMessage(f"Welcome to Meshapp - logfile is {MeshAppContext.logfile}")
+            outputLogMessage(f"Welcome to Meshapp, Build {BuildNumber}- logfile is {MeshAppContext.logfile}, Message-only log is {MeshAppContext.messageLogFile}")
             MeshAppContext.welcomeShown = True
 
         self.count += 1
@@ -1027,6 +1106,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             messageData = self.directMessagePages[tabName ].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
             messageData.toId = node.id
             outputLogMessage(f"Packet waiting for ack: {packet.id} to node {node.id}")
+            logNodeMessage(f"DM FROM: {MeshAppContext.localNodeLongName}, TO:{tabName} >> {msg}")
         else:
             # must be a channel message
             channel = self.nameToChannel[tabName]
@@ -1034,6 +1114,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             # now need to send this to our text edit
             messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
             outputLogMessage(f"Packet waiting for ack: {packet.id}")
+            logNodeMessage(f"Channel {tabName} FROM:{MeshAppContext.localNodeLongName} >> {msg}")
         if wantAck:
             self.waitingForAck[packet.id] = messageData
         if clearText:
@@ -1104,6 +1185,11 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if portnum != 'TEXT_MESSAGE_APP':
             return
         payload = decoded.get('payload', None)
+        hopStart = packet.get('hopStart', 0)
+        hopLimit = packet.get('hopLimit', 0)
+        node = MeshAppContext.getNodeById(fromId)
+        if node:
+            node.hops = hopStart-hopLimit
         if not isBroadcastId(toId):
             if convertNodeId(toId) == MeshAppContext.localNodeId and payload:
                 self.displayDirectMessage(payload, fromId, "in")
@@ -1120,6 +1206,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         tabName = self.getDirectMessageTabName(remoteId)
         # the tabName is the longName of the node
         messageText = payload.decode("utf-8")
+        logNodeMessage(f"DM FROM:{tabName}, TO: {MeshAppContext.localNodeLongName} >> {messageText}")
         self.directMessagePages[tabName].displayMessage(messageType, messageText, tabName , remoteId)
             
     def displayChannelMessage(self, payload, fromId, channel, messageType):
@@ -1132,14 +1219,19 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             if longName == "":
                 longName = 'unknown'
 
+
+
         messageText = payload.decode("utf-8")
         self.channelMessagePages[channel].displayMessage(messageType, messageText, longName, fromId)
+        channelName =  self.channelMessagePages[channel].name
+        logNodeMessage(f"Channel {channelName} FROM:{longName} >> {messageText}")
         if (MeshAppContext.getConfigOption('General:AutoTapback', default=False) and
            MeshAppContext.getConfigOption('General:AutoTapbackChannel', default=0) == channel ) :
             keyword = MeshAppContext.getConfigOption('General:AutoTapbackKeyword', default=False)
             words = messageText.split()
             if len(words) > 0 and words[0].lower() == keyword.lower():
                 self.doSendMessageCore(self.autoTapbackMessage, clearText=False)
+        
 
     def addChannels(self):
         """

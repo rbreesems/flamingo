@@ -324,6 +324,15 @@ def outputLogMessage(msg, verbosity=None, level=logging.INFO, logger=None, echoS
         else:
             outputStatusMessageMainWindow(msg, mainTab=False, level=level)
 
+def logNodeMessage(msg):
+    """
+    Used only to log node messages
+    """
+    logger = MeshAppContext.messageLogger
+    if logger is not None:
+        logger.log(logging.INFO,msg)
+
+
 class Node(object):
 
     def __init__(self, id=""):
@@ -336,6 +345,7 @@ class Node(object):
         self.uptimeSeconds = 0
         self.lastUpdate = 0
         self.lastUpdateFmt = ""
+        self.hops = 0
         self.traceRoutes = []
 
     def updateNodeTimeStamp(self):
@@ -373,12 +383,14 @@ class Node(object):
                     fwdList = [[fwdHops]]
                     for nodeHop in nodeHops:
                         fwdList.append([nodeHop])
-                    #fwdList.append(nodeHops)
                     trList.append(fwdList)
-                    #backList = [[pair[1][0]]]
-                    #backList.append(pair[1][1])
-                    
-                    #trList.append(backList)
+
+                    backHops = pair[1][0]
+                    nodeHops = pair[1][1]
+                    backList = [[backHops]]
+                    for nodeHop in nodeHops:
+                        backList.append([nodeHop])
+                    trList.append(backList)
                     desc.append(trList)
             else:
                 desc.append([f"{attr} : {value}"])
@@ -397,6 +409,7 @@ class MeshAppContext(object):
     mainWindow = None
     mainApp = None
     logfile = None
+    messageLogFile = None
     defaultLogger = None
     defaultVerbosity = 0
     systemDefaultColorName = None
@@ -410,6 +423,7 @@ class MeshAppContext(object):
     configData = None
     configDataOrg = None
     deviceLogEchoEnabled = False   # duplicate this from config for performance
+    messageLogger = None
     nodeDb: dict[int, dict] = {}
     # node colors for everthing except local node
     colorIndex = 0
@@ -740,7 +754,7 @@ class MeshAppContext(object):
                             self.mainWindow.updateDmTabsComboBox()
                             self.mainWindow.updateNodesTab()
 
-        elif portnum == 'TRACEROUTE_APP' and self.mainWindow.activeTraceRoute:
+        elif portnum == 'TRACEROUTE_APP' and self.mainWindow.activeTraceRoute and toId == self.localNodeId:
             # parse and save the traceroute
             trDict = decoded.get('traceroute', None)
             endNode = self.getNodeById(self.mainWindow.activeTraceRoute)
@@ -766,7 +780,7 @@ class MeshAppContext(object):
                             node = self.getNodeById(route[i])
                             if node:
                                 snr = snrTowards[i]/4
-                                nodeList.append(f" {node.longName}  ({snr:.2f}dB)")
+                                nodeList.append(f"{node.longName}  ({snr:.2f}dB)")
                         # add in the last node
                         snr = snrTowards[len(snrTowards)-1]/4
                         nodeList.append(f"{endNode.longName}  ({snr:.2f}dB)")
@@ -793,6 +807,8 @@ class MeshAppContext(object):
                 # Add this traceroute
                 self.mainWindow.activeTraceRoute = None
                 endNode.traceRoutes.insert(0,[endNode.lastUpdateFmt,[forwardPath,backwardPath]])
+                # update the nodes tab since trace route is updated
+                self.mainWindow.updateNodesTab()
             return
 
 
