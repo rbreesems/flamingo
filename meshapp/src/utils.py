@@ -733,12 +733,19 @@ class MeshAppContext(object):
             telemetry = decoded.get('telemetry', None)
             if telemetry:
                 deviceMetrics = telemetry.get('deviceMetrics', None)
+                node = self.getNodeById(fromId)
                 if deviceMetrics:
                     batteryLevel = deviceMetrics.get('batteryLevel', None)
-                    if isinstance(batteryLevel, int):
-                        node = self.getNodeById(fromId)
-                        if node:
-                            node.batteryLevel = batteryLevel
+                    if isinstance(batteryLevel, int) and node:
+                        node.batteryLevel = batteryLevel
+                    uptimeSeconds = deviceMetrics.get('uptimeSeconds', None)
+                    if (isinstance(uptimeSeconds, int)  or isinstance(uptimeSeconds, float)) and node:
+                        node.uptimeSeconds = uptimeSeconds
+                    voltage =  deviceMetrics.get('voltage', None)
+                    if (isinstance(voltage, int)  or isinstance(voltage, float)) and node:
+                        node.voltage = voltage
+                    # update the nodes tab since trace route is updated
+                    self.mainWindow.updateNodesTab()
         elif portnum == 'NODEINFO_APP':
             user = decoded.get('user', None)
             if user:

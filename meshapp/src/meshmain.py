@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.0
+BuildNumber = 1.1
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -271,8 +271,22 @@ def doTraceRoute(node):
          MeshAppContext.mainWindow.serialInterface.sendTraceRoute(node.id, MeshAppContext.getMaxHopLimitForTraceRoute())
          outputLogMessage(f"Trace Route wait for node {node.longName} is finished. ", echoStatus=True)
     except Exception as e:
-        outputLogMessage(f"ERROR: Traceroute error, {str(e)}", level=logging.ERROR, echoStatus=True)
+        outputLogMessage(f"ERROR: Traceroute error for node {node.longName}, {str(e)}", level=logging.ERROR, echoStatus=True)
     return
+
+def doRequestTelemetry(node):
+    try:
+         MeshAppContext.mainWindow.serialInterface.sendTelemetry(
+            destinationId=node.id,
+            wantResponse=True,
+            channelIndex=0,
+            telemetryType="device_metrics",
+             )
+         outputLogMessage(f"Telemetry request  wait for node {node.longName} is finished. ", echoStatus=True)
+    except Exception as e:
+        outputLogMessage(f"ERROR: Telemetry request error for node {node.longName}, {str(e)}", level=logging.ERROR, echoStatus=True)
+    return
+
 
 class MessageData(object):
     def __init__(self, messageText, id):
@@ -635,7 +649,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
         
         menu = QMenu()
-        traceRouteAction = menu.addAction("Trace Route")
+        if not self.activeTraceRoute:
+            traceRouteAction = menu.addAction("Trace Route")
+        else:
+            outputStatusMessageMainWindow(f"Traceroute not available, still waiting on last traceroute.")
+        
+        telemetryAction = menu.addAction("Request telemetry")
         selectedAction = menu.exec_(event.globalPos())
 
         if selectedAction is None:
@@ -647,6 +666,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             aThread.start()
             self.activeTraceRoute = node.id
             return
+        elif selectedAction == telemetryAction:
+            outputStatusMessageMainWindow(f"Requesting telemetry from {nodeName}")
+            aThread = threading.Thread(target=doRequestTelemetry, args=[node])
+            aThread.start()
         
         return
     
