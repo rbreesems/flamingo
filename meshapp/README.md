@@ -40,7 +40,7 @@ Then visit the the `Settings` tab, `GUI` subtab and enable Dark Style if desired
 
 ### Settings location
 
-All settings are saved in the user's home directory to a directory named `.flamingo_meshapp` in a file named `meshapp_config.yml` so that settings persist between app runs.  This directory will also have a file named `meshapp_nodedb.yml` that contains information about known node, delete this file when the app is inactive if you want to start with a fresh node database. 
+All settings are saved in the user's home directory to a directory named `.flamingo_meshapp` in a file named `meshapp_config.yml` so that settings persist between app runs.  This directory will also have a file named `meshapp_nodedb.yml` that contains information about known nodes, delete this file when the app is inactive if you want to start with a fresh node database. 
 
 ### Device Connection
 
@@ -54,21 +54,21 @@ Use the `Close Interface` pushbutton on the `Home` tab to disconnect from the cu
 
 Three logs are generated:
 
-- meshappLog_`timestamp` - contains everything that appears in the `Home|SysLog` tab
-- `comport`_debug_`timestamp` - contains all debug messages from the attached device serial port.  There is a setting in `Settings|General` that allows this to be echoed to the `Home|SysLog` tab but it is recommended to keep this disabled the large amount of text affects app performance
-- meshappNodeMessages_`timestamp` - contains only text message logging (both channel messages and direct messages)
+- meshappLog_`timestamp` - contains everything that appears in the `Home|SysLog` tab.
+- `comport`\_debug_`timestamp` - contains all debug messages from the attached device serial port.  There is a setting in `Settings|General` that allows this to be echoed to the `Home|SysLog` tab but it is recommended to keep this disabled as the large amount of text affects app performance.
+- meshappNodeMessages_`timestamp` - contains only text message logging (both channel messages and direct messages).
 
 ### Messages
 
-The `Messages` tab is used for sending and display of node messages. A sub tab is used for each configured channel, and node tabs are created dynamically for direct messages when needed.  The `Input` text field at the bottom of the page is used for sending a message to the selected tab.  To send a Direct Message (DM) to a node that does not yet have a tab, use the `Add DM` button in the bottom right to create a tab for the selected node from the combo box to the right.
+The `Messages` tab is used for sending and display of node messages. A sub-tab is used for each configured channel, and node sub-tabs are created dynamically for direct messages when needed.  The `Input` text field at the bottom of the page is used for sending a message to the selected tab.  To send a Direct Message (DM) to a node that does not yet have a tab, use the `Add DM` button in the bottom right to create a tab for the selected node from the combo box to the right.
 
 ### Nodes
 
-The `Nodes` tab display information about currently known nodes. A right-click menu on a selected node allows a trace route request to be sent to that node; the returned trace route is displayed in node information.
+The `Nodes` tab displays information about currently known nodes. A right-click menu on a selected node allows a trace route request to be sent to that node; the returned trace route is displayed in the node information.
 
 ### Auto Reply
 
-The `Settings|General` tab has an `Enable Auto Response` check box that provides an auto response (a thumbs up emoji) if the configured keyword is detected as the first word in the message on the selected channel (cannot be channel 0). This is helpful for a remote rescuer to determine if they have a comms-link back to Incident Command.
+The `Settings|General` tab has an `Enable Auto Response` check box that provides an auto response (a thumbs up emoji) if the configured keyword is detected as the first word in the message on the selected channel (cannot be channel 0). This is helpful for a remote rescuer to determine if they have a comms link to Incident Command.
 
 
 
