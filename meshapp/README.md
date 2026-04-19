@@ -62,6 +62,8 @@ Three logs are generated:
 
 The `Messages` tab is used for sending and display of node messages. A sub-tab is used for each configured channel, and node sub-tabs are created dynamically for direct messages when needed.  The `Input` text field at the bottom of the page is used for sending a message to the selected tab.  To send a Direct Message (DM) to a node that does not yet have a tab, use the `Add DM` button in the bottom right to create a tab for the selected node from the combo box to the right.
 
+The `Enable ENTER to Send Messages` checkbox  in `Settings|General` enables message send after the `Enter` key is pressed instead of having to press the `Send` button. 
+
 ### Nodes
 
 The `Nodes` tab displays information about currently known nodes. A right-click menu on a selected node allows a trace route request to be sent to that node; the returned trace route is displayed in the node information.
