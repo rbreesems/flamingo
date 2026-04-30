@@ -275,7 +275,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_8">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="1,1,2,2,5">
+         <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="1,2,2,2,1,5">
           <item>
            <widget class="QPushButton" name="nodesOpenOneLevelPushButton">
             <property name="text">
@@ -324,6 +324,16 @@
              <widget class="QComboBox" name="nodesSortByComboBox"/>
             </item>
            </layout>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="hideOldNodesCheckBox">
+            <property name="toolTip">
+             <string>Hide nodes that have not been contacted in the last 24 hours</string>
+            </property>
+            <property name="text">
+             <string>Hide old nodes</string>
+            </property>
+           </widget>
           </item>
           <item>
            <spacer name="horizontalSpacer_7">

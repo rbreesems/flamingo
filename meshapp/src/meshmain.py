@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.2
+BuildNumber = 1.3
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -235,36 +235,18 @@ def configureLogging(logfile=None):
 
 def onReceive(packet, interface): # called when a packet arrives
     outputLogMessage(f"Received Mesh packet: {packet}")
-    MeshAppContext.updateNodeDbFromPacket(packet)
-    MeshAppContext.handleAckPacket(packet)
-    MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.handleMessage, packet])
-
+    # need to do all of this work in the same thread as the main window
+    MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.handleOnReceive, packet])
 
 def onConnectionEstablished(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
-    # defaults to broadcast, specify a destination ID if you wish
-    if  MeshAppContext.mainWindow.serialInterface is None:
-        commPort = MeshAppContext.mainWindow.comPortComboBox.currentText()
-        outputLogMessage("ERROR: unable to connect to device on COMM port {commPort}. Try re-connecting or power cycling the attached device.", level=logging.ERROR, echoStatus=True)
-        return
-    shortName = MeshAppContext.mainWindow.serialInterface.getShortName()
-    longName = MeshAppContext.mainWindow.serialInterface.getLongName()
-    MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.addChannels])
-    outputLogMessage(f"Connected to meshtastic device: {shortName}", echoStatus=True)
-    MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(True)
-    MeshAppContext.addLocalNodeToDb()
+    # need to do all of this work in the same thread as the main window
+    MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.handleOnConnectionEstablished])
+    
 
 def onConnectionLost(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
-    # defaults to broadcast, specify a destination ID if you wish
-    outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
-    MeshAppContext.isMeshConnected = False
-    MeshAppContext.mainWindow.isConnectedCheckBox.setChecked(False)
-    if MeshAppContext.mainWindow.debugStream is not None:
-        try:
-            MeshAppContext.mainWindow.serialInterface = None
-            MeshAppContext.mainWindow.debugStream.close()
-            MeshAppContext.mainWindow.debugStream = None
-        except:
-            pass
+    # need to do all of this work in the same thread as the main window
+    MeshAppContext.mainWindow.addAction([MeshAppContext.mainWindow.handleOnConnectionLost])
+    
 
 def doTraceRoute(node):
     try:
@@ -479,7 +461,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.widgetScalingComboBox.addItem(value)
         self.widgetScalingComboBox.setCurrentIndex(0)
 
-        for value in ['longName', 'lastUpdate', 'batteryLevel', 'hops']:
+        for value in ['shortName','longName', 'lastUpdate', 'batteryLevel', 'hops']:
             self.nodesSortByComboBox.addItem(value)
         self.nodesSortByComboBox.setCurrentIndex(0)
 
@@ -508,7 +490,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             lambda x : MeshAppContext.setConfigOption('General:AutoTapbackChannel', x)
         )
         self.nodesFilterLineEdit.textChanged.connect(self.updateNodeListOnSortFilterChange)
-
+        self.hideOldNodesCheckBox.clicked.connect(self.updateNodeListOnSortFilterChange)
         
         
         # Init fields from saved options
@@ -580,6 +562,38 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.menus = {}
         self.menubar.clear()
         self.menubar.addMenu(self.createMenu('Actions',self.actionsMenuData))
+
+    def handleOnReceive(self, packet): # called when a packet arrives
+        outputLogMessage(f"Received Mesh packet: {packet}")
+        MeshAppContext.updateNodeDbFromPacket(packet)
+        MeshAppContext.handleAckPacket(packet)
+        self.handleMessage(packet)
+
+    def handleOnConnectionEstablished(self): # called when we (re)connect to the radio
+        # defaults to broadcast, specify a destination ID if you wish
+        if  self.serialInterface is None:
+            commPort = MeshAppContext.mainWindow.comPortComboBox.currentText()
+            outputLogMessage("ERROR: unable to connect to device on COMM port {commPort}. Try re-connecting or power cycling the attached device.", level=logging.ERROR, echoStatus=True)
+            return
+        shortName = self.serialInterface.getShortName()
+        longName = self.serialInterface.getLongName()
+        self.addChannels()
+        outputLogMessage(f"Connected to meshtastic device: {shortName}/{longName}", echoStatus=True)
+        MeshAppContext.addLocalNodeToDb()
+        self.isConnectedCheckBox.setChecked(True)
+
+    def handleOnConnectionLost(self): # called when we (re)connect to the radio
+        # defaults to broadcast, specify a destination ID if you wish
+        outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
+        MeshAppContext.isMeshConnected = False
+        self.isConnectedCheckBox.setChecked(False)
+        if self.debugStream is not None:
+            try:
+                self.serialInterface = None
+                self.debugStream.close()
+                self.debugStream = None
+            except:
+                pass
 
 
     def doClose(self):
@@ -677,7 +691,9 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     def updateNodeListOnSortFilterChange(self):
         try:
             text = self.nodesFilterLineEdit.text()
-            nodeList = MeshAppContext.getNodeList(filter=text,sort=self.nodesSortByComboBox.currentText())
+            
+            nodeList = MeshAppContext.getNodeList(filter=text,sort=self.nodesSortByComboBox.currentText(),
+                                                  filterOldNodes=self.hideOldNodesCheckBox.isChecked())
             self.updateNodesByNameForWidget(self.nodesTreeWidget, nodeList, 'nodes')
             if self.nodeListIsExpanded:
                 self.doNodeOpenOneLevel()
@@ -704,7 +720,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             if nodeName == str(node.id):
                 header = nodeName
             else:
-                header = nodeName + "  " + str(node.id)
+                header = str(node.shortName) + "  " + nodeName
             description = node.description()
             if nodesTopElement is not None:
                 nodeLine = QTreeWidgetItem(nodesTopElement, [header])
@@ -720,7 +736,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
         try:
             text = self.nodesFilterLineEdit.text()
-            nodeList = MeshAppContext.getNodeList(filter=text,sort=self.nodesSortByComboBox.currentText())
+            nodeList = MeshAppContext.getNodeList(filter=text,sort=self.nodesSortByComboBox.currentText(),
+                                                  filterOldNodes=self.hideOldNodesCheckBox.isChecked())
             self.updateNodesByNameForWidget(self.nodesTreeWidget, nodeList, 'nodes', flags=flags)
             if self.nodeListIsExpanded:
                 self.doNodeOpenOneLevel()

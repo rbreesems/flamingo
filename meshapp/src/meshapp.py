@@ -330,15 +330,21 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_12.addLayout(self.horizontalLayout_11)
 
+        self.hideOldNodesCheckBox = QCheckBox(self.tab)
+        self.hideOldNodesCheckBox.setObjectName(u"hideOldNodesCheckBox")
+
+        self.horizontalLayout_12.addWidget(self.hideOldNodesCheckBox)
+
         self.horizontalSpacer_7 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_12.addItem(self.horizontalSpacer_7)
 
         self.horizontalLayout_12.setStretch(0, 1)
-        self.horizontalLayout_12.setStretch(1, 1)
+        self.horizontalLayout_12.setStretch(1, 2)
         self.horizontalLayout_12.setStretch(2, 2)
         self.horizontalLayout_12.setStretch(3, 2)
-        self.horizontalLayout_12.setStretch(4, 5)
+        self.horizontalLayout_12.setStretch(4, 1)
+        self.horizontalLayout_12.setStretch(5, 5)
 
         self.verticalLayout_8.addLayout(self.horizontalLayout_12)
 
@@ -727,6 +733,10 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.nodesFilterLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"reg expression", None))
         self.label_5.setText(QCoreApplication.translate("MainWindow", u"Sort By", None))
+#if QT_CONFIG(tooltip)
+        self.hideOldNodesCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Hide nodes that have not been contacted in the last 24 hours", None))
+#endif // QT_CONFIG(tooltip)
+        self.hideOldNodesCheckBox.setText(QCoreApplication.translate("MainWindow", u"Hide old nodes", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.tab), QCoreApplication.translate("MainWindow", u"Nodes", None))
         self.configLoadPushButton.setText(QCoreApplication.translate("MainWindow", u"Load Config", None))
         self.configSavePushButton.setText(QCoreApplication.translate("MainWindow", u"Save Config", None))

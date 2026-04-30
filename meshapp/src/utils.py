@@ -578,7 +578,7 @@ class MeshAppContext(object):
         return posixpath.join(self.getConfigDirPath(), 'meshapp_nodedb.yml')
     
     @classmethod
-    def getNodeList(self, filter=None, sort=None):
+    def getNodeList(self, filter=None, sort=None, filterOldNodes=False):
         nodeList =  []
         pat = None
         if filter:
@@ -586,7 +586,10 @@ class MeshAppContext(object):
                 pat = re.compile(filter)
             except:
                 pat = None
+        cutoffTime = int(time.time()) - 24*60*60
         for node in self.nodeDb.values():
+            if filterOldNodes and (node.lastUpdate < cutoffTime):
+                continue
             if pat:
                 if re.match(pat, node.longName):
                     nodeList.append(node)
