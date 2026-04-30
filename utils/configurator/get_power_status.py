@@ -114,6 +114,8 @@ def main():
                 if len(words) < 2:
                     continue
                 nodeId = words[0].strip()
+                if len(nodeId) != 8:
+                    nodeId = '0'  + nodeId
                 shortName = words[1].strip()
                 nodeDict = {}
                 nodeDb[shortName] = nodeDict

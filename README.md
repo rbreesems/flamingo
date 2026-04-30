@@ -92,12 +92,13 @@ SNR (Signal to Noise ratio) is a magic number sent by the Gods and you can figur
 
 - Admin commands are supported for direct channel messages to a node. Admin commands are case insensitive (capitalization shown for emphasis only).  Admin commands are ignored if received on the general channel.
 These admin commands are compatible with voice recognition in the messaging app. The first word of an admin
-command was chosen to not be part of a normal status message.
+command was chosen to not be part of a normal status message. In the 2.7.16 firmware builds, the `ADRT on <shortname>` command was added that allows range test enabled from a broadcast channel to the targeted node with `<shortname>`.  This was added because to make node placement easier, this sidesteps the problems of DMs regarding mis-matched public keys and the necessity for the target node to be in the contacts lists.
 
   - `ADRT on`  -- turn on range test (default delay is 30 seconds)
-  - `ADRT on hop`  -- turn on range test, and enable packet hopping
+  - `ADRT on hop`  -- turn on range test, and enable packet hopping (REMOVED IN 2.7.16 firmware builds)
   - `ADRT off`  -- turn off range test.
   - `ADRT delay <15|30|60>`  -- set delay for between packets. Only 15, 30, or 60 is recognized.
+  - `ADRT on <shortname>` -- sent in broadcast channel, enables range test (2.7.16 firmware and up)
 
 - Logging messages to the serial port have been modified for easier parsing. Logging of all communication at Incident Command (IC) during a rescue is of critical importance. Our assumption is that the relay chain extends all the way to IC, with a laptop hooked to the surface node so that serial logging can be done.  The messages output to the serial port during operation were slightly modified so that they could be easily parsed afterwards, and incoming/outgoing messages with timestamps easily summarized. We use Microsoft Code + Serial Monitor plugin for serial monitoring. We used this methodology during testing and it worked well. There is a fix for logging of long messages in `HCRU 07/25.2` - a problem was discovered during the mock scenario held on August 3/2025 that messages longer than about 50 characters got truncated in the log. Fortunately, most of the messages during the mock were short, but it was still annoying to have lost some message content.
 
@@ -111,8 +112,8 @@ command was chosen to not be part of a normal status message.
 
 - The `hopmod_2.7.15`, `hopmod_2.7.16` branches have additional changes over `hopmod_2.7.9`. These changes added retries for channel messages (configured for two retransmits on failure, stock firmware has none), and retries direct messages even if there is no known neighbor (stock firmware only retries if there is a known neighbor). See the section that discusses retry behavior for the rationale for these changes. The SNR threshold for three beeps on rangetest packets was changed from 1.0 to 3.0. There is also a critical update to the RS485 serial link code that adds a TX queue and improved RX handling, see the section on RS485 collision testing. If you use the RS485 link, then you should use `hopmod_2.7.15` or higher.
 
-- The `hopmod_2.7.16` branch was updated in March 2026 with a fix for channel message retry cancellation. Previous to this fix, only the originator node canceled scheduled channel rebroadcasts if it heard a neighbor echo the packet. This bug caused unnecessary LORA TX.  With the fix, now all nodes in the chain will cancel scheduled channel broadcasts if they hear a neighbor echo a previously sent packet.  The debug logging output was also extended to encode emojis as
-ansii hex in the output so that these can be converted back to emojis by the `log_parse.py` utility. Previously, emojis appeared as `##` string in the debug output.
+- The `hopmod_2.7.16` branch was updated in April 2026 with a fix for channel message retry cancellation. Previous to this fix, only the originator node canceled scheduled channel rebroadcasts if it heard a neighbor echo the packet. This bug caused unnecessary LORA TX.  With the fix, now all nodes in the chain will cancel scheduled channel broadcasts if they hear a neighbor echo a previously sent packet.  The debug logging output was also extended to encode emojis as
+ansii hex in the output so that these can be converted back to emojis by the `log_parse.py` utility. Previously, emojis appeared as `##` string in the debug output.  This branch also supports the `ADRT on <shortname>` command sent in a broadcast channel to enable range test on the node with shortname of `<shortname>`.
 
 The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 

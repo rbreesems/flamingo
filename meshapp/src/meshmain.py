@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.1
+BuildNumber = 1.2
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -1101,7 +1101,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             statusColor = "red"
             messageData.ignoreAck = True
         else:
-            statusText = "  {errorReason} "
+            statusText = f"  {errorReason} "
             statusColor = "red"
             messageData.ignoreAck = True
         if statusText is None:
@@ -1421,7 +1421,7 @@ def meshappStart():
 
     # disable automatic garbage collection so we can handle it ourselves
     # QT does not do well with automatic GC
-    #gc.disable()
+    gc.disable()
     if isWindowsOs():
         if getattr(sys, 'frozen', False):
             hideConsole()
