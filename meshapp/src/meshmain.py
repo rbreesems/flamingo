@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.3
+BuildNumber = 1.4
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -643,7 +643,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             return
         itemText = itemList[0].text(0)
         words = itemText.split()
-        if len(words) != 2:
+        if len(words) != 3:
             return
         
         nodeName = words[0]
@@ -720,7 +720,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             if nodeName == str(node.id):
                 header = nodeName
             else:
-                header = str(node.shortName) + "  " + nodeName
+                header = str(node.shortName) + " " + str(node.id) + " " + nodeName
             description = node.description()
             if nodesTopElement is not None:
                 nodeLine = QTreeWidgetItem(nodesTopElement, [header])
