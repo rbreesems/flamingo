@@ -115,6 +115,9 @@ command was chosen to not be part of a normal status message. In the 2.7.16 firm
 - The `hopmod_2.7.16` branch was updated in April 2026 with a fix for channel message retry cancellation. Previous to this fix, only the originator node canceled scheduled channel rebroadcasts if it heard a neighbor echo the packet. This bug caused unnecessary LORA TX.  With the fix, now all nodes in the chain will cancel scheduled channel broadcasts if they hear a neighbor echo a previously sent packet.  The debug logging output was also extended to encode emojis as
 ansii hex in the output so that these can be converted back to emojis by the `log_parse.py` utility. Previously, emojis appeared as `##` string in the debug output.  This branch also supports the `ADRT on <shortname>` command sent in a broadcast channel to enable range test on the node with shortname of `<shortname>`.
 
+- The `hopmod_2.7.16` branch was updated in July 2026 to add a compilation target named `env:rak4631_slinkbuzzer` that
+uses a high-true active buzzer and blinky LED on the RS485 module connector (Blinky LED is on I2C_SCL, Buzzer on I2C_SDA, the ISC capability on these pins is disabled and they are just GPIO). The Blinky LED module and Buzzer Modules disable I2C1 capability if these pins are used for IO.
+
 The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
 1. `env:rak4631` - just contains hop limit/admin modifications
@@ -133,6 +136,8 @@ The `firmware/variants/rak4631/platformio.ini` file in the `hopmod_2.7.9` and `h
 4. `env:rak4631_buzzer` - `env:rak4631_flamingo` + enables buzzer modifications - assumes active buzzer.
 5. `env:rak4631_cavegen2` - `env:rak4631_flamingo` + enables buzzer modifications + blinky heartbeat led, intended for our 2nd gen cave node
 
+An additional target is in the  `hopmod_2.7.16` branch (2.7 firmware) :
+1. `env:rak4631_slinkbuzzer` - `env:rak4631_flamingo` + enables serial link modifications with buzzer and blinky LED on the RS485 module connector (Blinkly LED is on I2C_SCL, Buzzer on I2C_SDA, the ISC capability on these pins is disabled and they are just GPIO )
 
 For targets that support the buzzer and heartbeat LED the pin usage can be changed via compile time defines.
 
