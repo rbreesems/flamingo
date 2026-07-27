@@ -16,7 +16,7 @@ import meshtastic.serial_interface
 from pubsub import pub
 
 from qextrawidgets.gui.icons import QThemeResponsiveIcon
-from qextrawidgets.core.utils.emoji_fonts import QEmojiFonts
+from qextrawidgets.core.utils.emojis.emoji_fonts import QEmojiFonts
 from qextrawidgets.gui.items.icon_item import QIconItem
 from qextrawidgets.widgets.menus.emoji_picker_menu import QEmojiPickerMenu
 from qextrawidgets.gui.items import QIconCategoryItem
@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.4
+BuildNumber = 1.5
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -131,6 +131,8 @@ class MeshappStream(io.IOBase):
         # write to both file and the text edit
         orgLen = len(b)
         b = filterColorCode(b)
+        if self.filestream.closed:
+            return orgLen
         self.filestream.write(b)
         if MeshAppContext.deviceLogEchoEnabled:
             b = b.rstrip()
@@ -656,17 +658,15 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             outputStatusMessageMainWindow(f"No menu action items for connected node: {nodeName}")
             return
         
-        if self.activeTraceRoute:
-            # no menu items a traceroute is active
-            outputStatusMessageMainWindow(f"Still waiting on last traceroute")
-            return
 
-        
         menu = QMenu()
+        
         if not self.activeTraceRoute:
             traceRouteAction = menu.addAction("Trace Route")
         else:
-            outputStatusMessageMainWindow(f"Traceroute not available, still waiting on last traceroute.")
+            traceRouteAction = None
+            outputStatusMessageMainWindow(f"Traceroute not available, still waiting on last traceroute. Cancel to start new one.")
+            cancelTraceRoute = menu.addAction("Cancel Active Trace Route (will autoclose interface)")
         
         telemetryAction = menu.addAction("Request telemetry")
         selectedAction = menu.exec_(event.globalPos())
@@ -684,7 +684,11 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             outputStatusMessageMainWindow(f"Requesting telemetry from {nodeName}")
             aThread = threading.Thread(target=doRequestTelemetry, args=[node])
             aThread.start()
-        
+        elif selectedAction == cancelTraceRoute:
+            self.activeTraceRoute = None
+            self.doCloseConnectionDevicePushButton()
+            outputStatusMessageMainWindow(f"Trace Route canceled, connection closed to reset (auto-connection will reconnect)")
+            
         return
     
 
@@ -1374,7 +1378,11 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     def doCloseConnectionDevicePushButton(self):
         if self.serialInterface:
             try:
+                if self.debugStream:
+                    self.debugStream.close()
+                    self.debugStream = None
                 self.serialInterface.close()
+                self.serialInterface = None
                 MeshAppContext.isMeshConnected = False
             except Exception as e:
                 outputLogMessage(f"ERROR: error while disconnecting interface {sys.exc_info()[0]}/{e}", level=logging.ERROR, echoStatus=True)

@@ -1,10 +1,7 @@
 PyYAML
 types-PyYAML
-meshtastic
-PySide6
+meshtastic>=2.7.11
+PySide6>=6.11.1
 DeepDiff
-emoji
-qextrawidgets
-
-
-
+emoji>=2.15.0
+qextrawidgets>=0.4.1

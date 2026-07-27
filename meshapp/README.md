@@ -12,18 +12,12 @@ The desktop app has the following advantages over using just the phone app:
 ## Installation
 
 This assumes a Windows PC; the app should also be compatible with a Linux Desktop that has a Gnome desktop.
+This requires Python 3.14 or higher.
 
-- Download this repo and install a Python environment compatible with the `meshtastic` python package (Python 3.11 has been tested with this).
+- Download this repo and install a Python environment compatible with the `meshtastic` python package (Python 3.14 has been tested with this).
 - Open a command window with Python on the path, change to the `meshapp\src` directory, and execute `pip install -r requirements.txt`
-- Test the app by executing `python meshmain.py` in the `meshapp\src` directory - if the app window pops up, then success!  If an error appears that references the `qtextrawidgets` library, then see below on how to install a patch for this library.
+- Test the app by executing `python meshmain.py` in the `meshapp\src` directory - if the app window pops up, then success! 
 
-### Installing the qtextrawidgets patch
-
-If the app fails to launch, try installing the qtextrawidgets patch.  Copy the file `meshapp\patches\qextrawidgets.zip` to a temporary location and unzip it.
-
-Locate the Python `site-packages` directory (i.e., something like `C:\Python311\Lib\site-packages`) and copy the unzipped `qextrawidgets` directory over the top of the existing `site-packages\qextrawidgets`  directory.  
-
-Relaunch the app and the main window should appear.
 
 ## Usage
 
@@ -68,10 +62,20 @@ The `Enable ENTER to Send Messages` checkbox  in `Settings|General` enables mess
 
 The `Nodes` tab displays information about currently known nodes. A right-click menu on a selected node allows a trace route request to be sent to that node; the returned trace route is displayed in the node information.
 
+The right-click menu includes a `Trace Route` option. Once a `Trace Route` is initiated, it will complete and notify
+via message in the status bar. You cannot initiate another trace route until the current one completes, or you
+use the `Cancel Trace Route` to cancel the current trace route.   Canceling a trace route will close the interface to reset the internal Meshtastic API - the connection will auto-reconnect as long as the AutoConnect option is enabled.  If Autoconnect is not enabled, then you will need to manually reconnect after the Trace Route is canceled.
+
+The right-click menu includes a request telemetry which is a handy way for checking the battery status of a remote node.
+
 ### Auto Reply
 
 The `Settings|General` tab has an `Enable Auto Response` check box that provides an auto response (a thumbs up emoji) if the configured keyword is detected as the first word in the message on the selected channel (cannot be channel 0). This is helpful for a remote rescuer to determine if they have a comms link to Incident Command.
 
 
+## Version Notes:
+
+- V1.0-1.4 -- initial release, compatible with Python 3.11, needed a patch for the Emojii package
+- V1.5 - requires Python 3.14, no patching required.  Added `Cancel Trace Route` to right-click node menu.
 
 
