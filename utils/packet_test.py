@@ -59,7 +59,7 @@ def main():
 
     args = parser.parse_args()
     delay = args.delay
-    delay = random.randint(delay-delay/2,delay+delay/2)
+    delay = random.randint(int(delay-delay/2),int(delay+delay/2))
     count = args.count
 
     success_count = 0

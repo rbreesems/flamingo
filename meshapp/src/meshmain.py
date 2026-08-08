@@ -134,6 +134,7 @@ class MeshappStream(io.IOBase):
         if self.filestream.closed:
             return orgLen
         self.filestream.write(b)
+        self.filestream.flush()
         if MeshAppContext.deviceLogEchoEnabled:
             b = b.rstrip()
             outputDebugMessageThread(b, self.textEdit)
