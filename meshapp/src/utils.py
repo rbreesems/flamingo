@@ -132,6 +132,10 @@ def describeSerialPort(port):
         "pid": getattr(port, "pid", None),
     }
 
+def initDefaultTreeWidgetAttributes(treeWidget):
+    treeWidget.setHeaderHidden(True)
+    treeWidget.setMouseTracking(True)
+
 
 def listSerialPorts():
     try:

@@ -143,13 +143,15 @@
              </attribute>
              <layout class="QVBoxLayout" name="verticalLayout_7">
               <item>
-               <widget class="QTextEdit" name="ch0TextEdit">
-                <property name="acceptDrops">
-                 <bool>false</bool>
-                </property>
-                <property name="readOnly">
+               <widget class="QTreeWidget" name="ch0TreeWidget">
+                <property name="headerHidden">
                  <bool>true</bool>
                 </property>
+                <column>
+                 <property name="text">
+                  <string notr="true">1</string>
+                 </property>
+                </column>
                </widget>
               </item>
              </layout>

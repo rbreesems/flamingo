@@ -313,8 +313,8 @@ class MessageData(object):
 
 class MessagePage(object):
 
-    def __init__(self, textEdit):
-        self.textEdit = textEdit
+    def __init__(self, treeWidget):
+        self.treeWidget = treeWidget
         self.cursorPosition = 0
         self.messages = []  # list of message objects
         self.nextMessageId = 0
@@ -332,81 +332,85 @@ class MessagePage(object):
         messageData = MessageData(messageText, self.getNextMessageId())
         messageData.messageType = messageType
         messageData.longName = longName
-        messageData.textEdit = self.textEdit
+        messageData.treeWidget = self.treeWidget
         self.messages.append(messageData)
-        messageData.startCursor = self.cursorPosition
-        if messageType == "in":
-            statusLine = self.statusLine
-            preamble = f"IN ({longName})\n{messageText}\n"
-        else:
-            statusLine = self.statusLine
-            preamble = f"OUT ({longName})\n{messageText}\n"
-        msgEnd = f"{self.eotMarker}{statusLine}\n"
-        totalMessage = f"{preamble}{msgEnd}"
-        messageLength = len(totalMessage)
-            
-        self.textEdit.append(totalMessage)
-        # find the actual end of the message, search for self.eotMarker
-        cursor = self.textEdit.textCursor()
-        pos = messageData.startCursor + len(preamble)
-        messageData.statusCursor = pos # this is the start of search, this is default value, will be adjusted if Eot marker found
-        endpos = pos + len(msgEnd)  # do not let the search go past this
-        foundEot = False
-        index = 0
-        while (pos < endpos):
-            cursor.setPosition(pos)
-            c = self.textEdit.document().characterAt(pos)
-            if index == 0:
-                if c == self.eotMarker[index]:
-                    index += 1
+        flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+        # add this message to the treeWidget
+        # TODO modify this for tree widget
+        if False:
+            messageData.startCursor = self.cursorPosition
+            if messageType == "in":
+                statusLine = self.statusLine
+                preamble = f"IN ({longName})\n{messageText}\n"
             else:
-                if c != self.eotMarker[index]:
-                    index = 0 # reset search
+                statusLine = self.statusLine
+                preamble = f"OUT ({longName})\n{messageText}\n"
+            msgEnd = f"{self.eotMarker}{statusLine}\n"
+            totalMessage = f"{preamble}{msgEnd}"
+            messageLength = len(totalMessage)
+                
+            self.textEdit.append(totalMessage)
+            # find the actual end of the message, search for self.eotMarker
+            cursor = self.textEdit.textCursor()
+            pos = messageData.startCursor + len(preamble)
+            messageData.statusCursor = pos # this is the start of search, this is default value, will be adjusted if Eot marker found
+            endpos = pos + len(msgEnd)  # do not let the search go past this
+            foundEot = False
+            index = 0
+            while (pos < endpos):
+                cursor.setPosition(pos)
+                c = self.textEdit.document().characterAt(pos)
+                if index == 0:
+                    if c == self.eotMarker[index]:
+                        index += 1
                 else:
-                    index += 1
-                    if index == len(self.eotMarker):
-                        # found the string
-                        foundEot = True
-                        pos += 1
-                        break
-            pos += 1
-        if foundEot:
-            messageData.statusCursor = pos - len(self.eotMarker)  # beginning of status line
-            messageData.endCursor =  pos + len(statusLine)+1
-            self.cursorPosition = messageData.endCursor+1
-        else:
-            # did not find EOT. A problem, use default
-            messageData.endCursor =  messageData.startCursor + messageLength
-            self.cursorPosition = messageData.endCursor+1
-        # replace the EOT text with spaces so that it is not visible
-        cursor = self.textEdit.textCursor()
-        cursor.setPosition(messageData.statusCursor)
-        cursor.setPosition(messageData.statusCursor+len(self.eotMarker), QTextCursor.KeepAnchor)
-        cursor.insertText("      ")
-        
-        
-        # do formatting
-        nodeColor = MeshAppContext.getNodeColor(fromId)
-        # set cursor
-        cursor = self.textEdit.textCursor()
-        cursor.setPosition(messageData.startCursor)
-        cursor.setPosition(messageData.startCursor+len(f"IN ({longName}")+1, QTextCursor.KeepAnchor)
-        # apply fmt
-        if self.fmt is None:
-            self.fmt = QTextCharFormat()
-        newSize = getStatusFontSize(self.textEdit)
-        self.fmt.setFontPointSize(newSize)
-        #self.fmt.setFontWeight(QFont.Weight.Bold)
-        self.fmt.setForeground(QColor(nodeColor))
-        cursor.setCharFormat(self.fmt)
-        if messageType == "in":
-            # display incoming messages on status bar
-            outputStatusMessageMainWindow(f"{self.name}: IN ({longName}): {messageText}")
-        if messageType == "out" and wantAck:
-            if not (packetId and packetId in MeshAppContext.mainWindow.orphanAcks):
-                messageData.displayMessageStatus("  Waiting on ack")
+                    if c != self.eotMarker[index]:
+                        index = 0 # reset search
+                    else:
+                        index += 1
+                        if index == len(self.eotMarker):
+                            # found the string
+                            foundEot = True
+                            pos += 1
+                            break
+                pos += 1
+            if foundEot:
+                messageData.statusCursor = pos - len(self.eotMarker)  # beginning of status line
+                messageData.endCursor =  pos + len(statusLine)+1
+                self.cursorPosition = messageData.endCursor+1
+            else:
+                # did not find EOT. A problem, use default
+                messageData.endCursor =  messageData.startCursor + messageLength
+                self.cursorPosition = messageData.endCursor+1
+            # replace the EOT text with spaces so that it is not visible
+            cursor = self.textEdit.textCursor()
+            cursor.setPosition(messageData.statusCursor)
+            cursor.setPosition(messageData.statusCursor+len(self.eotMarker), QTextCursor.KeepAnchor)
+            cursor.insertText("      ")
+            
+            
+            # do formatting
+            nodeColor = MeshAppContext.getNodeColor(fromId)
+            # set cursor
+            cursor = self.textEdit.textCursor()
+            cursor.setPosition(messageData.startCursor)
+            cursor.setPosition(messageData.startCursor+len(f"IN ({longName}")+1, QTextCursor.KeepAnchor)
+            # apply fmt
+            if self.fmt is None:
+                self.fmt = QTextCharFormat()
+            newSize = getStatusFontSize(self.textEdit)
+            self.fmt.setFontPointSize(newSize)
+            #self.fmt.setFontWeight(QFont.Weight.Bold)
+            self.fmt.setForeground(QColor(nodeColor))
+            cursor.setCharFormat(self.fmt)
+            if messageType == "in":
+                # display incoming messages on status bar
+                outputStatusMessageMainWindow(f"{self.name}: IN ({longName}): {messageText}")
+            if messageType == "out" and wantAck:
+                if not (packetId and packetId in MeshAppContext.mainWindow.orphanAcks):
+                    messageData.displayMessageStatus("  Waiting on ack")
 
-        self.textEdit.verticalScrollBar().setValue(self.textEdit.verticalScrollBar().maximum())
+            self.textEdit.verticalScrollBar().setValue(self.textEdit.verticalScrollBar().maximum())
         return messageData
     
 
@@ -453,11 +457,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         # channel 0 text edit always exists and is fixed.
         # Other text edits are dynamically added as channels are discovered
         # or DMs added
-        self.channelMessagePages = { 0 : MessagePage(self.ch0TextEdit)}
+        self.channelMessagePages = { 0 : MessagePage(self.ch0TreeWidget)}
         self.directMessagePages = {}  # key is always the remote node ID
         self.waitingForAck = {} # key is packet ID, data is MessageData object
         self.orphanAcks = {}  #  for acks not in waitingForAck, value is error reason
-        self.ch0TextEdit.setReadOnly(True)
+
+        initDefaultTreeWidgetAttributes(self.ch0TreeWidget)
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -1195,10 +1200,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
 
     def addDirectMessageTab(self, tabName):
-        textEdit = QTextEdit()
-        textEdit.setReadOnly(True)
-        self.messagesTabWidget.addTab(textEdit, tabName)
-        messagePage = MessagePage(textEdit)
+        treeWidget = QTreeWidget()
+        initDefaultTreeWidgetAttributes(treeWidget)
+        self.messagesTabWidget.addTab(treeWidget, tabName)
+        messagePage = MessagePage(treeWidget)
         messagePage.name = tabName
         self.directMessagePages[tabName] = messagePage
         return
@@ -1232,10 +1237,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 if self.messagesTabWidget.tabText(i) == name:
                     return  # this tab already exists
             # add this tab with a text edit
-            textEdit = QTextEdit()
-            textEdit.setReadOnly(True)
-            self.messagesTabWidget.addTab(textEdit, name)
-            self.channelMessagePages[channel] = MessagePage(textEdit)
+            treeWidget = QTreeWidget()
+            initDefaultTreeWidgetAttributes(treeWidget)
+            self.messagesTabWidget.addTab(treeWidget, name)
+            self.channelMessagePages[channel] = MessagePage(treeWidget)
         messagePage = self.channelMessagePages[channel]
         messagePage.name = name
         return

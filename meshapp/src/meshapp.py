@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshapp.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.11.0
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -198,12 +198,14 @@ class Ui_MainWindow(object):
         self.ch0Tab.setObjectName(u"ch0Tab")
         self.verticalLayout_7 = QVBoxLayout(self.ch0Tab)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        self.ch0TextEdit = QTextEdit(self.ch0Tab)
-        self.ch0TextEdit.setObjectName(u"ch0TextEdit")
-        self.ch0TextEdit.setAcceptDrops(False)
-        self.ch0TextEdit.setReadOnly(True)
+        self.ch0TreeWidget = QTreeWidget(self.ch0Tab)
+        __qtreewidgetitem = QTreeWidgetItem()
+        __qtreewidgetitem.setText(0, u"1")
+        self.ch0TreeWidget.setHeaderItem(__qtreewidgetitem)
+        self.ch0TreeWidget.setObjectName(u"ch0TreeWidget")
+        self.ch0TreeWidget.setHeaderHidden(True)
 
-        self.verticalLayout_7.addWidget(self.ch0TextEdit)
+        self.verticalLayout_7.addWidget(self.ch0TreeWidget)
 
         self.messagesTabWidget.addTab(self.ch0Tab, "")
 
@@ -349,9 +351,9 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.addLayout(self.horizontalLayout_12)
 
         self.nodesTreeWidget = QTreeWidget(self.tab)
-        __qtreewidgetitem = QTreeWidgetItem()
-        __qtreewidgetitem.setText(0, u"1")
-        self.nodesTreeWidget.setHeaderItem(__qtreewidgetitem)
+        __qtreewidgetitem1 = QTreeWidgetItem()
+        __qtreewidgetitem1.setText(0, u"1")
+        self.nodesTreeWidget.setHeaderItem(__qtreewidgetitem1)
         self.nodesTreeWidget.setObjectName(u"nodesTreeWidget")
         self.nodesTreeWidget.header().setVisible(False)
 
