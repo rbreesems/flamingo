@@ -23,6 +23,7 @@ settings:
   bluetooth.mode : "FIXED_PIN"
   bluetooth.fixed_pin: "911911"
   device.role : "CLIENT_MUTE"
+  device.node_info_broadcast_secs: "3600"
   lora.channel_num: "10"
   lora.hop_limit: "31"
   lora.modem_preset: "SHORT_FAST"
