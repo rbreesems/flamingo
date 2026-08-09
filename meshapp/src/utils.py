@@ -132,9 +132,11 @@ def describeSerialPort(port):
         "pid": getattr(port, "pid", None),
     }
 
-def initDefaultTreeWidgetAttributes(treeWidget):
+def initDefaultTreeWidgetAttributes(treeWidget, col0Width):
     treeWidget.setHeaderHidden(True)
     treeWidget.setMouseTracking(True)
+    treeWidget.setColumnCount(2)
+    treeWidget.setColumnWidth(0, col0Width)
 
 
 def listSerialPorts():
@@ -438,6 +440,7 @@ class MeshAppContext(object):
     nodeColorMap: dict[int, str] = {}
     localNodeId = 0
     localNodeLongName = ""
+    localNodeShortName = ""
 
     @classmethod
     def getNextNodeColor(self):
@@ -656,6 +659,7 @@ class MeshAppContext(object):
             newNode.longName = user.get('longName','')
             newNode.shortName = user.get('shortName','')
             self.localNodeLongName = newNode.longName
+            self.localNodeShortName = newNode.shortName
         self.updateNodeTimeStamp(id)
 
     @classmethod

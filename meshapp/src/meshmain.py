@@ -280,34 +280,43 @@ class MessageData(object):
         self.messageType = "in"
         self.messageText = messageText
         self.longName = ""   # from longname
+        self.shortName = "" 
         self.startCursor = 0 # beginning of entire message
         self.endCursor = 0  # end of entire message
         self.statusCursor = 0 # beginning of status line
         self.status = None
         self.textEdit = None  # this is the textEdit that this MessageData appears on
         self.fmt = None
+        # for  OUT message, will be packet id of sent message, used for tapback
+        # for IN meesage, will be packet id of incoming message, used for reply or tapback
+        self.packetId = None  
         self.ignoreAck = False  # if True, then ignore any other ack packets arriving for this message
+        self.treeWidgetItem = None  # will be the item that holds the text
+        
 
     def displayMessageStatus(self, statusText, statusColor=None):
-        if statusColor is None:
-            statusColor = getLocalUserColor()
-        # now need to display the message text
-        cursor = self.textEdit.textCursor()
-        cursor.setPosition(self.statusCursor)
-        cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
-        cursor.insertText(statusText)
+        self.treeWidgetItem.setText(0, f"{statusText}")
+        #TODO Fix this for tree widget
+        if False:
+            if statusColor is None:
+                statusColor = getLocalUserColor()
+            # now need to display the message text
+            cursor = self.textEdit.textCursor()
+            cursor.setPosition(self.statusCursor)
+            cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
+            cursor.insertText(statusText)
 
-        # Do formatting
-        newSize = getStatusFontSize(self.textEdit)
-        if self.fmt is None:
-            self.fmt = QTextCharFormat()
-        self.fmt.setFontPointSize(newSize)
-        self.fmt.setFontUnderline(True)
-        #self.fmt.setFontWeight(QFont.Weight.Bold)
-        self.fmt.setForeground(QColor(statusColor))
-        cursor.setPosition(self.statusCursor+2)
-        cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
-        cursor.setCharFormat(self.fmt)
+            # Do formatting
+            newSize = getStatusFontSize(self.textEdit)
+            if self.fmt is None:
+                self.fmt = QTextCharFormat()
+            self.fmt.setFontPointSize(newSize)
+            self.fmt.setFontUnderline(True)
+            #self.fmt.setFontWeight(QFont.Weight.Bold)
+            self.fmt.setForeground(QColor(statusColor))
+            cursor.setPosition(self.statusCursor+2)
+            cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
+            cursor.setCharFormat(self.fmt)
 
         return
 
@@ -316,6 +325,7 @@ class MessagePage(object):
     def __init__(self, treeWidget):
         self.treeWidget = treeWidget
         self.cursorPosition = 0
+        self.packetId = 0
         self.messages = []  # list of message objects
         self.nextMessageId = 0
         self.eotMarker = "#E_0?+"
@@ -326,15 +336,53 @@ class MessagePage(object):
     def getNextMessageId(self):
         self.nextMessageId += 1
         return self.nextMessageId
-    
-    def displayMessage(self, messageType, messageText, longName, fromId, packetId=None, wantAck=True):
+
+    # if replyId is not None, then this is a reply or a tapback
+    def displayMessage(self, messageType, messageText, shortName, longName, fromId, packetId=None, wantAck=True, replyId=None):
         
         messageData = MessageData(messageText, self.getNextMessageId())
         messageData.messageType = messageType
+        messageData.packetId = packetId
         messageData.longName = longName
+        messageData.shortName = shortName
         messageData.treeWidget = self.treeWidget
         self.messages.append(messageData)
         flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+        targetMessage = None
+        if replyId:
+            targetMessage = MeshAppContext.mainWindow.messagesByPacketId.get(replyId, None)
+        messageHandled = False
+        if targetMessage:
+            # this is either a reply or a tapback
+            # find the message and add this as a child of that message, do not need a new header 
+            treeWidgetItem = targetMessage.treeWidgetItem
+            try:
+                messageBodyItem = QTreeWidgetItem(treeWidgetItem)
+                messageData.treeWidgetItem= messageBodyItem
+                messageBodyItem.setFlags(flags)
+                messageBodyItem.setText(1, f"{shortName}/{longName}: {messageText}")
+                messageHandled = True
+            except Exception as e:
+                print("ERROR: Unexpected error %s/%s" % (sys.exc_info()[0], e))
+                return
+            
+        if not messageHandled:
+            treeWidgetItem =  QTreeWidgetItem(self.treeWidget)
+            treeWidgetItem.setFlags(flags)
+            messageData.treeWidgetItem = treeWidgetItem
+            if messageType == "in":
+                treeWidgetItem.setText(1, f"{shortName}/{longName}:  {messageText}")
+                # display incoming messages on status bar
+                outputStatusMessageMainWindow(f"{self.name}: IN ({shortName}/{longName}): {messageText}")
+            else:
+                treeWidgetItem.setText(1, f"{shortName}/{longName}: {messageText}")
+                if messageType == "out" and wantAck:
+                    if not (packetId and packetId in MeshAppContext.mainWindow.orphanAcks):
+                        treeWidgetItem.setText(0, f"Waiting for Ack")
+        
+        self.treeWidget.expandAll()
+        self.treeWidget.resizeColumnToContents(1)
+
         # add this message to the treeWidget
         # TODO modify this for tree widget
         if False:
@@ -461,8 +509,11 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.directMessagePages = {}  # key is always the remote node ID
         self.waitingForAck = {} # key is packet ID, data is MessageData object
         self.orphanAcks = {}  #  for acks not in waitingForAck, value is error reason
+        self.messagesByPacketId = {}  # out messages key'ed by packet ID, used for replies
 
-        initDefaultTreeWidgetAttributes(self.ch0TreeWidget)
+        metrics = QFontMetrics(self.ch0TreeWidget.font())
+        self.messagesColumn0Width = metrics.horizontalAdvance("Waiting for Acknowledge  ")
+        initDefaultTreeWidgetAttributes(self.ch0TreeWidget, self.messagesColumn0Width)
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -984,7 +1035,8 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.sendMessageTextEdit.textCursor().insertText(item.data(Qt.ItemDataRole.EditRole))
 
     def _on_tapback_picked(self, item: QIconItem) -> None:
-        self.doSendMessageCore(item.data(Qt.ItemDataRole.EditRole))
+       
+        self.doSendMessageCore(item.data(Qt.ItemDataRole.EditRole), isReply=True)
         return
 
     def addAction(self, item):
@@ -1115,12 +1167,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if errorReason == 'NONE':
             if messageData.toId and messageData.toId != fromId:
                 # this was DM to node messageData.toId but the ACK packet is from another ode
-                statusText = "  Ack by other"
+                statusText = "Ack by other"
             else:
-                statusText = "   Acknowledged "
+                statusText = "Acknowledged "
                 messageData.ignoreAck = True
         elif errorReason == 'MAX_RETRANSMIT':
-            statusText = "  Max retransmit "
+            statusText = "Max retransmit "
             statusColor = "red"
             messageData.ignoreAck = True
         elif errorReason == 'NO_CHANNEL':
@@ -1128,7 +1180,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             statusColor = "red"
             messageData.ignoreAck = True
         else:
-            statusText = f"  {errorReason} "
+            statusText = f"{errorReason} "
             statusColor = "red"
             messageData.ignoreAck = True
         if statusText is None:
@@ -1146,10 +1198,12 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
          self.doSendMessageCore(self.sendMessageTextEdit.toPlainText())
          return
     
-    def doSendMessageCore(self, msg, clearText=True):
+    def doSendMessageCore(self, msg, clearText=True, isReply=False):
 
         if len(msg) > 200:
             msg = msg[0:199]
+
+
         wantAck = True
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
         if tabName in self.directMessagePages:
@@ -1164,16 +1218,23 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             if node is None:
                 outputLogMessage("ERROR: node {tabname} cannot be found, unable to send message.", level=logging.ERROR, echoStatus=True)
             packet = self.serialInterface.sendText(msg, node.id, wantAck=wantAck, wantResponse=False)
-            messageData = self.directMessagePages[tabName ].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
+            messageData = self.directMessagePages[tabName].displayMessage("out", msg, MeshAppContext.localNodeShortName, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
             messageData.toId = node.id
+            messageData.packetId = packet.id
+            self.messagesByPacketId[packet.id] = messageData
             outputLogMessage(f"Packet waiting for ack: {packet.id} to node {node.id}")
             logNodeMessage(f"DM FROM: {MeshAppContext.localNodeLongName}, TO:{tabName} >> {msg}")
         else:
+            if isReply:
+                self.channelMessagePages[channel]
+
             # must be a channel message
             channel = self.nameToChannel[tabName]
             packet = self.serialInterface.sendText(msg, '^all', wantAck=wantAck, wantResponse=False, channelIndex=channel)
             # now need to send this to our text edit
-            messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
+            messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeShortName, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
+            messageData.packetId = packet.id
+            self.messagesByPacketId[packet.id] = messageData
             outputLogMessage(f"Packet waiting for ack: {packet.id}")
             logNodeMessage(f"Channel {tabName} FROM:{MeshAppContext.localNodeLongName} >> {msg}")
         if wantAck:
@@ -1201,7 +1262,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
     def addDirectMessageTab(self, tabName):
         treeWidget = QTreeWidget()
-        initDefaultTreeWidgetAttributes(treeWidget)
+        initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width)
         self.messagesTabWidget.addTab(treeWidget, tabName)
         messagePage = MessagePage(treeWidget)
         messagePage.name = tabName
@@ -1238,7 +1299,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     return  # this tab already exists
             # add this tab with a text edit
             treeWidget = QTreeWidget()
-            initDefaultTreeWidgetAttributes(treeWidget)
+            initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width)
             self.messagesTabWidget.addTab(treeWidget, name)
             self.channelMessagePages[channel] = MessagePage(treeWidget)
         messagePage = self.channelMessagePages[channel]
@@ -1255,44 +1316,56 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if portnum != 'TEXT_MESSAGE_APP':
             return
         payload = decoded.get('payload', None)
+        replyId = decoded.get('replyId', None)
         hopStart = packet.get('hopStart', 0)
         hopLimit = packet.get('hopLimit', 0)
+        packetId = packet.get('id', None)
         node = MeshAppContext.getNodeById(fromId)
         if node:
             node.hops = hopStart-hopLimit
         if not isBroadcastId(toId):
             if convertNodeId(toId) == MeshAppContext.localNodeId and payload:
-                self.displayDirectMessage(payload, fromId, "in")
+                self.displayDirectMessage(payload, fromId, "in", replyId)
         else:
             # this is a channel message
             channel = packet.get('channel', 0)
             if payload:
-                self.displayChannelMessage(payload, fromId, channel, "in")
+                self.displayChannelMessage(payload, fromId, channel, "in", replyId, packetId)
                 
 
         return
     
-    def displayDirectMessage (self, payload, remoteId, messageType):
-        tabName = self.getDirectMessageTabName(remoteId)
-        # the tabName is the longName of the node
+    def displayDirectMessage (self, payload, remoteId, messageType, replyId, packetId):
+         # the tabName is the longName of the node
+        longName = self.getDirectMessageTabName(remoteId)
+        node = MeshAppContext.getNodeById(remoteId)
+        if node is None:
+            shortName = 'n/a'
+        else:
+            shortName = node.shortName 
+            if shortName == "":
+                shortName = 'n/a'
+       
         messageText = payload.decode("utf-8")
-        logNodeMessage(f"DM FROM:{tabName}, TO: {MeshAppContext.localNodeLongName} >> {messageText}")
-        self.directMessagePages[tabName].displayMessage(messageType, messageText, tabName , remoteId)
+        logNodeMessage(f"DM FROM:{longName}, TO: {MeshAppContext.localNodeLongName} >> {messageText}")
+        self.directMessagePages[longName].displayMessage(messageType, messageText, shortName, longName , remoteId, packetId=packetId, replyId=replyId)
             
-    def displayChannelMessage(self, payload, fromId, channel, messageType):
+    def displayChannelMessage(self, payload, fromId, channel, messageType, replyId, packetId):
         
         node = MeshAppContext.getNodeById(fromId)
         if node is None:
-            longName = 'unknown'
+            longName = 'n/a'
+            shortName = 'n/a'
         else:
             longName = node.longName
+            shortName = node.shortName 
             if longName == "":
-                longName = 'unknown'
-
-
+                longName = 'n/a'
+            if shortName == "":
+                shortName = 'n/a'
 
         messageText = payload.decode("utf-8")
-        self.channelMessagePages[channel].displayMessage(messageType, messageText, longName, fromId)
+        self.channelMessagePages[channel].displayMessage(messageType, messageText, shortName, longName, fromId, packetId=packetId, replyId=replyId)
         channelName =  self.channelMessagePages[channel].name
         logNodeMessage(f"Channel {channelName} FROM:{longName} >> {messageText}")
         if (MeshAppContext.getConfigOption('General:AutoTapback', default=False) and
