@@ -101,6 +101,8 @@ from PySide6.QtWidgets import QHBoxLayout
 from PySide6.QtWidgets import QStyleFactory
 from PySide6.QtWidgets import QComboBox
 from PySide6.QtGui import QAction
+from PySide6.QtCore import QUrl
+from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtWidgets import QToolTip
 from PySide6.QtWidgets import QPlainTextEdit
 from PySide6.QtWidgets import QSpinBox

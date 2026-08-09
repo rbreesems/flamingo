@@ -458,6 +458,11 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout_7)
 
+        self.enableSoundNotificationsCheckBox = QCheckBox(self.optionsGeneralTab)
+        self.enableSoundNotificationsCheckBox.setObjectName(u"enableSoundNotificationsCheckBox")
+
+        self.verticalLayout.addWidget(self.enableSoundNotificationsCheckBox)
+
         self.verticalSpacer_4 = QSpacerItem(20, 439, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout.addItem(self.verticalSpacer_4)
@@ -774,6 +779,10 @@ class Ui_MainWindow(object):
         self.autoTapbackLineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Keyword (not case sensitive) that triggers auto response, must be first word in messsage. ", None))
 #endif // QT_CONFIG(tooltip)
         self.autoTapbackLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"keyword", None))
+#if QT_CONFIG(tooltip)
+        self.enableSoundNotificationsCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"If checked, then sound notifications are enabled.", None))
+#endif // QT_CONFIG(tooltip)
+        self.enableSoundNotificationsCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable sound notifications", None))
         self.optionsTabWidget.setTabText(self.optionsTabWidget.indexOf(self.optionsGeneralTab), QCoreApplication.translate("MainWindow", u"General", None))
 #if QT_CONFIG(tooltip)
         self.useDarkStylelCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Takes effect on restart", None))

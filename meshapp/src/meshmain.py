@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.5
+BuildNumber = 1.6
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -60,6 +60,11 @@ else:
 
     def showConsole():
         pass
+
+def treeWidgetResized(logical_index, old_size, new_size, w=None):
+    if w:
+        w.scheduleDelayedItemsLayout()
+    print(f"Logical_index: {logical_index}, old_size:{old_size}, new_size:{new_size}")
 
 
 def getStatusFontSize(textEdit):
@@ -341,7 +346,10 @@ class MessagePage(object):
 
     # if replyId is not None, then this is a reply or a tapback
     def displayMessage(self, messageType, messageText, shortName, longName, fromId, packetId=None, wantAck=True, replyId=None, replyMessage=None):
-        
+
+        if messageType == "in" and  MeshAppContext.mainWindow.soundOnMessageIn and MeshAppContext.getConfigOption('General:EnableSounds', default=''):
+            MeshAppContext.mainWindow.soundOnMessageIn.play()
+
         messageData = MessageData(messageText, self.getNextMessageId())
         messageData.messageType = messageType
         messageData.packetId = packetId
@@ -372,7 +380,8 @@ class MessagePage(object):
                 messageData.treeWidgetItem= messageBodyItem
                 messageBodyItem.setFlags(flags)
                 num_tabs = targetMessage.indentation
-                messageBodyItem.setText(1, ("      " * num_tabs) + f"{shortName}/{longName}: {messageText}")
+                itemText = ("    " * num_tabs) + f"{shortName}/{longName}: {messageText}"
+                messageBodyItem.setText(1, itemText)
                 messageHandled = True
             except Exception as e:
                 print("ERROR: Unexpected error %s/%s" % (sys.exc_info()[0], e))
@@ -528,6 +537,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.messagesColumn0Width = metrics.horizontalAdvance("Acknowledge ")
         self.messagesIndentation = metrics.horizontalAdvance("xxxxx")
         initDefaultTreeWidgetAttributes(self.ch0TreeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
+        #self.ch0TreeWidget.header().sectionResized.connect(treeWidgetResized)
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -544,6 +554,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
         self.autoConnectSerialCheckBox.clicked.connect(self.doAutoConnectSerialCheckBox)
         self.enableEnterToSendCheckBox.clicked.connect(lambda x : MeshAppContext.setConfigOption('General:UseEnterToSend', self.enableEnterToSendCheckBox.isChecked() ))
+        self.enableSoundNotificationsCheckBox.clicked.connect(lambda x : MeshAppContext.setConfigOption('General:EnableSounds', self.enableSoundNotificationsCheckBox.isChecked() ))
         self.enableDeviceLogEchoCheckBox.clicked.connect(self.doEnableDeviceLogEchoCheckBox)
         self.connectDevicePushButton.clicked.connect(self.doConnectDevicePushButton)
         self.closeConnectionDevicePushButton.clicked.connect(self.doCloseConnectionDevicePushButton)
@@ -654,12 +665,18 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         outputLogMessage(f"Connected to meshtastic device: {shortName}/{longName}", echoStatus=True)
         MeshAppContext.addLocalNodeToDb()
         self.isConnectedCheckBox.setChecked(True)
+        if self.soundOnConnection and MeshAppContext.getConfigOption('General:EnableSounds', default=''):
+            self.soundOnConnection.play()
+        
+
 
     def handleOnConnectionLost(self): # called when we (re)connect to the radio
         # defaults to broadcast, specify a destination ID if you wish
         outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
         MeshAppContext.isMeshConnected = False
         self.isConnectedCheckBox.setChecked(False)
+        if self.soundOnDisconnection and MeshAppContext.getConfigOption('General:EnableSounds', default=''):
+            self.soundOnDisconnection.play()
         if self.debugStream is not None:
             try:
                 self.serialInterface = None
@@ -667,7 +684,6 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 self.debugStream = None
             except:
                 pass
-
 
     def doClose(self):
         self.close()
@@ -1023,6 +1039,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.logDirLineEdit.setText(MeshAppContext.getConfigOption('General:LogDirectory', default=''))
         self.autoConnectSerialCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoConnect', default=False))
         self.enableEnterToSendCheckBox.setChecked(MeshAppContext.getConfigOption('General:UseEnterToSend', default=False))
+        self.enableSoundNotificationsCheckBox.setChecked(MeshAppContext.getConfigOption('General:EnableSounds', default=False))
         self.enableDeviceLogEchoCheckBox.setChecked(MeshAppContext.getConfigOption('General:EnableDeviceLogEcho', default=False))
         self.connectDevicePushButton.setDisabled(self.autoConnectSerialCheckBox.isChecked())
         MeshAppContext.deviceLogEchoEnabled = self.enableDeviceLogEchoCheckBox.isChecked()
@@ -1042,6 +1059,33 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.autoTapbackChannelSpinBox.setValue(MeshAppContext.getConfigOption('General:AutoTapbackChannel', default=0))
         self.autoTapbackCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoTapback', default=False))
         self.autoTapbackLineEdit.setText(MeshAppContext.getConfigOption('General:AutoTapbackKeyword', default="response"))
+
+        
+        self.soundVolume = 0.5
+
+        self.soundOnConnection = None
+        soundFile = MeshAppContext.getConfigOption('General:ConnectSound', default='')
+        if soundFile: 
+            self.soundOnConnection = QSoundEffect()
+            self.soundOnConnection.setSource(QUrl.fromLocalFile(soundFile))
+            self.soundOnConnection.setVolume(self.soundVolume)
+
+        self.soundOnDisconnection = None
+        soundFile = MeshAppContext.getConfigOption('General:DisconnectSound', default='')
+        if soundFile: 
+            self.soundOnDisconnection = QSoundEffect()
+            self.soundOnDisconnection.setSource(QUrl.fromLocalFile(soundFile))
+            self.soundOnDisconnection.setVolume(self.soundVolume)
+
+        self.soundOnMessageIn = None
+        soundFile = MeshAppContext.getConfigOption('General:MesssageInSound', default='')
+        if soundFile: 
+            self.soundOnMessageIn = QSoundEffect()
+            self.soundOnMessageIn.setSource(QUrl.fromLocalFile(soundFile))
+            self.soundOnMessageIn.setVolume(self.soundVolume)
+
+       
+        
 
         return
     

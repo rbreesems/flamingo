@@ -9,6 +9,10 @@ General:
   AutoTapbackKeyword: response
   AutoTapbackChannel: 0
   UseEnterToSend: false
+  ConnectSound: "C:/Windows/Media/Windows Hardware Insert.wav"
+  DisconnectSound: "C:/Windows/Media/Windows Hardware Remove.wav"
+  MesssageInSound: "C:/Windows/Media/Windows Notify.wav"
+  EnableSounds: true
 GUI:
   UseDarkStyle: false
   EnableFontScaling: false

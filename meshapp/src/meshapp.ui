@@ -521,6 +521,16 @@
              </layout>
             </item>
             <item>
+             <widget class="QCheckBox" name="enableSoundNotificationsCheckBox">
+              <property name="toolTip">
+               <string>If checked, then sound notifications are enabled.</string>
+              </property>
+              <property name="text">
+               <string>Enable sound notifications</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <spacer name="verticalSpacer_4">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
