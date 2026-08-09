@@ -132,11 +132,13 @@ def describeSerialPort(port):
         "pid": getattr(port, "pid", None),
     }
 
-def initDefaultTreeWidgetAttributes(treeWidget, col0Width):
+def initDefaultTreeWidgetAttributes(treeWidget, col0Width, indentation=None):
     treeWidget.setHeaderHidden(True)
     treeWidget.setMouseTracking(True)
     treeWidget.setColumnCount(2)
     treeWidget.setColumnWidth(0, col0Width)
+    if indentation:
+        treeWidget.setIndentation(indentation)
 
 
 def listSerialPorts():
