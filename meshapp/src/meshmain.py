@@ -396,7 +396,7 @@ class MessagePage(object):
         
         self.treeWidget.expandAll()
         self.treeWidget.resizeColumnToContents(0)
-        #self.treeWidget.resizeColumnToContents(1)
+        self.treeWidget.resizeColumnToContents(1)
         return messageData
     
 
