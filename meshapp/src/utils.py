@@ -344,6 +344,20 @@ def logNodeMessage(msg):
     if logger is not None:
         logger.log(logging.INFO,msg)
 
+def getNodeLongShortNames(nodeId):
+    node = MeshAppContext.getNodeById(nodeId)
+    if node is None:
+        longName = 'n/a'
+        shortName = 'n/a'
+    else:
+        longName = node.longName
+        shortName = node.shortName 
+        if longName == "":
+            longName = 'n/a'
+        if shortName == "":
+            shortName = 'n/a'
+    return longName, shortName
+
 
 class Node(object):
 
@@ -770,13 +784,18 @@ class MeshAppContext(object):
                 if id:
                     node = self.getNodeById(id)
                     if node:
+                        oldLongName = f"{node.longName}"
                         node.longName = user.get('longName', '')
+                        oldShortName = f"{node.shortName}"
                         node.shortName = user.get('shortName', '')
+                        nameChanged = oldLongName != node.longName or oldShortName != node.shortName
                         node.role = user.get('role', '')
                         outputLogMessage(f"NODEINFO received:  { user.get('shortName', '')} / {user.get('longName', '')}")
                         if self.mainWindow:
                             self.mainWindow.updateDmTabsComboBox()
                             self.mainWindow.updateNodesTab()
+                            if nameChanged:
+                                self.mainWindow.regenerateMessages(node.id)
 
         elif portnum == 'TRACEROUTE_APP' and self.mainWindow.activeTraceRoute and toId == self.localNodeId:
             # parse and save the traceroute
