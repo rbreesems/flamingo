@@ -143,13 +143,15 @@
              </attribute>
              <layout class="QVBoxLayout" name="verticalLayout_7">
               <item>
-               <widget class="QTextEdit" name="ch0TextEdit">
-                <property name="acceptDrops">
-                 <bool>false</bool>
-                </property>
-                <property name="readOnly">
+               <widget class="QTreeWidget" name="ch0TreeWidget">
+                <property name="headerHidden">
                  <bool>true</bool>
                 </property>
+                <column>
+                 <property name="text">
+                  <string notr="true">1</string>
+                 </property>
+                </column>
                </widget>
               </item>
              </layout>
@@ -158,6 +160,9 @@
           </item>
           <item>
            <widget class="QGroupBox" name="groupBox">
+            <property name="statusTip">
+             <string/>
+            </property>
             <property name="title">
              <string>Input</string>
             </property>
@@ -170,7 +175,7 @@
                <item>
                 <widget class="QPushButton" name="sendMessagePushButton">
                  <property name="toolTip">
-                  <string>Send message to exposed Message tab</string>
+                  <string>Send message to exposed Message tab. Can also use &quot;enter&quot;.  If message is selected, will be a reply.</string>
                  </property>
                  <property name="text">
                   <string>Send</string>
@@ -200,7 +205,7 @@
                <item>
                 <widget class="QToolButton" name="tapbackMessageToolButton">
                  <property name="toolTip">
-                  <string>Tapback - sends a single emoji to the current message tab</string>
+                  <string>Tapback - sends a single emoji to the current message tab. If message is selected, then will be a reply</string>
                  </property>
                  <property name="text">
                   <string>...</string>
@@ -514,6 +519,16 @@
                </spacer>
               </item>
              </layout>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="enableSoundNotificationsCheckBox">
+              <property name="toolTip">
+               <string>If checked, then sound notifications are enabled.</string>
+              </property>
+              <property name="text">
+               <string>Enable sound notifications</string>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer name="verticalSpacer_4">

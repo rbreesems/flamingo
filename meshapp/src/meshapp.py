@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'meshapp.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.11.0
+## Created by: Qt User Interface Compiler version 6.11.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -198,12 +198,14 @@ class Ui_MainWindow(object):
         self.ch0Tab.setObjectName(u"ch0Tab")
         self.verticalLayout_7 = QVBoxLayout(self.ch0Tab)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        self.ch0TextEdit = QTextEdit(self.ch0Tab)
-        self.ch0TextEdit.setObjectName(u"ch0TextEdit")
-        self.ch0TextEdit.setAcceptDrops(False)
-        self.ch0TextEdit.setReadOnly(True)
+        self.ch0TreeWidget = QTreeWidget(self.ch0Tab)
+        __qtreewidgetitem = QTreeWidgetItem()
+        __qtreewidgetitem.setText(0, u"1")
+        self.ch0TreeWidget.setHeaderItem(__qtreewidgetitem)
+        self.ch0TreeWidget.setObjectName(u"ch0TreeWidget")
+        self.ch0TreeWidget.setHeaderHidden(True)
 
-        self.verticalLayout_7.addWidget(self.ch0TextEdit)
+        self.verticalLayout_7.addWidget(self.ch0TreeWidget)
 
         self.messagesTabWidget.addTab(self.ch0Tab, "")
 
@@ -349,9 +351,9 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.addLayout(self.horizontalLayout_12)
 
         self.nodesTreeWidget = QTreeWidget(self.tab)
-        __qtreewidgetitem = QTreeWidgetItem()
-        __qtreewidgetitem.setText(0, u"1")
-        self.nodesTreeWidget.setHeaderItem(__qtreewidgetitem)
+        __qtreewidgetitem1 = QTreeWidgetItem()
+        __qtreewidgetitem1.setText(0, u"1")
+        self.nodesTreeWidget.setHeaderItem(__qtreewidgetitem1)
         self.nodesTreeWidget.setObjectName(u"nodesTreeWidget")
         self.nodesTreeWidget.header().setVisible(False)
 
@@ -455,6 +457,11 @@ class Ui_MainWindow(object):
         self.horizontalLayout_7.setStretch(4, 10)
 
         self.verticalLayout.addLayout(self.horizontalLayout_7)
+
+        self.enableSoundNotificationsCheckBox = QCheckBox(self.optionsGeneralTab)
+        self.enableSoundNotificationsCheckBox.setObjectName(u"enableSoundNotificationsCheckBox")
+
+        self.verticalLayout.addWidget(self.enableSoundNotificationsCheckBox)
 
         self.verticalSpacer_4 = QSpacerItem(20, 439, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -696,9 +703,12 @@ class Ui_MainWindow(object):
         self.logTabWidget.setTabText(self.logTabWidget.indexOf(self.deviceLogTab), QCoreApplication.translate("MainWindow", u"DeviceLog", None))
         self.mainTabWidget.setTabText(self.mainTabWidget.indexOf(self.homeTab), QCoreApplication.translate("MainWindow", u"Home", None))
         self.messagesTabWidget.setTabText(self.messagesTabWidget.indexOf(self.ch0Tab), QCoreApplication.translate("MainWindow", u"Ch.0", None))
+#if QT_CONFIG(statustip)
+        self.groupBox.setStatusTip("")
+#endif // QT_CONFIG(statustip)
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Input", None))
 #if QT_CONFIG(tooltip)
-        self.sendMessagePushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Send message to exposed Message tab", None))
+        self.sendMessagePushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Send message to exposed Message tab. Can also use \"enter\".  If message is selected, will be a reply.", None))
 #endif // QT_CONFIG(tooltip)
         self.sendMessagePushButton.setText(QCoreApplication.translate("MainWindow", u"Send", None))
 #if QT_CONFIG(tooltip)
@@ -710,7 +720,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.emojisMessageToolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
 #if QT_CONFIG(tooltip)
-        self.tapbackMessageToolButton.setToolTip(QCoreApplication.translate("MainWindow", u"Tapback - sends a single emoji to the current message tab", None))
+        self.tapbackMessageToolButton.setToolTip(QCoreApplication.translate("MainWindow", u"Tapback - sends a single emoji to the current message tab. If message is selected, then will be a reply", None))
 #endif // QT_CONFIG(tooltip)
         self.tapbackMessageToolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
 #if QT_CONFIG(tooltip)
@@ -769,6 +779,10 @@ class Ui_MainWindow(object):
         self.autoTapbackLineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Keyword (not case sensitive) that triggers auto response, must be first word in messsage. ", None))
 #endif // QT_CONFIG(tooltip)
         self.autoTapbackLineEdit.setPlaceholderText(QCoreApplication.translate("MainWindow", u"keyword", None))
+#if QT_CONFIG(tooltip)
+        self.enableSoundNotificationsCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"If checked, then sound notifications are enabled.", None))
+#endif // QT_CONFIG(tooltip)
+        self.enableSoundNotificationsCheckBox.setText(QCoreApplication.translate("MainWindow", u"Enable sound notifications", None))
         self.optionsTabWidget.setTabText(self.optionsTabWidget.indexOf(self.optionsGeneralTab), QCoreApplication.translate("MainWindow", u"General", None))
 #if QT_CONFIG(tooltip)
         self.useDarkStylelCheckBox.setToolTip(QCoreApplication.translate("MainWindow", u"Takes effect on restart", None))

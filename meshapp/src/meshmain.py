@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.5
+BuildNumber = 1.6
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -60,6 +60,11 @@ else:
 
     def showConsole():
         pass
+
+def treeWidgetResized(logical_index, old_size, new_size, w=None):
+    if w:
+        w.scheduleDelayedItemsLayout()
+    print(f"Logical_index: {logical_index}, old_size:{old_size}, new_size:{new_size}")
 
 
 def getStatusFontSize(textEdit):
@@ -279,134 +284,119 @@ class MessageData(object):
         self.toId = 0 # if this is non-zero, then this is a DM to this id.
         self.messageType = "in"
         self.messageText = messageText
-        self.longName = ""   # from longname
-        self.startCursor = 0 # beginning of entire message
-        self.endCursor = 0  # end of entire message
-        self.statusCursor = 0 # beginning of status line
-        self.status = None
+        self.nodeId = None
+        self.indentation = 0
         self.textEdit = None  # this is the textEdit that this MessageData appears on
         self.fmt = None
+        # for  OUT message, will be packet id of sent message, used for tapback
+        # for IN meesage, will be packet id of incoming message, used for reply or tapback
+        self.packetId = None  
         self.ignoreAck = False  # if True, then ignore any other ack packets arriving for this message
+        self.treeWidgetItem = None  # will be the item that holds the text
+        
 
     def displayMessageStatus(self, statusText, statusColor=None):
-        if statusColor is None:
-            statusColor = getLocalUserColor()
-        # now need to display the message text
-        cursor = self.textEdit.textCursor()
-        cursor.setPosition(self.statusCursor)
-        cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
-        cursor.insertText(statusText)
-
-        # Do formatting
-        newSize = getStatusFontSize(self.textEdit)
-        if self.fmt is None:
-            self.fmt = QTextCharFormat()
-        self.fmt.setFontPointSize(newSize)
-        self.fmt.setFontUnderline(True)
-        #self.fmt.setFontWeight(QFont.Weight.Bold)
-        self.fmt.setForeground(QColor(statusColor))
-        cursor.setPosition(self.statusCursor+2)
-        cursor.setPosition(self.statusCursor+len(statusText), QTextCursor.KeepAnchor)
-        cursor.setCharFormat(self.fmt)
-
+        self.treeWidgetItem.setText(0, f"{statusText}")
+        self.treeWidget.resizeColumnToContents(0)
         return
 
 class MessagePage(object):
 
-    def __init__(self, textEdit):
-        self.textEdit = textEdit
-        self.cursorPosition = 0
+    def __init__(self, treeWidget):
+        self.treeWidget = treeWidget
+        self.packetId = 0
         self.messages = []  # list of message objects
         self.nextMessageId = 0
-        self.eotMarker = "#E_0?+"
-        self.statusLine = "                             "
         self.name = ""  #tab name
         self.fmt = None
 
     def getNextMessageId(self):
         self.nextMessageId += 1
         return self.nextMessageId
-    
-    def displayMessage(self, messageType, messageText, longName, fromId, packetId=None, wantAck=True):
-        
+
+    def renameMessages(self,changedNodeId):
+        for message in self.messages:
+            if message.messageType == "in" and message.nodeId == changedNodeId:
+                # regenerate the text for these messages
+                try:
+                    longName, shortName = getNodeLongShortNames(message.nodeId)
+                    num_tabs = message.indentation
+                    itemText = ("    " * num_tabs) + f"{shortName}/{longName}: {message.messageText}"
+                    message.treeWidgetItem.setText(1, itemText)
+                except Exception as e:
+                    outputLogMessage(f"ERROR: Unexpected error {str(e)}", level=logging.ERROR, echoStatus=True)
+                    return
+
+    # if replyId is not None, then this is a reply or a tapback
+    def displayMessage(self, messageType, messageText, fromId, packetId=None, wantAck=True, replyId=None, replyMessage=None):
+
+        if messageType == "in" and  MeshAppContext.mainWindow.soundOnMessageIn and MeshAppContext.getConfigOption('General:EnableSounds', default=''):
+            MeshAppContext.mainWindow.soundOnMessageIn.play()
+        if messageType == "out":
+            shortName = MeshAppContext.localNodeShortName
+            longName = MeshAppContext.localNodeLongName
+            nodeId = MeshAppContext.localNodeId
+        else:
+            try:
+                longName, shortName = getNodeLongShortNames(fromId)
+                nodeId = fromId
+            except Exception as e:
+                outputLogMessage(f"ERROR: Unexpected error {str(e)}", level=logging.ERROR, echoStatus=True)
+                return
+
         messageData = MessageData(messageText, self.getNextMessageId())
         messageData.messageType = messageType
-        messageData.longName = longName
-        messageData.textEdit = self.textEdit
+        messageData.packetId = packetId
+        messageData.nodeId = nodeId
+        messageData.treeWidget = self.treeWidget
         self.messages.append(messageData)
-        messageData.startCursor = self.cursorPosition
-        if messageType == "in":
-            statusLine = self.statusLine
-            preamble = f"IN ({longName})\n{messageText}\n"
-        else:
-            statusLine = self.statusLine
-            preamble = f"OUT ({longName})\n{messageText}\n"
-        msgEnd = f"{self.eotMarker}{statusLine}\n"
-        totalMessage = f"{preamble}{msgEnd}"
-        messageLength = len(totalMessage)
+        flags = QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled
+        targetMessage = None
+        if replyId:
+            targetMessage = MeshAppContext.mainWindow.messagesByPacketId.get(replyId, None)
+        elif replyMessage:
+            targetMessage = replyMessage
+            # this message selected from the tree widget, clear the selection
+            targetMessage.treeWidgetItem.setSelected(False)
+        messageHandled = False
+        if targetMessage:
+            # this is either a reply or a tapback
+            # find the message and add this as a child of that message, do not need a new header 
+            treeWidgetItem = targetMessage.treeWidgetItem
+            try:
+                if treeWidgetItem.childCount() == 0:
+                    # no children, first response, set indentation
+                    targetMessage.indentation += 1
+                messageBodyItem = QTreeWidgetItem(treeWidgetItem)
+                # this new messageData needs to inherit the indentation of its reply parent
+                messageData.indentation = targetMessage.indentation
+                messageData.treeWidgetItem= messageBodyItem
+                messageBodyItem.setFlags(flags)
+                num_tabs = targetMessage.indentation
+                itemText = ("    " * num_tabs) + f"{shortName}/{longName}: {messageText}"
+                messageBodyItem.setText(1, itemText)
+                messageHandled = True
+            except Exception as e:
+                outputLogMessage(f"ERROR: Unexpected error, {str(e)}", level=logging.ERROR, echoStatus=True)
+                return
             
-        self.textEdit.append(totalMessage)
-        # find the actual end of the message, search for self.eotMarker
-        cursor = self.textEdit.textCursor()
-        pos = messageData.startCursor + len(preamble)
-        messageData.statusCursor = pos # this is the start of search, this is default value, will be adjusted if Eot marker found
-        endpos = pos + len(msgEnd)  # do not let the search go past this
-        foundEot = False
-        index = 0
-        while (pos < endpos):
-            cursor.setPosition(pos)
-            c = self.textEdit.document().characterAt(pos)
-            if index == 0:
-                if c == self.eotMarker[index]:
-                    index += 1
+        if not messageHandled:
+            treeWidgetItem =  QTreeWidgetItem(self.treeWidget)
+            treeWidgetItem.setFlags(flags)
+            messageData.treeWidgetItem = treeWidgetItem
+            if messageType == "in":
+                treeWidgetItem.setText(1, f"{shortName}/{longName}:  {messageText}")
+                # display incoming messages on status bar
+                outputStatusMessageMainWindow(f"{self.name}: IN ({shortName}/{longName}): {messageText}")
             else:
-                if c != self.eotMarker[index]:
-                    index = 0 # reset search
-                else:
-                    index += 1
-                    if index == len(self.eotMarker):
-                        # found the string
-                        foundEot = True
-                        pos += 1
-                        break
-            pos += 1
-        if foundEot:
-            messageData.statusCursor = pos - len(self.eotMarker)  # beginning of status line
-            messageData.endCursor =  pos + len(statusLine)+1
-            self.cursorPosition = messageData.endCursor+1
-        else:
-            # did not find EOT. A problem, use default
-            messageData.endCursor =  messageData.startCursor + messageLength
-            self.cursorPosition = messageData.endCursor+1
-        # replace the EOT text with spaces so that it is not visible
-        cursor = self.textEdit.textCursor()
-        cursor.setPosition(messageData.statusCursor)
-        cursor.setPosition(messageData.statusCursor+len(self.eotMarker), QTextCursor.KeepAnchor)
-        cursor.insertText("      ")
+                treeWidgetItem.setText(1, f"{shortName}/{longName}: {messageText}")
+                if messageType == "out" and wantAck:
+                    if not (packetId and packetId in MeshAppContext.mainWindow.orphanAcks):
+                        treeWidgetItem.setText(0, f"Ack Wait")
         
-        
-        # do formatting
-        nodeColor = MeshAppContext.getNodeColor(fromId)
-        # set cursor
-        cursor = self.textEdit.textCursor()
-        cursor.setPosition(messageData.startCursor)
-        cursor.setPosition(messageData.startCursor+len(f"IN ({longName}")+1, QTextCursor.KeepAnchor)
-        # apply fmt
-        if self.fmt is None:
-            self.fmt = QTextCharFormat()
-        newSize = getStatusFontSize(self.textEdit)
-        self.fmt.setFontPointSize(newSize)
-        #self.fmt.setFontWeight(QFont.Weight.Bold)
-        self.fmt.setForeground(QColor(nodeColor))
-        cursor.setCharFormat(self.fmt)
-        if messageType == "in":
-            # display incoming messages on status bar
-            outputStatusMessageMainWindow(f"{self.name}: IN ({longName}): {messageText}")
-        if messageType == "out" and wantAck:
-            if not (packetId and packetId in MeshAppContext.mainWindow.orphanAcks):
-                messageData.displayMessageStatus("  Waiting on ack")
-
-        self.textEdit.verticalScrollBar().setValue(self.textEdit.verticalScrollBar().maximum())
+        self.treeWidget.expandAll()
+        self.treeWidget.resizeColumnToContents(0)
+        self.treeWidget.resizeColumnToContents(1)
         return messageData
     
 
@@ -453,11 +443,17 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         # channel 0 text edit always exists and is fixed.
         # Other text edits are dynamically added as channels are discovered
         # or DMs added
-        self.channelMessagePages = { 0 : MessagePage(self.ch0TextEdit)}
+        self.channelMessagePages = { 0 : MessagePage(self.ch0TreeWidget)}
         self.directMessagePages = {}  # key is always the remote node ID
         self.waitingForAck = {} # key is packet ID, data is MessageData object
         self.orphanAcks = {}  #  for acks not in waitingForAck, value is error reason
-        self.ch0TextEdit.setReadOnly(True)
+        self.messagesByPacketId = {}  # out messages key'ed by packet ID, used for replies
+
+        metrics = QFontMetrics(self.ch0TreeWidget.font())
+        self.messagesColumn0Width = metrics.horizontalAdvance("Acknowledge ")
+        self.messagesIndentation = metrics.horizontalAdvance("xxxxx")
+        initDefaultTreeWidgetAttributes(self.ch0TreeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
+        #self.ch0TreeWidget.header().sectionResized.connect(treeWidgetResized)
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -474,6 +470,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.browseDefaultLogDirPushButton.clicked.connect(self.doBrowseDefaultLogDirPushButton)
         self.autoConnectSerialCheckBox.clicked.connect(self.doAutoConnectSerialCheckBox)
         self.enableEnterToSendCheckBox.clicked.connect(lambda x : MeshAppContext.setConfigOption('General:UseEnterToSend', self.enableEnterToSendCheckBox.isChecked() ))
+        self.enableSoundNotificationsCheckBox.clicked.connect(lambda x : MeshAppContext.setConfigOption('General:EnableSounds', self.enableSoundNotificationsCheckBox.isChecked() ))
         self.enableDeviceLogEchoCheckBox.clicked.connect(self.doEnableDeviceLogEchoCheckBox)
         self.connectDevicePushButton.clicked.connect(self.doConnectDevicePushButton)
         self.closeConnectionDevicePushButton.clicked.connect(self.doCloseConnectionDevicePushButton)
@@ -566,6 +563,16 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.menubar.clear()
         self.menubar.addMenu(self.createMenu('Actions',self.actionsMenuData))
 
+    def regenerateMessages(self, changedNodeId):
+        #some node name has changed, regenerate all messages
+        for messagePage in self.channelMessagePages.values():
+            messagePage.renameMessages(changedNodeId)
+            messagePage.treeWidget.update()
+        for messagePage in self.directMessagePages.values():
+            messagePage.renameMessages(changedNodeId)
+            messagePage.treeWidget.update()
+
+
     def handleOnReceive(self, packet): # called when a packet arrives
         outputLogMessage(f"Received Mesh packet: {packet}")
         MeshAppContext.updateNodeDbFromPacket(packet)
@@ -584,12 +591,18 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         outputLogMessage(f"Connected to meshtastic device: {shortName}/{longName}", echoStatus=True)
         MeshAppContext.addLocalNodeToDb()
         self.isConnectedCheckBox.setChecked(True)
+        if self.soundOnConnection and MeshAppContext.getConfigOption('General:EnableSounds', default=''):
+            self.soundOnConnection.play()
+        
+
 
     def handleOnConnectionLost(self): # called when we (re)connect to the radio
         # defaults to broadcast, specify a destination ID if you wish
         outputLogMessage(f"Disconnected from meshtastic device", echoStatus=True)
         MeshAppContext.isMeshConnected = False
         self.isConnectedCheckBox.setChecked(False)
+        if self.soundOnDisconnection and MeshAppContext.getConfigOption('General:EnableSounds', default=''):
+            self.soundOnDisconnection.play()
         if self.debugStream is not None:
             try:
                 self.serialInterface = None
@@ -597,7 +610,6 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 self.debugStream = None
             except:
                 pass
-
 
     def doClose(self):
         self.close()
@@ -953,6 +965,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.logDirLineEdit.setText(MeshAppContext.getConfigOption('General:LogDirectory', default=''))
         self.autoConnectSerialCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoConnect', default=False))
         self.enableEnterToSendCheckBox.setChecked(MeshAppContext.getConfigOption('General:UseEnterToSend', default=False))
+        self.enableSoundNotificationsCheckBox.setChecked(MeshAppContext.getConfigOption('General:EnableSounds', default=False))
         self.enableDeviceLogEchoCheckBox.setChecked(MeshAppContext.getConfigOption('General:EnableDeviceLogEcho', default=False))
         self.connectDevicePushButton.setDisabled(self.autoConnectSerialCheckBox.isChecked())
         MeshAppContext.deviceLogEchoEnabled = self.enableDeviceLogEchoCheckBox.isChecked()
@@ -973,12 +986,40 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.autoTapbackCheckBox.setChecked(MeshAppContext.getConfigOption('General:AutoTapback', default=False))
         self.autoTapbackLineEdit.setText(MeshAppContext.getConfigOption('General:AutoTapbackKeyword', default="response"))
 
+        
+        self.soundVolume = 0.5
+
+        self.soundOnConnection = None
+        soundFile = MeshAppContext.getConfigOption('General:ConnectSound', default='')
+        if soundFile: 
+            self.soundOnConnection = QSoundEffect()
+            self.soundOnConnection.setSource(QUrl.fromLocalFile(soundFile))
+            self.soundOnConnection.setVolume(self.soundVolume)
+
+        self.soundOnDisconnection = None
+        soundFile = MeshAppContext.getConfigOption('General:DisconnectSound', default='')
+        if soundFile: 
+            self.soundOnDisconnection = QSoundEffect()
+            self.soundOnDisconnection.setSource(QUrl.fromLocalFile(soundFile))
+            self.soundOnDisconnection.setVolume(self.soundVolume)
+
+        self.soundOnMessageIn = None
+        soundFile = MeshAppContext.getConfigOption('General:MesssageInSound', default='')
+        if soundFile: 
+            self.soundOnMessageIn = QSoundEffect()
+            self.soundOnMessageIn.setSource(QUrl.fromLocalFile(soundFile))
+            self.soundOnMessageIn.setVolume(self.soundVolume)
+
+       
+        
+
         return
     
     def _on_emoji_picked(self, item: QIconItem) -> None:
         self.sendMessageTextEdit.textCursor().insertText(item.data(Qt.ItemDataRole.EditRole))
 
     def _on_tapback_picked(self, item: QIconItem) -> None:
+       
         self.doSendMessageCore(item.data(Qt.ItemDataRole.EditRole))
         return
 
@@ -1110,20 +1151,20 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if errorReason == 'NONE':
             if messageData.toId and messageData.toId != fromId:
                 # this was DM to node messageData.toId but the ACK packet is from another ode
-                statusText = "  Ack by other"
+                statusText = "Ack by other"
             else:
-                statusText = "   Acknowledged "
+                statusText = "Acknowledged"
                 messageData.ignoreAck = True
         elif errorReason == 'MAX_RETRANSMIT':
-            statusText = "  Max retransmit "
+            statusText = "Max retransmit "
             statusColor = "red"
             messageData.ignoreAck = True
         elif errorReason == 'NO_CHANNEL':
-            statusText = "  No channel "
+            statusText = "No channel"
             statusColor = "red"
             messageData.ignoreAck = True
         else:
-            statusText = f"  {errorReason} "
+            statusText = f"{errorReason} "
             statusColor = "red"
             messageData.ignoreAck = True
         if statusText is None:
@@ -1143,10 +1184,28 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
     
     def doSendMessageCore(self, msg, clearText=True):
 
+        def getReplyMessage(messageList):
+            selectedCount = 0
+            selectedMessage = None
+            for message in messageList:
+                if message.treeWidgetItem.isSelected():
+                    selectedMessage = message
+                    selectedCount += 1
+            if selectedCount == 0:
+                outputStatusMessageMainWindow(f"No message selected, sending as non-reply")
+                return None
+            elif selectedCount > 1:
+                outputStatusMessageMainWindow(f"Multiple messages selected, sending as non-reply")
+                return None
+            return selectedMessage
+
+
         if len(msg) > 200:
             msg = msg[0:199]
+
         wantAck = True
         tabName = self.messagesTabWidget.tabText(self.messagesTabWidget.currentIndex()) # get exposed tab name
+        replyPacketId = None
         if tabName in self.directMessagePages:
             # this is a direct message, get the from ID of the node
             node = MeshAppContext.getNodeByLongname(tabName)
@@ -1158,17 +1217,30 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     pass
             if node is None:
                 outputLogMessage("ERROR: node {tabname} cannot be found, unable to send message.", level=logging.ERROR, echoStatus=True)
-            packet = self.serialInterface.sendText(msg, node.id, wantAck=wantAck, wantResponse=False)
-            messageData = self.directMessagePages[tabName ].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
+                return
+            replyMessage = getReplyMessage(self.directMessagePages[tabName].messages)
+            if replyMessage:
+                 packet = self.serialInterface.sendText(msg, node.id, wantAck=wantAck, wantResponse=False, replyId=replyMessage.packetId)
+            else:
+                packet = self.serialInterface.sendText(msg, node.id, wantAck=wantAck, wantResponse=False)
+            messageData = self.directMessagePages[tabName].displayMessage("out", msg, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck, replyMessage=replyMessage)
             messageData.toId = node.id
+            messageData.packetId = packet.id
+            self.messagesByPacketId[packet.id] = messageData
             outputLogMessage(f"Packet waiting for ack: {packet.id} to node {node.id}")
             logNodeMessage(f"DM FROM: {MeshAppContext.localNodeLongName}, TO:{tabName} >> {msg}")
         else:
             # must be a channel message
             channel = self.nameToChannel[tabName]
-            packet = self.serialInterface.sendText(msg, '^all', wantAck=wantAck, wantResponse=False, channelIndex=channel)
+            replyMessage = getReplyMessage(self.channelMessagePages[channel].messages)
+            if replyMessage:
+                packet = self.serialInterface.sendText(msg, '^all', wantAck=wantAck, wantResponse=False, channelIndex=channel, replyId=replyMessage.packetId)
+            else:
+                packet = self.serialInterface.sendText(msg, '^all', wantAck=wantAck, wantResponse=False, channelIndex=channel)
             # now need to send this to our text edit
-            messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeLongName, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck)
+            messageData = self.channelMessagePages[channel].displayMessage("out", msg, MeshAppContext.localNodeId, packetId=packet.id, wantAck=wantAck, replyMessage=replyMessage)
+            messageData.packetId = packet.id
+            self.messagesByPacketId[packet.id] = messageData
             outputLogMessage(f"Packet waiting for ack: {packet.id}")
             logNodeMessage(f"Channel {tabName} FROM:{MeshAppContext.localNodeLongName} >> {msg}")
         if wantAck:
@@ -1195,10 +1267,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
 
     def addDirectMessageTab(self, tabName):
-        textEdit = QTextEdit()
-        textEdit.setReadOnly(True)
-        self.messagesTabWidget.addTab(textEdit, tabName)
-        messagePage = MessagePage(textEdit)
+        treeWidget = QTreeWidget()
+        initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
+        self.messagesTabWidget.addTab(treeWidget, tabName)
+        messagePage = MessagePage(treeWidget)
         messagePage.name = tabName
         self.directMessagePages[tabName] = messagePage
         return
@@ -1232,10 +1304,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 if self.messagesTabWidget.tabText(i) == name:
                     return  # this tab already exists
             # add this tab with a text edit
-            textEdit = QTextEdit()
-            textEdit.setReadOnly(True)
-            self.messagesTabWidget.addTab(textEdit, name)
-            self.channelMessagePages[channel] = MessagePage(textEdit)
+            treeWidget = QTreeWidget()
+            initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
+            self.messagesTabWidget.addTab(treeWidget, name)
+            self.channelMessagePages[channel] = MessagePage(treeWidget)
         messagePage = self.channelMessagePages[channel]
         messagePage.name = name
         return
@@ -1250,44 +1322,48 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if portnum != 'TEXT_MESSAGE_APP':
             return
         payload = decoded.get('payload', None)
+        replyId = decoded.get('replyId', None)
         hopStart = packet.get('hopStart', 0)
         hopLimit = packet.get('hopLimit', 0)
+        packetId = packet.get('id', None)
         node = MeshAppContext.getNodeById(fromId)
         if node:
             node.hops = hopStart-hopLimit
         if not isBroadcastId(toId):
             if convertNodeId(toId) == MeshAppContext.localNodeId and payload:
-                self.displayDirectMessage(payload, fromId, "in")
+                self.displayDirectMessage(payload, fromId, "in", replyId, packetId)
         else:
             # this is a channel message
             channel = packet.get('channel', 0)
             if payload:
-                self.displayChannelMessage(payload, fromId, channel, "in")
+                self.displayChannelMessage(payload, fromId, channel, "in", replyId, packetId)
                 
 
         return
     
-    def displayDirectMessage (self, payload, remoteId, messageType):
-        tabName = self.getDirectMessageTabName(remoteId)
-        # the tabName is the longName of the node
-        messageText = payload.decode("utf-8")
-        logNodeMessage(f"DM FROM:{tabName}, TO: {MeshAppContext.localNodeLongName} >> {messageText}")
-        self.directMessagePages[tabName].displayMessage(messageType, messageText, tabName , remoteId)
-            
-    def displayChannelMessage(self, payload, fromId, channel, messageType):
-        
-        node = MeshAppContext.getNodeById(fromId)
+    def displayDirectMessage (self, payload, remoteId, messageType, replyId, packetId):
+         # the tabName is the longName of the node
+        longName = self.getDirectMessageTabName(remoteId)
+        node = MeshAppContext.getNodeById(remoteId)
         if node is None:
-            longName = 'unknown'
+            shortName = 'n/a'
         else:
-            longName = node.longName
-            if longName == "":
-                longName = 'unknown'
-
-
-
+            shortName = node.shortName 
+            if shortName == "":
+                shortName = 'n/a'
+       
         messageText = payload.decode("utf-8")
-        self.channelMessagePages[channel].displayMessage(messageType, messageText, longName, fromId)
+        logNodeMessage(f"DM FROM:{longName}, TO: {MeshAppContext.localNodeLongName} >> {messageText}")
+        self.directMessagePages[longName].displayMessage(messageType, messageText, remoteId, packetId=packetId, replyId=replyId)
+            
+    def displayChannelMessage(self, payload, fromId, channel, messageType, replyId, packetId):
+        
+        if messageType == "in":
+            longName, _ = getNodeLongShortNames(fromId)
+        else:
+            longName = MeshAppContext.localNodeLongName
+        messageText = payload.decode("utf-8")
+        self.channelMessagePages[channel].displayMessage(messageType, messageText, fromId, packetId=packetId, replyId=replyId)
         channelName =  self.channelMessagePages[channel].name
         logNodeMessage(f"Channel {channelName} FROM:{longName} >> {messageText}")
         if (MeshAppContext.getConfigOption('General:AutoTapback', default=False) and
