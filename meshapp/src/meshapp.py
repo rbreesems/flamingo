@@ -688,7 +688,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.clearCurrentLogWindowPushButton.setText(QCoreApplication.translate("MainWindow", u"Clear", None))
 #if QT_CONFIG(tooltip)
-        self.connectDevicePushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Connect to currently selected COM port", None))
+        self.connectDevicePushButton.setToolTip(QCoreApplication.translate("MainWindow", u"Connect to currently selected COM port. Only enabled if autoconnect is turned off.", None))
 #endif // QT_CONFIG(tooltip)
         self.connectDevicePushButton.setText(QCoreApplication.translate("MainWindow", u"Connect", None))
 #if QT_CONFIG(tooltip)

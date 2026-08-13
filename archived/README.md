@@ -1,7 +1,4 @@
 # Flamingo
-
-(This was updated in August 2026 to remove old information, see original in the archive/ directory.)
-
 Repo for sharing utilities for in-cave communication project using Meshtastic-based radios.  This is an extension of (but not affiliated with) the work done by the [Vangelis](https://github.com/semper-ad-fundum/vangelis) project.
 
 With tongue-in-cheek, if flamingo must stand for something, then:
@@ -34,10 +31,12 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
 - Direct message or use dedicated private channels
   - Any technician with smartphone can connect easily
   - All messages are AES128 encrypted
-- Deployments can use either wireless-only or a mixture of wireless + wired (hybrid) nodes
-  - Max wired length between one pair of phone depends on data rate, ie. 9600 bits/second can drive 2400 feet of wire
-  - Wired connections can use standard 2-conductor field phone wire
-- Max hop-length extended to 255 (not that you would ever want to use this!)
+- Faster deployment and cleanup compared to wire and phones
+  - Cover up to 2,000ft of comms in 1hr of setup time using RF only
+  - Cover over 5,000ft (1.6km) of comms per section of phone wire
+- Seamlessly compatible with existing comms wire (hybrid nodes)
+  - Hybrid nodes can be daisy-chained along wire
+- Virtually unlimited chain length (up to 255 nodes)
 
 ## Operability
 - Works with Android or iPhone using free Meshtastic application
@@ -54,49 +53,13 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
 - Range (Radio):
   - 130-320ft (40-100m) between nodes
 - Range (Wired):
-  - Depends on data rate, 4800 bits per second can drive 4700 ft (1.4 km) 
+  - Over 5,000ft of comms wire between nodes
 - Ingress:
   - Water resistant (estimated IP55 for Cavenode V2)
 - Weight/Volume:
   - <6oz (160g) per radio
   - <8lbs per field kit
   - 12 Cavenodes or 8+ Hybrid nodes fit in 10L hard case
-
-# Table of Contents
-
-- [Project Background](#project-background)
-  - [Node Nomenclature](#node-nomenclature)
-  - [Radio Setup](#radio-setup)
-  - [Radio Hardware](#radio-hardware)
-  - [Mesh deployment in a cave](#mesh-deployment-in-a-cave)
-  - [Buzzer Haptic](#buzzer-haptic)
-  - [LORA Speed Mode](#lora-speed-mode)
-  - [Radio Device Roles](#radio-device-roles)\
-  - [Incident Command](#incident-command)
-- [Firmware Repo and changes](#firmware-repo-and-changes)
-  - [Firmware Changes](#firmware-changes)
-  - [Pre-Built Firmware files](#pre-built-firmware-files)
-  - [Firmware Build Targets](#firmware-build-targets)
-  - [RS485 Serial link modification](#rs485-serial-link-modification)
-  - [RS485 Connection](#rs485-connection)
-  - [RS485 Collision](#rs485-collision)
-  - [Hop Limit Extension](#hop-limit-extension)
-  - [Router Rebroadcasts vs Retries](#router-rebroadcasts-vs-retries)
-  - [Direct Messages and Public/Private Keys](#direct-messages-and-publicprivate-keys)
-- [Utility Software](#utility-software)
-- [Testing](#testing)
-  - [Tumbling Rock Cave Preserve / Alabama /US   April 4, 2025](#tumbling-rock-cave-preserve--alabama-us---april-4-2025)
-  - [Tumbling Rock Cave Preserve / Alabama /US   June 6, 2025](#tumbling-rock-cave-preserve--alabama-us---june-6-2025)
-  - [Guffey Cave / Alabama /US   June 27, 2025](#guffey-cave--alabama-us---june-27-2025)
-  - [HCRU Cave Rescue Class Scenario/ Guffey Cave / Alabama /US   August 3, 2025](#hcru-cave-rescue-class-scenario-guffey-cave--alabama-us---august-3-2025)
-  - [HCRU/Chattanooga Cave Rescue/Jackson County Rescue Mock/ Tumbling Rock Cave / Alabama /US   Sept 27, 2025](#hcruchattanooga-cave-rescuejackson-county-rescue-mock-tumbling-rock-cave--alabama-us---sept-27-2025)
-    - [So why did the mesh used in the Tumbling Rock Mock have initial reliablity problems?](#so-why-did-the-mesh-used-in-the-tumbling-rock-mock-have-initial-reliablity-problems)
-  - [Hop Latency/Range Testing - October 2025](#hop-latencyrange-testing---october-2025)
-  - [Traceroute/External Antenna on Cave Nodes Testing, December 2025](#tracerouteexternal-antenna-on-cave-nodes-testing-december-2025)
-  - [Firmware 2.7.15 testing, January 2026](#firmware-2715-testing-january-2026)
-  - [Tumbling Rock Cave Preserve test, January 23/2026](#tumbling-rock-cave-preserve-test-january-232026)
-  - [Tumbling Rock Cave Preserve test, March 20/2026](#tumbling-rock-cave-preserve-test-march-202026)
-  - [HCRU Cave Rescue Class / Hughes Cave and Guffey Cave / Alabama /US --  August 1/2, 2026](#hcru-cave-rescue-class--hughes-cave-and-guffey-cave--alabama-us-----august-12-2026)
 
 # Project Background
 
@@ -108,185 +71,120 @@ A cave environment is much different from open air, with radios needing to be pl
 
 Meshtastic guidance is that 3 is typically a sufficient value for maximum hops for most mesh mesh configurations to avoid packet congestion. However, our configuration is a linear chain, so mesh congestion is not an issue. We require more hops than 7, with the max feasible limit something to be discovered through testing.
 
-## Node Nomenclature
+# Firmware Modifications
 
-When deploying a mesh in the cave, we split radios into two categories:
+This [repo](https://github.com/rbreesems/firmware) is our fork of the meshtastic repo.   We have been using RAK4630-based radios, both built-from-scratch with 3D printed enclosures and off-the-shelf 
+[WisMeshPocket V2](https://store.rokland.com/products/wismesh-pocket).  Dane Evans has a [Flamingo Repo](https://github.com/DaneEvans/Flamingo-Firmware) that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as it progresses, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release (the `flamingo` branch in that repo has our changes integrated into the latest Meshtastic `main` ).
 
-- Relay nodes - these are radios that are placed by the comms team and are used to relay packets back to Incident Command outside of the cave. Once placed, a relay node does not move. Rescuers do not pair to these nodes.  The Device Role for these radios are ROUTER (more on this later). 
-- Rescuer nodes - these are radios that are given to rescuers, where the rescuer pairs to the radio assigned to them and carries it with them in the cave. The Device Role for these radios are either CLIENT_MUTE or CLIENT.  Packets travel from a rescuer phone (bluetooth) to rescuer radio, then from rescuer radio to a nearby relay radio, and then out the cave to IC via the relay radio mesh.
+In the rbreesems repo, the branches `may2025` (firmware 2.5),  `hopmod_2.6.11` (firmware 2.6), `hopmod_2.7.9` (firmware 2.7.9), `hopmod_2.7.15`, `hopmod_2.7.16`,  contains our modifications (other branches should not be used).  The following summarizes our changes:
 
-## Radio Setup
+- Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31.
+See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
 
-We have two channels in our radio YML configuration files, Admin (channel 0), and General (channel 1). Our usage of these channels is:
+- LCD splash screen displays Flamingo firmware version name.
 
-- The Admin channel should be used by Incident Command (IC) and the comms team when setting up the mesh.  Non-comms team rescuers are advised to mute this channel. Range test packets which are output during mesh setup all go to channel 0, and can be distracting for non-comms team members.
-- The General channel is used for all rescue communication
+- Range test has been modified to support non-hopping/hopping range test packets.  Default is non-hopping.  It has also been modified to be enabled even when GPS code is excluded. Also, range test data is never saved to storage.
 
-We do not use direct messages as radios must know each other's public keys which can be a hassel to manage. For channel messages, a radio only needs the key for the channel.
-Also, direct messages just mean a different tab to watch in the phone app which can be distracting.  We discourage (but obviously cannot prohibit) rescuers from using direct messages for rescue communication.
+- Range test messages sent to phone now have the RX RSSI/SNR for the received packet. RSSI is a negative number that increases in absolute value with increasing distance between TX/RX nodes.
+SNR (Signal to Noise ratio) is a magic number sent by the Gods and you can figure out its relationship to distance. Actually, we have found that SNR is the best indicator (> 3.0 dB) of packets being received reliably for long hop chains.
 
-See the section on [Utility Software](#utility-software) for information on a python utility for easily configuring radio settings -- it is important that all radios have common setting for things like LORA speed mode and channels before deployment.
+- Range test should be enabled on all cave nodes as any cave node may have to send/receive range test packets. Range test must enabled and the sender delay must be set in order for the remote range test admin commands to work (set this via the CLI or app). Even if sender delay is non-zero, the sending action must be soft-enabled by an admin command as specified in the next bullet.
 
+- Admin commands are supported for direct channel messages to a node. Admin commands are case insensitive (capitalization shown for emphasis only).  Admin commands are ignored if received on the general channel.
+These admin commands are compatible with voice recognition in the messaging app. The first word of an admin
+command was chosen to not be part of a normal status message. In the 2.7.16 firmware builds, the `ADRT on <shortname>` command was added that allows range test enabled from a broadcast channel to the targeted node with `<shortname>`.  This was added because to make node placement easier, this sidesteps the problems of DMs regarding mis-matched public keys and the necessity for the target node to be in the contacts lists.
 
-## Radio Hardware
+  - `ADRT on`  -- turn on range test (default delay is 30 seconds)
+  - `ADRT on hop`  -- turn on range test, and enable packet hopping (REMOVED IN 2.7.16 firmware builds)
+  - `ADRT off`  -- turn off range test.
+  - `ADRT delay <15|30|60>`  -- set delay for between packets. Only 15, 30, or 60 is recognized.
+  - `ADRT on <shortname>` -- sent in broadcast channel, enables range test (2.7.16 firmware and up)
 
-There literally dozens of radio types that are compatible with the Meshtastic firmware.  The principle CPU/radio combination that we use is the RAKwireless RAK4631 module + WisMesh board for expansion.  This has a NR52 series CPU + bluetooth radio + LORA radio.  Its principle advantage is that it is very low power; typically our radios can run for over a week continuously on an 18650 battery.  Its disadvantage is that it is a bit more expensive than some other cpu/radio combinations like the ESP32 CPU.  
+- Logging messages to the serial port have been modified for easier parsing. Logging of all communication at Incident Command (IC) during a rescue is of critical importance. Our assumption is that the relay chain extends all the way to IC, with a laptop hooked to the surface node so that serial logging can be done.  The messages output to the serial port during operation were slightly modified so that they could be easily parsed afterwards, and incoming/outgoing messages with timestamps easily summarized. We use Microsoft Code + Serial Monitor plugin for serial monitoring. We used this methodology during testing and it worked well. There is a fix for logging of long messages in `HCRU 07/25.2` - a problem was discovered during the mock scenario held on August 3/2025 that messages longer than about 50 characters got truncated in the log. Fortunately, most of the messages during the mock were short, but it was still annoying to have lost some message content.
 
-We have tested our Meshtastic forked firmware with CPUs/Radios other than the RAK4631 for curiosity purposes, but all of our deployed radios use the RAK4631 module. We purchase RakWireless products from [Rokland](https://store.rokland.com), based in Florida, USA.
+- Support for serial link via the RAK5802 RS485 module - see the detailed section below.
 
-Our unit radios use the RAKwireless WisBlock Meshtastic Starter Kit (RAK4631 module + RAK19007 WisBlock base board) installed in a 3D printed enclosure.  For off-the-shell radios, we like the RAKwireless WisMesh Pocket V2 all-in-one, also available from Rokland. These make for good rescuer radios.
+- Support for a buzzer haptic for RSSI - see the detailed section below.
 
-The hybrid node that supports a wired link between nodes uses the RAK5802 RS485 module which can also be purchased either directly from RAK Wireless or from Rokland for less than $10 USD. This module plugs into the RAK19007 WisBlock base board.
+- Support for a heartbeat LED (blinks every two seconds) - useful for locating nodes that have been placed in the cave. NOT SUPPORTED ON BRIDGE NODES (nodes with the RS485 interface).
 
-Our built radios come in two flavors:
-  - Wireless only nodes
-  - Hybrid nodes - supports either wirless or a wired serial connection (via RS485). We also refer to Hybrid nodes as 'Bridge' nodes (bridge between wireless and wired).
+- The  `hopmod_2.7.9` branch has some additional changes - SNR average is printed out in the range test packets, buzzer will have 3 beeps if SNR average is less than 1.0, and TraceRoute support has been extended to 19 hops and made more reliable (see the detail section on hop latency testing/TraceRoute).  In the other branches, TraceRoute returns inaccurate results past 8 hops.
 
-We have been gravitating to only using Hybrid nodes as relay nodes so as to not have to pre-decide how many wireless vs hybrid nodes to use in the mesh - if all the relay nodes are hybrids, then any of them then can support a wired connection if needed.
+- The `hopmod_2.7.15`, `hopmod_2.7.16` branches have additional changes over `hopmod_2.7.9`. These changes added retries for channel messages (configured for two retransmits on failure, stock firmware has none), and retries direct messages even if there is no known neighbor (stock firmware only retries if there is a known neighbor). See the section that discusses retry behavior for the rationale for these changes. The SNR threshold for three beeps on rangetest packets was changed from 1.0 to 3.0. There is also a critical update to the RS485 serial link code that adds a TX queue and improved RX handling, see the section on RS485 collision testing. If you use the RS485 link, then you should use `hopmod_2.7.15` or higher.
 
-## Mesh deployment in a cave
+- The `hopmod_2.7.16` branch was updated in April 2026 with a fix for channel message retry cancellation. Previous to this fix, only the originator node canceled scheduled channel rebroadcasts if it heard a neighbor echo the packet. This bug caused unnecessary LORA TX.  With the fix, now all nodes in the chain will cancel scheduled channel broadcasts if they hear a neighbor echo a previously sent packet.  The debug logging output was also extended to encode emojis as
+ansii hex in the output so that these can be converted back to emojis by the `log_parse.py` utility. Previously, emojis appeared as `##` string in the debug output.  This branch also supports the `ADRT on <shortname>` command sent in a broadcast channel to enable range test on the node with shortname of `<shortname>`.
 
-This section gives some generalities about how to set up a mesh in a cave; exact details one some of the steps are given later. 
+- The `hopmod_2.7.16` branch was updated in July 2026 to add a compilation target named `env:rak4631_slinkbuzzer` that
+uses a high-true active buzzer and blinky LED on the RS485 module connector (Blinky LED is on I2C_SCL, Buzzer on I2C_SDA, the ISC capability on these pins is disabled and they are just GPIO). The Blinky LED module and Buzzer Modules disable I2C1 capability if these pins are used for IO.
 
-It is assumed that the comms team is already familiar with the general cave layout and have a plan for what sections of the cave will need wired connections (ie., the passage is twisty or narrow or both) and which sections of the cave lend itself to wireless relay nodes.
+The `firmware/variants/rak4631/platformio.ini` file (2.6 or less) contains different targets for these various capabilities. All targets contain the hop limit and admin command modifications.
 
-A wire connection is easy; just run the comms wire between two hybrid nodes without exceeding the maxium distance for the given programmed bit rate.  Our radios all used 9600 bits/per/second, which can drive approximately 2400 feet of wire. Our wire spools typically have have 800 feet on them, so just two hybrid nodes could consume three wire spools. 
+1. `env:rak4631` - just contains hop limit/admin modifications
+2. `env:rak4631_slink` - `env:rak4631` + enables serial link modifications
+3. `env:rak4631_buzzer` - `env:rak4631` + enables buzzer modifications
+4. `env:rak4631_cavenode` - `env:rak4631` + enables buzzer modifications + blinky heartbeat led
+5. `env:rak4631_slink_hb` - `env:rak4631` + enables serial link modifications + blinky heartbeat led (DO NOT USE - SEE BELOW)
 
-Placing a wireless relay chain can be faster than laying down wire, once the team is practiced at it.  The methodology is:
+The above targets are based on the `may2025` (2.5 firmware) and `hopmod_2.6.11` (2.6 firmware) branches.
 
-1. Place a wireless relay node (ie. Node A)
-2. A comms team member enables range test sending on Node A.  Range test sends out packets at fixed intervals (i.e every 10 seconds) on the broadcast channel 0, and these packets arrive at radios in range but are not forwarded from those radios. The receiving radio can see the SNR (signal to noise ratio) of the recieved packet (starts at 12 DB and goes down with distance, can become negative.)
-3. The comms team moves away from Node A and watches the average SNR value of arriving packets - we use a minimum average SNR of 3.0 as the indication that a new relay node must be placed.
-4. Place the next relay node (ie, Node B). 
-5. Disable range test on Node A.
-6. Send a test message to Incident Command (assumed located outside of the cave) and request a hard acknowledgement to verify a solid link to IC.  You could also do a trace route to the IC radio instead of message.
-6. Enable range test on Node B and continue into the cave.
+The `firmware/variants/rak4631/platformio.ini` file in the `hopmod_2.7.9` and `hopmod_2.7.15` branches (2.7 firmware) has the following targets (in these branches, all Flamingo code changes are protected by a `#ifdef FLAMINGO`/`#endif` section).
 
-All comms chatter during setup should be on the Admin channel (channel 0).  Range test packets go to channel 0 as well.
-Details on enabling/disabling range test is given later in this document.
+1. `env:rak4631` - this target compiles to standard Meshtastic firmware
+2. `env:rak4631_flamingo` - has `-D FLAMINGO` compile flag, just contains hop limit/admin/trace route modifications, suitable for a generic rak4631 device like a WisMesh Pocket
+3. `env:rak4631_slink` - `env:rak4631_flamingo` + enables serial link modifications
+4. `env:rak4631_buzzer` - `env:rak4631_flamingo` + enables buzzer modifications - assumes active buzzer.
+5. `env:rak4631_cavegen2` - `env:rak4631_flamingo` + enables buzzer modifications + blinky heartbeat led, intended for our 2nd gen cave node
 
-When monitoring SNR during range test, you will notice that the SNR will bounce around as you move -- you should occassionally pause and let it settle.  Be conservative in placing nodes as a relay chain is only as strong as its weakest link.
+An additional target is in the  `hopmod_2.7.16` branch (2.7 firmware) :
+1. `env:rak4631_slinkbuzzer` - `env:rak4631_flamingo` + enables serial link modifications with buzzer and blinky LED on the RS485 module connector (Blinkly LED is on I2C_SCL, Buzzer on I2C_SDA, the ISC capability on these pins is disabled and they are just GPIO )
 
-When placing relay nodes, try to use some numerical ordering based on the short name (WP01, WP02, WP03, ...). This makes it easier to debug the chain via trace route if comm problems arise.
+For targets that support the buzzer and heartbeat LED the pin usage can be changed via compile time defines.
 
-Our hybrid nodes (and some older generation nodes) contains a buzzer that beeps as follows:
-1. Four beeps on power up
-2. During Range test, one beep is SNR average >=6, two beeps if  6 > SNR average >= 3, three beeps if 3 > SNR average.  A buzzer is only for convenience, as SNR average is printed in the range test packet.  This allows you to walk forward without constantly monitoring the phone. You should never place a relay node is the average SNR is negative.
+The `firmware/tested` directory for pre-built firmware, in sub-directories labeled as `fw2_5`, `fw2_6`, `fw2.7.9`, `fw2.7.15`, `fw2.7.16`  Going forward, new features will be added to 2.7 firmware builds and will not be backported to 2.5/2.6.  The `firmware/beta` directory has firmware that is the process of being tested, but not fully vetted inside of a cave. As of Feburary 2026, the 2.7.15/2.7.16 firmware updates moved from the  `firmware/beta` directory to the `firmware/tested` directory , and all `2.7.15`, `2.7.16` firmware files are configured for two retransmits.
 
-To enable range test on a remote node, send 'ADRT on <shortname>' in a broadcast channel (ie. ADRT on WP03) -- capitialization used for emphasis only. The <shortname> is the target node to enable range test. To disable range test, send 'ADRT off' in a broadcast channel - all nodes that receive this will turn off range test. These are examples of `admin` commands that are explained in more depth later in this document.
+On the Bridge Nodes, aka serial link nodes (RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module) we have discovered that IO1 and IO2 appear to be shorted to each other on the RAK5802 RS485 board.  According to the RAK5802 documentation, IO1 is a low-true signal used to disable the RS485 interface, so our code always keeps it in the high state (we never disable the RS485 interface). We tried using IO2 for the blink LED, but found that RS485 operation became erratic with blink enabled. We then discovered that IO2 was always high, the same state as IO1, and it is suspicious that IO1 and IO2 are directly across from each other on the RAK19007 I/O connector. The conclusion is that IO1 and IO2 are shorted, and that blinking IO2 periodically enables/disables the RS485 interface, causing erratic operation. Unfortunately, there is no other easily accessible general purpose IO pin for use as the blinky LED using the RAK19007 base board. So on our bridge node builds, we just tie the blink LED to IO2 and accept that it will always be on when power is applied (does not appear to affect power usage that much, only a 7% overnight drop on an 18650 battery). So, our serial link firmware builds do not include the blink module for this reason.
 
-When placing relay nodes, it is __EXTREMELY IMPORTANT__ that the radio used by the comm team member listening for range test packets from relay nodes use the same antenna configuration as the relay nodes themselves.  See the section on [So why did the mesh used in the Tumbling Rock Mock have initial reliablity problems?](#so-why-did-the-mesh-used-in-the-tumbling-rock-mock-have-initial-reliablity-problems) for an example of what can happen when this rule is not followed.
+## What LORA speed mode to use for cave nodes?
 
-## Buzzer Haptic
+In our cave testing, we used MEDIUM/SLOW for our mocks/testing through October 2025. However, after the September Tumbling Rock cave rescue mock, we did some detailed hop latency/range testing (see the dedicated section on this). This resulted in a decision to use SHORT/FAST going forward in order to reduce latency over a large number of hops and to keep TX contention low. The distance that wireless nodes can practically reach in a cave means that the range difference between MEDIUM and SHORT modes is not that significant, and that we would rather have lower latency/less contention.  Wired segments with bridge nodes can be used to cover long distances with wireless nodes used to bridge gaps or reach vertically if needed.
 
-The current buzzer that use is the [Grove Buzzer] (https://wiki.seeedstudio.com/Grove-Buzzer/) from SeeedStudio.  It is a high true, active buzzer on a small PCB. We just stuff this into our 3D enclosure.  We have also used a low-true active buzzer purchased from Amazon (search for Active Buzzer Module, 5V Piezoelectric Alarm, DIYables store) but prefer the Grove buzzer as it is a smaller form factor.
-
-## LORA Speed Modes
-
-In our cave testing, we used MEDIUM/SLOW for our mocks/testing through October 2025. However, after the September 2025 Tumbling Rock cave rescue mock, we did some detailed hop latency/range testing (see the dedicated section on this). This resulted in a decision to use SHORT Range/FAST speed going forward in order to reduce latency over a large number of hops and to keep TX contention low. The distance that wireless nodes can practically reach in a cave means that the range difference between MEDIUM and SHORT modes is not that significant, and that we would rather have lower latency/less contention.  Wired segments with bridge nodes can be used to cover long distances with wireless nodes used to bridge gaps or reach vertically if needed.
-
-We used the SHORT Range/FAST mode in the 2026 Cave Rescue class and we noticed little difference from 2025 node placements in the same cave, and the mesh worked flawlessly.
-
-## Radio Device Roles
+## What Device roles to use for cave nodes?
 
 First, using the `CLIENT` role for all nodes will work, but is not optimal as explained below. We used the `CLIENT` role exclusively for a long time before we learned that using different roles can improve both latency and chain debugging.
 
 There are three device roles that we use for cave nodes:
 
-- `ROUTER` - this role is used for relay nodes that form the primary communication chain. The principle reason to use this role is because it has much lower latency when rebroadcasting packets than a role like `CLIENT`.  The following [blog post](https://meshtastic.org/blog/demystifying-router-late/) has a great explantion of how the different roles calculate latency when rebroadcasting packets.  As an example of the latency difference, a seven-node chain of all CLIENT nodes had an end-to-end latency of about 10 seconds for a channel message using LORA SHORT/FAST mode, while the same seven-node chain only had a one to two second latency when all nodes had ROUTER roles.
+- `ROUTER` - this role is used for nodes that form the primary communication chain. The principle reason to use this role is because it has much lower latency when rebroadcasting packets than a role like `CLIENT`.  The following [blog post](https://meshtastic.org/blog/demystifying-router-late/) has a great explantion of how the different roles calculate latency when rebroadcasting packets.  As an example of the latency difference, a seven-node chain of all CLIENT nodes had an end-to-end latency of about 10 seconds for a channel message using LORA SHORT/FAST mode, while the same seven-node chain only had a one to two second latency when all nodes had ROUTER roles.
 
-- `CLIENT` - this can be used for rescuer radios who will be going in and out of range of the primary communication chain or who are extending past the end of the primary communication chain. This role rebroadcasts packets like the `ROUTER` role, but with a longer latency.  By rebroadcasting, these nodes can dynamically extend comms past the primary communication chain.
+- `CLIENT` - this can be used for any teams who are will be going in and out of range of the primary communication chain or who are extending past the end of the primary communication chain. This role rebroadcasts packets like the `ROUTER` role, but with a longer latency.  By rebroadcasting, these nodes can dynamically extend comms past the primary communication chain.
 
 - `CLIENT_MUTE` - this role should be used for rescuer radios that are always in range of the primary communication chain. One reason to use this role is that packets are not rebroadcast which reduces TX contention.  A second reason is that when trying to debug a weak link in the communication chain you do not want nearby rescuer radios rebroadcasting packets, which will obfuscate your attempts to locate a weak link in the primary communication chain.
 
-In the 2026 Cave Rescue class, we used this assignment methodology and it worked well. The only drawback of `CLIENT_MUTE` is that if a radio is only in range of other `CLIENT_MUTE` radios, then it will report a `MAX RETRANSMIT` error on any message since it will not hear the packet echoed by the other `CLIENT_MUTE` radios that received the packet. This can be confusing, as the other radios in range probably received the packet, they just did not echo it.
 
-## Incident Command
+## Buzzer Haptic for RSSI
 
-We use a Windows laptop at Incident Command to log all messages. Initially, we just used Visual Studio code to record the debugging messages from the connected IC radio, and then used a custom python utility to parse the messages from the debug log. 
+The buzzer modifications use an active buzzer to indicate different RSSI ranges when a range test packet is received. The ranges are:
 
-However, this proved to be insufficent in terms of log clarity, so a Windows Desktop app based on Python + Qt was developed for this purpose. This is located in the `meshapp` folder, see the README in that folder for more details. This is a relatively new app (developed in early summer 2026) and is so undergoing rapid changes. We used it to good effect for the first time at our August 2026 cave rescue class and it worked well.
+1. One beep: RSSI greater than or equal to -90
+2. Two beeps:  RSSI less than -90  greater than or equal to -110
+3. Three beeps  RSSI less than -110.
 
-The responsibilities of Incident Command are:
-- Hand out rescuer radios and rename the owner name (long name) to something appropriate when a radio is assigned.  This reduces confusion in the channel chat if the long name accurately reflects the sender. After a radio is renamed, power-cycle the radio so that is sends out a node information packet with the new long name.
-- Monitor the incoming messages and respond as appropriately with either replies or tapbacks or general messages.
-- Assist the comms team during mesh setup with ack responses to comm team messages to ensure the comms team has a good link back to IC
+The 2.7+ firmware builds have extended this to also use a running SNR (signal-to-noise ratio) average based on the last three packets - if the average SNR falls below a set threshold, then three beeps is used regardless of RSSI. We have found SNR to be a good predictor packet loss. SNR tends to bounce around when moving so once beeps are sounded based on SNR, need to pause and wait for SNR to steady out to determine if SNR is unacceptable or not. The `hopmod_2.7.9` branch uses a value of 1.0 for the SNR threshold, while the `hopmod_2.7.15` branch uses a value of 3.0 (after more testing, we felt that a higher threshold was needed).
 
-Once all radios are handed out, it is a good idea to send the admin command `ADNI` to a broadcast channel. This causes all radios to schedule a node-information packet sometimes in the next 15 minutes (slot time randomly chosed by each radio). This is needed so that all radios get updated the the correct long names for radios in the mesh -- radios that were renamed may still be under the previous long name in a radio that was turned on afer the initial radio renaming.
+This buzzer is used during relay placement so that you don't have to keep your eyes on the screen to see RSSI values for range test packets. This does not use the RAK PWM buzzer settings in the phone app.  The buzzer is only installed on the radio that you want to use as a relay placement listener.
 
-# Firmware Repo and Changes
+The buzzer we used was purchased from Amazon (search for Active Buzzer Module, 5V Piezoelectric Alarm, DIYables store) - it is a small 3-pin (Vcc/Gnd/IO) breadboard.  We have stuffed it successfully into a WisMesh Pocket radio, it just barely fits. It runs fine on 3.3V.  This particular active buzzer is an active low enable.
 
-The original firmware [repo](https://github.com/rbreesems/firmware) which was a fork of the official meshtastic repo has been retired.
-The new firmware repo is the rbreesems/Flamingo-Firmware [repo](https://github.com/rbreesems/Flamingo-Firmware) is a fork of a repo setup by Dane Evans [Flamingo Repo](https://github.com/DaneEvans/Flamingo-Firmware)  that has the Flamingo firmware changes and checks integration into the Meshtastic main firmware branch as new releases are made, to ensure that we can stay abreast of Meshtastic development and are not tied to a single Meshtastic release.
+These modifications could easily be modified to support a passive buzzer.
 
-Pre-built firmware is placed in this repo in the `firmware/tested` directory. As of August 2026, the current firmware builds are in the 2.7.25 directory. If you wish to build these yourself, look at the `flamingo_v2.7.25_add` branch in the new firmware  [repo](https://github.com/rbreesems/Flamingo-Firmware).  You can also look at the DaneEvans repo if you want to build firmware yourself that targets later versions.  The branches in the rbreesems Flamingo-Firmware directory will always lag behind those on the DaneEvans repo as it takes time to vet new builds for the 30+ radios that we have in our equipment trailer.  No attempt will be made to verify every minor meshtastic release. When a major release is done, we will wait for a few minor releases before moving to release unless Meshtastic phone App updates forces us to move faster.
-
-## Firmware Changes
-
-These are all the firmware changes in the 2.7.25 builds that differ from the Meshtastic stock firmware:
-
-- Packet header has been changed to support a hop limit up to 255, but firmware has it limited to 31 (you do not want to a hop chain longer than this for latency/reliability reasons).  See the section on hop limit modification for a discussion of this change. The most important ramification is that radios with this firmware can only talk to radios with the same firmware.
-
-- LCD splash screen displays Flamingo firmware version name.
-
-- Range test is now enabled even when GPS code is excluded. Also, range test data is never saved to storage.
-
-- Range test messages sent to phone now have the RX RSSI/SNR for the received packet. RSSI is a negative number that increases in absolute value with increasing distance between TX/RX nodes.  SNR (Signal to Noise ratio) ranges from about 12 db max to negative numbers. We have found that SNR is the best indicator (> 3.0 dB) of packets being received reliably for long hop chains.
-
-- Admin commands have been added that work on either the broadcast channels or via direct messages.  Admin commands are case insensitive (capitalization shown for emphasis only).  Admin commands used for instructing remote radios to perform some action (there is a capability built into Meshtastic but it is too cumbersome to configure and use).
-
-Because admin commands are used in a broadcast channel,  the first word of an admin
-command was chosen to be cryptic so as not to be part of a normal status message. The commands below have captilization for emphasis, but parsing is case-insensitive.
-
-  - `ADRT on <shortname>`  -- broadcast channel, turn on range test (default delay between packets set by node configuration file) for target radio `<shortname>`
-  - `ADRT off`  -- broadcast channel or Direct Message (DM), turn off range test (no radio target is needed, any radio in range will turn off range test sending)
-  - `ADRT delay <5|10|15|30|60>`  -- broadcast channel or (DM), set delay for between packets. Only 5, 10, 15, 30, or 60 is recognized.
-  - `ADRT on` -- as a Direct Message, enables range test on receiving node. If sent in broadcast channel has no effect.
-  - `ADNI` -- broadcast channel,  all receiving nodes will send out a node information packet within the next 15 minutes (each node randomly chooses a time). The need for this command is discussed later in this document.
-  - `ADNI <shortname>` -- broadcast channel, only the target node will send a node information packet.
-
-- Support for serial link via the RAK5802 RS485 module - see the detailed section below.
-
-- Support for a heartbeat LED (blinks every two seconds) - useful for locating nodes that have been placed in the cave. 
-
-- Support for a buzzer haptic that beeps based on SNR average during range testing During range test, a running average of the last three SNR packets is computed.  A node with a buzzer outputs three beeps if SNR average is less than 3.0, two beeps if less than 6, and one beep otherwise.  Three beeps is considered a bad placement and the node should be moved closer to the previous relay node. The buzzer can be configured to be either active or passive, low or high true via compilation flags.
-
-- TraceRoute support has been extended to 19 hops and made more reliable (see the detail section on hop latency testing/TraceRoute). 
-
-- Retries for channel messages have been added (default configuration is for two retransmits on failure, stock firmware has none), and retries direct messages even if there is no known neighbor (stock firmware only retries if there is a known neighbor). See the section that discusses retry behavior for the rationale for these changes.
-
-## Pre-Built Firmware files
-
-The firmware/tested/fw2.7.25 contains the latest pre-built firmware files as of August 2026. The `xmitt2` tags mean that these builds are configured for 2 retries for broadcast packets (retries are used if a node does not hear a neighboring mesh node echo the packet it just sent).
-
-1. `rak4631-firmware-wismesh-pocket_2.7.25_xmit2.uf2` -- WisMesh pocket
-2. `rak4631-firmware-wismesh-pocket-active-buzzer-lowtrue-io3_2.7.25_xmit2` - WisMesh pocket build with a low-true active buzzer on io3
-3. `rak4631-hybridnode-active-buzzer-hightrue-ain1-led-i2cscl1_2.7.25_xmit2` - Hybrid node build blinkly led on i2cslc1 (pin available on RAK5802 RS485 connector) and a high true buzzer on pin ain1 (accessible from the RAK19007 WisBlock base board).
-
-## Firmware Build Targets
-
-If you build the firmware yourself, the file `variants/nrf52840/rak4631/platform.ini` contains the following build targets for various flavors of nodes.
-Our code changes are protected by various compile compilation flags that contain `FLAMINGO` in it so the code can be compiled to standard Meshtastic base if desired.
-
-The build targets are: 
-
-1. `env:rak4631` - this target compiles to standard Meshtastic firmware
-2. `env:rak4631_flamingo` - has `-D FLAMINGO` compile flag, just contains hop limit/admin/trace route modifications, suitable for a generic rak4631 device like a WisMesh Pocket
-3. `env:rak4631_slink` - `env:rak4631_flamingo` + enables serial link modifications - used for hybrid build without blinky LED/Buzzer
-4. `env:rak4631_buzzer` - `env:rak4631_flamingo` + enables buzzer modifications - flags are set for active low true buzzer.
-5. `env:rak4631_cavegen2` - `env:rak4631_flamingo` + enables buzzer modifications + blinky heartbeat led, intended for our 2nd gen cave node
-6.  `env:rak4631_slinkbuzzer` - `env:rak4631_flamingo` + enables serial link modifications with high true active buzzer (AIN1) and blinky LED on the RS485 module connector (I2C1_SCL). This code disables the I2C functionality.
-
-On the Hybrid Nodes, aka serial link nodes (RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module) we have discovered that IO1 and IO2 appear to be shorted to each other on the RAK5802 RS485 board.  According to the RAK5802 documentation, IO1 is a low-true signal used to disable the RS485 interface, so our code always keeps it in the high state (we never disable the RS485 interface). We tried using IO2 for the blinky LED, but found that RS485 operation became erratic with blink enabled. We then discovered that IO2 was always high, the same state as IO1, and it is suspicious that IO1 and IO2 are directly across from each other on the RAK19007 I/O connector. The conclusion is that IO1 and IO2 are shorted, and that blinking IO2 periodically enables/disables the RS485 interface, causing erratic operation. 
-
-This is why we ended up using the I2C1_SCL output on the RS485 module connector for the Blinky LED and disabled the I2C functionality.
 
 ## RS485 Serial link modification
 
 The `slink` targets in the `platformio.ini` enable the serial link code. This code is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
 RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. 
 
-Our terminology for radio that has the RS485 interface is `bridge node`, as it allows bridging between the wireless/wired worlds (we also call it a `hybrid node`).
+Our terminology for radio that has the RS485 interface is `bridge node`, as it allows bridging between the wireless/wired worlds.
 
 The maximum working baud rage for a short wire (< 2 feet) was found to be 230400 buad. 
 
@@ -312,7 +210,7 @@ Connect two radios via the hard link, then bluetooth connect to each radio with 
 
 To test RF RX (radio 1)> RS485 TX (radio 1) > RS485 RX (radio 2) > RF TX (radio 2) > RF RX (radio 3), just turn on a third radio in the room, connect your phone to the bridge node that has LORA TX disabled (radio 1), and target radio 3 with a direct message.  The packet will be sent by radio 1 over the wire to the bridge node with LORA TX enabled (radio 2), and which will then send the packet to radio 3 via RF -  you should receive an ACK back from this direct message.
 
-The image below shows early bridge node prototypes: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire") shows three bridge nodes @4800 baud and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  You could also place two more bridge nodes in this system, one each spool connection. The bridge nodes have their LORA TX disabled during testing, this forces packets over the wire.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.  While this may look like a 'multi-hop wire' connection it is not - this just a multi-driver RS485 topology (which RS485 supports). Any packet sent by a bridge node over the wire arrives at all connected bridge nodes and counts as one hop. Just think of the wire as being 'air' if that helps.  There will be packet collision on the wire, just like there is packet collision over the air - there is no arbitration mechanism for who is allowed access to the wire. RS485 supports driver contention without damage to the drivers, the packets just get garbled and retries/random backoff are necessary to get packets through (just like via air TX).  It is assumed that cave rescuers will have individual radios with them, and if a rescuer is in range of a bridge node, packets from the rescuer will jump on the wire, and packets arriving at the bridge node will be sent over the air and arrive at the rescuer radio.
+The image below: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire") shows three bridge nodes @4800 baud and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  You could also place two more bridge nodes in this system, one each spool connection. The bridge nodes have their LORA TX disabled during testing, this forces packets over the wire.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.  While this may look like a 'multi-hop wire' connection it is not - this just a multi-driver RS485 topology (which RS485 supports). Any packet sent by a bridge node over the wire arrives at all connected bridge nodes and counts as one hop. Just think of the wire as being 'air' if that helps.  There will be packet collision on the wire, just like there is packet collision over the air - there is no arbitration mechanism for who is allowed access to the wire. RS485 supports driver contention without damage to the drivers, the packets just get garbled and retries/random backoff are necessary to get packets through (just like via air TX).  It is assumed that cave rescuers will have individual radios with them, and if a rescuer is in range of a bridge node, packets from the rescuer will jump on the wire, and packets arriving at the bridge node will be sent over the air and arrive at the rescuer radio.
 
 ## RS485 Connection
 
@@ -327,7 +225,7 @@ point with a field phone.  That can still work with this system, but the problem
 for both wires, so there is no distinguishing A from B when tapping in.  The solution is to tap in using one polarity and send a direct message - if an ack is received, then the message succeeded and the polarity is correct. If no ack is received, reverse the direction and try again - it should succeed.  Having a reversed direction will cause no damage to
 the RAK5802 RS485 module.
 
-## RS485 Collision
+## RS485 Collision/Need for a TX queue
 
 Just like over-the-air packets, there can be a packet collision if both ends of the hard link attempt to send a packet
 at the same time. RS485 supports multiple-driver connection, and driver contention causes no physical damage.
@@ -368,9 +266,50 @@ There were enough extra bytes in the original Meshtastic packet structure that t
 
 Setting the hop-limit greater than 7 must be done via the CLI as the phone apps all assume the max hop limit is 7.
 
-## Router Rebroadcasts vs Retries
 
- The following comments assume Meshtastic firmware 2.7 or higher. A user can send a message on a `channel`, and the message will be seen on all phones attached to radios that have that channel key. Or, a user can send a direct message, and only the phone attached to the radio that the message is targeted for will see that message. The firmware code that is used for channel messages is the `Flooding Router`, while the `NextHopRouter` code is used for direct messages.
+## Using Range Test to set Cave Relay nodes
+
+In the master Meshtastic firmware, range test packets have their packet hop_limit forced to zero when sent so that when they arrive at another node, they are not forwarded.
+Our modifications allow range test packets to either be hopping or non-hopping (default).
+
+There are two methodologies that can be used when setting out relay nodes in a cave, using hopping or non-hopping packets:
+
+Using hopping packets (NOT PREFERRED, tends to clog the mesh): 
+
+1. In this scenario, the surface node sends out all range test packets and uses hopping packets.
+
+2. To place a relay node,  move away from the previous relay node (or surface node if this is the first relay) until range test packet arrival becomes unreliable, 
+then move back into reliable range, place a new relay node, and move on. 
+
+3. Arrival of a range test packet at the last relay node verifies end-to-end connectivity.
+
+4. In our test of this, it seemed like the range test packets congested the network, and interfered with sending normal messages back to the surface node.
+
+Using non-hopping packets (this has become our preferred method):
+
+1. Use a direct admin message `ADRT on`  to the previous relay node (or surface node if this is the first relay) to enable range test sending.
+
+2. Move away from the range test sending node until range test packet arrival become unreliable, 
+then move back into reliable range, and place a new relay node. 
+
+3. Use a direct admin message `ADRT off` to the sending node to turn off range test sending.
+
+4. Send a message to the surface node and get an ack back to verify end-to-end connectivity.
+
+5. Go back to step #1 where the current relay node becomes the previous relay node.
+
+
+We now use SNR (signal to noise ratio) to determine if packet arrival is reliable, and aim for an average SNR > 3.0 dB at the placement point (the new range test packet displays an average SNR over the last three packets)
+
+
+## A Note on V2.5 vs V2.6 firmware vs V2.7 firmware
+
+We have ported our changes to Version 2.6 firmware even though it does not seem to have anything really needed for our cave radios, just to stay semi-current with Meshtastic (even though this is a fast moving target).  If you update a V2.5 radio to V2.6 firmware, be aware that this wipes settings, and things like longName/shortName and all other have to be reprogrammed. We have moved our nodes to the V2.7 firmware (`hopmod_2.7.9`, `hopmod_2.7.15` branches) in order to try to stay current with Meshtastic firmware and new features have been added to that branch. We may or may not backport to the previous branches, depends on time.  The retry logic in the `hopmod_2.7.15` branch has not been back ported to the `hopmod_2.7.9` branch. We moved to the Meshtastic 2.7.15 release because it has more reliable Bluetooth connections over the 2.7.9 release.
+
+
+## Router Algorithm/Reliability/Rebroadcasts vs Retries
+
+ The following comments assume Meshtastic firmware 2.7. A user can send a message on a `channel`, and the message will be seen on all phones attached to radios that have that channel key. Or, a user can send a direct message, and only the phone attached to the radio that the message is targeted for will see that message. The firmware code that is used for channel messages is the `Flooding Router`, while the `NextHopRouter` code is used for direct messages.
 
  When a channel message or direct message is sent, the initial packet is assigned a unique ID that is kept with that packet as it is relayed around the mesh.  A channel message will have a destination of 0 which means that is meant for all nodes, while a direct message has the node-id of the destination radio.  
 
@@ -380,7 +319,7 @@ Setting the hop-limit greater than 7 must be done via the CLI as the phone apps 
 
  In Meshtastic stock firmware 2.7 and greater, retries are only used for direct message packets (not channel packets), and a retry is scheduled for a packet only if that node has a `known neighbor` (ie, that node heard a neighbor rebroadcast a packet). Meshtastic will keep track of multiple neighbors in a mesh, and the assumption is that in a mesh, most nodes will have multiple known neighbors. In the stock firmware, only one retry is scheduled for a packet.  On the retry, if the node fails to hear the packet echo, it assumes the neighbors have moved out of range, and it clears its neighbor info. In a chain of nodes that is our common topology, if the single retry by Node C of a packet is not echoed by node D, then the next time a direct message arrives at node C, no retries will be scheduled at all until node C hears its packet rebroadcast echoed by neighbor (ie, Node C is even less likely to successfully deliver a packet the next time because it has no retries).
 
- Our firmware modifications to the 2.7.15 (and higher) code removes this requirement of a known neighbor for retries for direct messages to make retries more predictable, and also add retries for channel messages (which is the mode we most commonly use). The figure below shows testing of the new retry logic over a chain of 8 nodes (6 hops from Node 1 to Node 8) that were forced to accept packets only from their neighbors (Node 3 only accepted from nodes 2,4; node 5 from nodes 4 and 6, etc).  Channel messages were sent from node 1 to node 8 via an automated script, and log parsing at node 8 checked how many messages successfully arrived. Nodes could also be configured to randomly drop some percentage of packets. Three configurations were tested, one where node #4 had 50% packet loss,  one where all nodes had 10% packet loss, one where no packet loss was forced (for a long duration test). In the first two configurations, tests were done with retries of 0, 1, and 2. As expected, success rate increased with the number of retries, with the first retry having the biggest impact.  
+ Our firmware modifications to the 2.7.15 code removes this requirement of a known neighbor for retries for direct messages to make retries more predictable, and also add retries for channel messages (which is the mode we most commonly use). The figure below shows testing of the new retry logic over a chain of 8 nodes (6 hops from Node 1 to Node 8) that were forced to accept packets only from their neighbors (Node 3 only accepted from nodes 2,4; node 5 from nodes 4 and 6, etc).  Channel messages were sent from node 1 to node 8 via an automated script, and log parsing at node 8 checked how many messages successfully arrived. Nodes could also be configured to randomly drop some percentage of packets. Three configurations were tested, one where node #4 had 50% packet loss,  one where all nodes had 10% packet loss, one where no packet loss was forced (for a long duration test). In the first two configurations, tests were done with retries of 0, 1, and 2. As expected, success rate increased with the number of retries, with the first retry having the biggest impact.  
 
  ![Retry Testing for Channel Packets](./doc/flooding_router_testing.png)
 
@@ -400,17 +339,15 @@ For a node to talk on a general channel, only the channel key is needed.
 
 Here is a [youtube video](https://youtu.be/ZyLO-XVfxyo) of us fixing this problem between two radios during the Tumbling Rock Jan 23/2026 test (J. Moon filming B.Reese correcting the public key mismatch).
 
-This problem of managing public keys between radios is what caused us to abandon use of direct messages during mesh setup, and add the capability of enabling/disabling range test via broadcast channels.
-
 # Utility Software
 
 The `utils` subdirectory has the following python scripts:
 
-1. The `configurator/configure_node_2.7.py` is a script for writing settings to a radio using the `meshtastic` CLI. It reads a YML file that contains the settings (see `cave_node.yml` for an example). It is critical that all radios be configured in the same way and this script streamlines the process. During script operation, the settings are read back from the radio after programming to verify that all settings were transferred correctly, and loops up to three times to complete the programming. We have noticed that a radio does not always get all of the setting on the first try (for unknown reasons) so the verification loop is necessary.  This script also writes an information file to the `infofiles` subdirectory so that a record of each radio that is programmed is saved. A recently added feature by Dane Evans is that the Private/Public key of the target radio is added to a `keys.txt` file indexed by node ID.  The `--retain-keys` option can be used during program to restore Private/Public keys in the radio from the keys in this file. This is crucial for DM compatibility between radios, as the Public Key can be changed during a firmware upgrade, and the target radio will no longer be able to send DMs to other radios.  See the discussion on topic on Public/Private keys for more information.  Note- the `--retain-keys` option is no longer needed if broadcast channels are used for the `ADRT` commands for enabling/disabling range test.
+1. The `configurator/configure_node_2.7.py` is a script for writing settings to a radio using the `meshtastic` CLI. It reads a YML file that contains the settings (see `cave_node.yml` for an example). It is critical that all radios be configured in the same way and this script streamlines the process. During script operation, the settings are read back from the radio after programming to verify that all settings were transferred correctly, and loops up to three times to complete the programming. We have noticed that a radio does not always get all of the setting on the first try (for unknown reasons) so the verification loop is necessary.  This script also writes an information file to the `infofiles` subdirectory so that a record of each radio that is programmed is saved. A recently added feature by Dane Evans is that the Private/Public key of the target radio is added to a `keys.txt` file indexed by node ID.  The `--retain-keys` option can be used during program to restore Private/Public keys in the radio from the keys in this file. This is crucial for DM compatibility between radios, as the Public Key can be changed during a firmware upgrade, and the target radio will no longer be able to send DMs to other radios.  See the discussion on topic on Public/Private keys for more information.
 
 2. The `gen_csv.py` is a utility that parses all of the files in the `infofiles` subdirectory and writes out a summary CSV file. The format of the CSV file is specified by a YML file, see the `node_csvspec.yml` file for an example. This gives you a handy summary of all the radios that have been programmed.
 
-3. The `log_parse.py` file is a utility for parsing the radio serial log files to produce a summary of incoming/outgoing messages + timestamps. This utility was upgraded to handle the emoji hex encoding in the log output that was added in Flamingo 3.26 build.  This has been updated in March 2026 along with the `fw2.7.16` firmware to support emojis in the log output.  This utility is no longer needed if the Windows MeshApp is used at Incident Command as it logs all messages to a text file.
+3. The `log_parse.py` file is a utility for parsing the radio serial log files to produce a summary of incoming/outgoing messages + timestamps. This utility was upgraded to handle the emoji hex encoding in the log output that was added in Flamingo 3.26 build.  This has been updated in March 2026 along with the `fw2.7.16` firmware to support emojis in the log output.
 
 
 # Testing

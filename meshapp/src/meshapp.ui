@@ -43,7 +43,7 @@
           <item>
            <widget class="QPushButton" name="connectDevicePushButton">
             <property name="toolTip">
-             <string>Connect to currently selected COM port</string>
+             <string>Connect to currently selected COM port. Only enabled if autoconnect is turned off.</string>
             </property>
             <property name="text">
              <string>Connect</string>

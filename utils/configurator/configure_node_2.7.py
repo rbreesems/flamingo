@@ -36,7 +36,7 @@ import shlex
 # Docs on Cli: https://meshtastic.org/docs/software/python/cli/
 #
 # In set mode, it will write settings, set a new key for the primary channel.
-# This always writes data returned from --info command to infofiles/<longname>.txt
+# This always writes data returned from --info command to infofiles/<shortname>.txt
 # 
 # Version 2.0 - for FW > 2.7  Handles a change in output structure, Owner is no longer on the get list. 
 #             - writes admin keys, channels as needed etc.
@@ -336,8 +336,10 @@ def printDeviceInfo(output):
         try:
             if not posixpath.exists(infodir):
                 os.mkdir(infodir)
-            sanitized_longname = longname.replace(' ', '_')
-            fname = posixpath.join(infodir, f"info_{sanitized_longname}.txt")
+            #sanitized_longname = longname.replace(' ', '_')
+            #use shortname as long name may change often
+            sanitized_shortname = shortname.lower()
+            fname = posixpath.join(infodir, f"info_{sanitized_shortname}.txt")
             with open(fname,"w") as file:
                 file.writelines(output)
             print(f"Wrote info file: {fname}")

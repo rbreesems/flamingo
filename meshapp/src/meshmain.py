@@ -25,7 +25,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 1.6
+BuildNumber = 2.0
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -473,6 +473,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.enableSoundNotificationsCheckBox.clicked.connect(lambda x : MeshAppContext.setConfigOption('General:EnableSounds', self.enableSoundNotificationsCheckBox.isChecked() ))
         self.enableDeviceLogEchoCheckBox.clicked.connect(self.doEnableDeviceLogEchoCheckBox)
         self.connectDevicePushButton.clicked.connect(self.doConnectDevicePushButton)
+        self.clearCurrentLogWindowPushButton.clicked.connect(self.doClearCurrentLogWindowPushButton)
         self.closeConnectionDevicePushButton.clicked.connect(self.doCloseConnectionDevicePushButton)
         self.isConnectedCheckBox.stateChanged.connect(self.doIsConnectedCheckBoxStateChange)
         self.useDarkStylelCheckBox.clicked.connect(self.doUseDarkStylelCheckBox)
@@ -572,6 +573,13 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             messagePage.renameMessages(changedNodeId)
             messagePage.treeWidget.update()
 
+    def doClearCurrentLogWindowPushButton(self):
+        currentIndex = self.logTabWidget.currentIndex()
+        if currentIndex == 0:
+            self.sysLogTextEdit.clear()
+            self.printWelcome()
+        else:
+            self.deviceLogTextEdit.clear()
 
     def handleOnReceive(self, packet): # called when a packet arrives
         outputLogMessage(f"Received Mesh packet: {packet}")
@@ -1029,13 +1037,16 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.actionQueue.put(item)
 
+    def printWelcome(self):
+        outputLogMessage(f"Welcome to Meshapp, Build {BuildNumber}- logfile is {MeshAppContext.logfile}, Message-only log is {MeshAppContext.messageLogFile}")
+
     def idleLoop(self):
         """
         Called during Idle time of the GUI
         """
         # Print welcome
         if not MeshAppContext.welcomeShown:
-            outputLogMessage(f"Welcome to Meshapp, Build {BuildNumber}- logfile is {MeshAppContext.logfile}, Message-only log is {MeshAppContext.messageLogFile}")
+            self.printWelcome()
             MeshAppContext.welcomeShown = True
 
         self.count += 1
@@ -1474,7 +1485,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
             self.closeConnectionDevicePushButton.setDisabled(False)
         else:
             MeshAppContext.isMeshConnected = False
-            self.connectDevicePushButton.setDisabled(False)
+            if not self.autoConnectSerialCheckBox.isChecked():
+                self.connectDevicePushButton.setEnabled(True)
+            else:
+                self.connectDevicePushButton.setDisabled(True)
             self.sendMessagePushButton.setEnabled(False)
             self.comPortComboBox.setDisabled(False)
             self.closeConnectionDevicePushButton.setDisabled(True)
