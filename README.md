@@ -71,7 +71,7 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [Mesh deployment in a cave](#mesh-deployment-in-a-cave)
   - [Buzzer Haptic](#buzzer-haptic)
   - [LORA Speed Mode](#lora-speed-mode)
-  - [Radio Device Roles](#radio-device-roles)\
+  - [Radio Device Roles](#radio-device-roles)
   - [Incident Command](#incident-command)
 - [Firmware Repo and changes](#firmware-repo-and-changes)
   - [Firmware Changes](#firmware-changes)
