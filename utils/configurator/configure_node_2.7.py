@@ -604,9 +604,6 @@ def main():
     parser.add_argument('-sn', '--shortname', dest='shortname', type=str,
                         default=None,
                         help='short name, optional')
-    parser.add_argument('-cs', '--csvspec', dest='csv', type=str,
-                        default=None,
-                        help='YML CSV spec file, optional, creates nodes.csv from all files in infofiles dir ')
     parser.add_argument('-p', '--port', dest='port', type=str,
                         default=None,
                         help='com port name, optional, typically COMn')
@@ -788,7 +785,10 @@ def main():
             # write each channel
             for cdict in channels:
                 setcmd = meshcmd
-                setcmd += f" --ch-set name {cdict['name']} --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
+                if 'name' in cdict:
+                    setcmd += f" --ch-set name {cdict['name']} --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
+                else:
+                    setcmd += f" --ch-set psk {cdict['psk']} --ch-index {cdict['index']}"
                 print(f"Writing channel index: {cdict['index']}")
                 runCmd(setcmd, echoOnly=args.test, reboot=(not args.test))
             time.sleep(15)  # extra sleep after channel
