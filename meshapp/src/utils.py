@@ -18,6 +18,7 @@ from copy import deepcopy
 from deepdiff import DeepDiff
 from default_config import defaultConfigYml
 from operator import attrgetter
+from pyside_imports import *
 
 
 
@@ -133,14 +134,16 @@ def describeSerialPort(port):
     }
 
 
-
 def initDefaultTreeWidgetAttributes(treeWidget, col0Width, indentation=None):
+    mw = MeshAppContext.mainWindow
     treeWidget.setHeaderHidden(True)
     treeWidget.setMouseTracking(True)
+    treeWidget.setFocusPolicy(QtCore.Qt.StrongFocus)
     treeWidget.setColumnCount(2)
     treeWidget.setColumnWidth(0, col0Width)
     treeWidget.setUniformRowHeights(False)
     treeWidget.setWordWrap(True)
+    treeWidget.installEventFilter(mw)
     if indentation:
         treeWidget.setIndentation(indentation)
 

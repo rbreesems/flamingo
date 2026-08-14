@@ -1,6 +1,7 @@
 
 
 from meshapp import Ui_MainWindow
+from customTreeWidget import MyTreeWidget
 import sys
 import gc
 from pyside_imports import *
@@ -71,6 +72,7 @@ def getStatusFontSize(textEdit):
     baseSize =  textEdit.font().pointSize()
     newSize = float(baseSize) * 0.8
     return newSize
+
 
 class MenuWithToolTips(QMenu):
     def __init__(self, *args, **kwargs):
@@ -564,6 +566,20 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.menubar.clear()
         self.menubar.addMenu(self.createMenu('Actions',self.actionsMenuData))
 
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.KeyPress:
+            for messagePage in self.channelMessagePages.values():
+                if source is messagePage.treeWidget:
+                    if event.key() == Qt.Key.Key_Escape:
+                        messagePage.treeWidget.clearSelection()
+                        return True
+            for messagePage in self.directMessagePages.values():
+                if source is messagePage.treeWidget:
+                    if event.key() == Qt.Key.Key_Escape:
+                        messagePage.treeWidget.clearSelection()
+                        return True
+        return super(MeshMainWindow, self).eventFilter(source, event)
+                
     def regenerateMessages(self, changedNodeId):
         #some node name has changed, regenerate all messages
         for messagePage in self.channelMessagePages.values():
@@ -1278,7 +1294,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
 
     def addDirectMessageTab(self, tabName):
-        treeWidget = QTreeWidget()
+        treeWidget = MyTreeWidget()
         initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
         self.messagesTabWidget.addTab(treeWidget, tabName)
         messagePage = MessagePage(treeWidget)
@@ -1315,7 +1331,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                 if self.messagesTabWidget.tabText(i) == name:
                     return  # this tab already exists
             # add this tab with a text edit
-            treeWidget = QTreeWidget()
+            treeWidget = MyTreeWidget()
             initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
             self.messagesTabWidget.addTab(treeWidget, name)
             self.channelMessagePages[channel] = MessagePage(treeWidget)

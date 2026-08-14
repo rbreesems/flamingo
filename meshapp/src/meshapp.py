@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGroupBox,
     QTabWidget, QTextEdit, QToolButton, QTreeWidget,
     QTreeWidgetItem, QVBoxLayout, QWidget)
 
+from customTreeWidget import MyTreeWidget
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
@@ -198,7 +200,7 @@ class Ui_MainWindow(object):
         self.ch0Tab.setObjectName(u"ch0Tab")
         self.verticalLayout_7 = QVBoxLayout(self.ch0Tab)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        self.ch0TreeWidget = QTreeWidget(self.ch0Tab)
+        self.ch0TreeWidget = MyTreeWidget(self.ch0Tab)
         __qtreewidgetitem = QTreeWidgetItem()
         __qtreewidgetitem.setText(0, u"1")
         self.ch0TreeWidget.setHeaderItem(__qtreewidgetitem)

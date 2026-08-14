@@ -143,7 +143,7 @@
              </attribute>
              <layout class="QVBoxLayout" name="verticalLayout_7">
               <item>
-               <widget class="QTreeWidget" name="ch0TreeWidget">
+               <widget class="MyTreeWidget" name="ch0TreeWidget">
                 <property name="headerHidden">
                  <bool>true</bool>
                 </property>
@@ -955,6 +955,13 @@ If disabled, values below are ignored and Font/Widget scaling adjust automatical
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MyTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header location="global">customTreeWidget</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
