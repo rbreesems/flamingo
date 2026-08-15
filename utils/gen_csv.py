@@ -159,7 +159,12 @@ def makeCsvFile():
     global columns_name_dict
     global column_list
 
-    ofile = open("nodes.csv","w")
+    try:
+        ofile = open("nodes.csv","w")
+    except Exception as e:
+        print("ERROR: Error opening nodes.csv for writing (is this already open in Excel?): %s/%s" % ( sys.exc_info()[0], e))
+        exit(-1)
+
     s = ""
     for uname in column_list:
         s += f"{columns_name_dict[uname]},"
