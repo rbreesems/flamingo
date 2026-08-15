@@ -117,10 +117,10 @@ When deploying a mesh in the cave, we split radios into two categories:
 
 ## Radio Setup
 
-We have two channels in our radio YML configuration files, Admin (channel 0), and General (channel 1). Our usage of these channels is:
+We have two channels in our radio YML configuration files, `AdminUse` (channel 0), and `General` (channel 1). Our usage of these channels is:
 
-- The Admin channel should be used by Incident Command (IC) and the comms team when setting up the mesh.  Non-comms team rescuers are advised to mute this channel. Range test packets which are output during mesh setup all go to channel 0, and can be distracting for non-comms team members.
-- The General channel is used for all rescue communication
+- The `AdminUse` channel should be used by Incident Command (IC) and the comms team when setting up the mesh.  Non-comms team rescuers are advised to mute this channel. Range test packets which are output during mesh setup all go to channel 0, and can be distracting for non-comms team members.
+- The `General` channel is used for all rescue communication
 
 We do not use direct messages as radios must know each other's public keys which can be a hassle to manage. For channel messages, a radio only needs the key for the channel.
 Also, direct messages just mean a different tab to watch in the phone app which can be distracting.  We discourage (but obviously cannot prohibit) rescuers from using direct messages for rescue communication.
@@ -162,7 +162,7 @@ Placing a wireless relay chain can be faster than laying down wire, once the tea
 6. Send a test message to Incident Command (assumed located outside of the cave) and request a hard acknowledgement to verify a solid link to IC.  You could also do a trace route to the IC radio instead of message.
 6. Enable range test on Node B and continue into the cave.
 
-All comms chatter during setup should be on the Admin channel (channel 0).  Range test packets go to channel 0 as well.
+All comms chatter during setup should be on the `AdminUse` channel (channel 0).  Range test packets go to channel 0 as well.
 Details on enabling/disabling range test are given later in this document.
 
 When monitoring SNR during range test, you will notice that the SNR will bounce around as you move -- you should occasionally pause and let it settle.  Be conservative in placing nodes as a relay chain is only as strong as its weakest link.
@@ -208,7 +208,7 @@ We use a Windows laptop at Incident Command to log all messages. Initially, we j
 However, this proved to be insufficient in terms of log clarity, so a Windows Desktop app based on Python + Qt was developed for this purpose. This is located in the `meshapp` folder, see the README in that folder for more details. This is a relatively new app (developed in early summer 2026) and is undergoing rapid changes. We used it to good effect for the first time at our August 2026 cave rescue class and it worked well.
 
 The responsibilities of Incident Command are:
-- Hand out rescuer radios and rename the owner name (long name) to something appropriate when a radio is assigned.  This reduces confusion in the channel chat if the long name accurately reflects the sender. After a radio is renamed, power-cycle the radio so that is sends out a node information packet with the new long name.
+- Hand out rescuer radios and rename the owner name (long name) to something appropriate when a radio is assigned.  This reduces confusion in the channel chat if the long name accurately reflects the sender. After a radio is renamed, power-cycle the radio so that is sends out a node information packet with the new long name. Radio renaming can either done from the phone app or by plugging the radio into a serial cable attached to the IC laptop and using the python Meshtastic command line interface.
 - Monitor the incoming messages and respond as appropriately with either replies or tap-backs or general messages.
 - Assist the comms team during mesh setup with ack responses to comm team messages to ensure the comms team has a good link back to IC
 

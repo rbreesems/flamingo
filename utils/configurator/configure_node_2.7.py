@@ -54,6 +54,8 @@ infodir = "infofiles"
 configdir = "configfiles"
 max_retries = 3
 
+channel_reserved_names = ["admin", "gpio", "serial", "mqtt"]
+
 config_lookup = {
     "bluetooth.mode" : {"0":"RANDOM_PIN", "1":"FIXED_PIN", "2":"NO_PIN"},
     "position.gps_mode" : {"0":"DISABLED", "1":"ENABLED", "2":"NOT_PRESENT"}, # for 2.6+ firmware only
@@ -659,6 +661,16 @@ def main():
     if config_opts is None:
         print(f"WARNING: No available settings found in {args.settingsFile} file.")
 
+    if channels is not None:
+        errors_found = False
+        for i, channel in enumerate(channels):
+            if channel['name'].lower() in channel_reserved_names:
+                print(f"ERROR: Channel {i} has reserved name '{channel['name']}'. Please choose a different name.")
+                errors_found = True
+                continue
+        if errors_found:
+            print("Exiting due to reserved channel name errors.")
+            exit(1)
 
     if args.longname:
         # add special setting so we can compare like other settings
