@@ -55,6 +55,9 @@ def parseOneInfoFile(fpath):
         if re.match("^Preferences:.*",line):
             state = "prefs"
             continue
+        if re.match("^Channels:.*",line):
+            state = "channels"
+            continue
         if state == "init":
             if re.match("^Owner:.*", line):
                 # parse long,short names
@@ -140,9 +143,31 @@ def parseOneInfoFile(fpath):
                 # found a value
                 node_dict[f"{current_dict_name}_{k}"] = v
                 continue
-    
+        if state == "channels":
+            line = line.strip()
+            if re.match("^Index.*", line):
+                
+                line = line.replace(',','')
+                words = line.split()
+                channelnum = words[1].replace(':','')
+                channelname = "n/a"
+                index = 0
+                
+                for word in words:
+                    if word == '"name":':
+                        channelname = words[words.index(word)+1]
+                        channelname = channelname.replace('"','')
+                        
+                        break
+                    index += 1
+                if 'global_channels' not in node_dict:
+                    node_dict["global_channels"] = f"{channelnum}:{channelname}"
+                else:
+                    node_dict["global_channels"] += f";{channelnum}:{channelname}"
+
     if "global_Short Name" in node_dict:
         node_data[node_dict["global_Short Name"]] = node_dict
+   
     return 
 
 

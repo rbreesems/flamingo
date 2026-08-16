@@ -20,7 +20,7 @@ fixed_cols:
   - "firmwareVersion:FW Ver"
   - "role:Role"
   - "hasWifi:hasWifi"
-  
+  - "channels:Channels" 
 
 prefs:
   lora:
