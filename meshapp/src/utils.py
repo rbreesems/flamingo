@@ -780,6 +780,8 @@ class MeshAppContext(object):
                         node.voltage = voltage
                     # update the nodes tab since trace route is updated
                     self.mainWindow.updateNodesTab()
+                    # update status bar as this may have been an explicit telemetry request
+                    outputLogMessage(f"Telemetry received for node {node.longName}. ", echoStatus=True)
         elif portnum == 'NODEINFO_APP':
             user = decoded.get('user', None)
             if user:

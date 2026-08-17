@@ -26,7 +26,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 2.0
+BuildNumber = 2.1
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -274,7 +274,8 @@ def doRequestTelemetry(node):
             channelIndex=0,
             telemetryType="device_metrics",
              )
-         outputLogMessage(f"Telemetry request  wait for node {node.longName} is finished. ", echoStatus=True)
+         # when this eventually returns you have no idea what node it is. Print the status message from telemetry packet parse 
+         # outputLogMessage(f"Telemetry request  wait for node {node.longName} is finished. ", echoStatus=True)
     except Exception as e:
         outputLogMessage(f"ERROR: Telemetry request error for node {node.longName}, {str(e)}", level=logging.ERROR, echoStatus=True)
     return

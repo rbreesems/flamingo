@@ -77,5 +77,6 @@ The `Settings|General` tab has an `Enable Auto Response` check box that provides
 
 - V1.0-1.4 -- initial release, compatible with Python 3.11, needed a patch for the Emojii package
 - V1.5 - requires Python 3.14, no patching required.  Added `Cancel Trace Route` to right-click node menu.
-
+- V2.0 - updated message tabs to use tree widgets instead of a text edit
+- V2.1 - fixed problem with indication of what telemetry returned for what node 
 
