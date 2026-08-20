@@ -97,6 +97,8 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [Tumbling Rock Cave Preserve test, January 23/2026](#tumbling-rock-cave-preserve-test-january-232026)
   - [Tumbling Rock Cave Preserve test, March 20/2026](#tumbling-rock-cave-preserve-test-march-202026)
   - [HCRU Cave Rescue Class / Hughes Cave and Guffey Cave / Alabama /US --  August 1/2, 2026](#hcru-cave-rescue-class--hughes-cave-and-guffey-cave--alabama-us-----august-12-2026)
+- [Tutorial Documents](#tutorial-documents)
+  - [Basic Radio Operation](#basic-radio-operation)
 
 # Project Background
 
@@ -596,3 +598,11 @@ In Guffey, we used the same mesh topology that was used last year -- two wired s
 Approximately 300 texts were exchanged during the Mock on Sunday. The firmware used was version 2.7.16.  A few rescuers reported some sporadic bluetooth disconnects that were solved by restarting the phone Meshtastic App and power cycling the radio.  We will investigate moving to the latest firmware version now that the Cave Rescue class is behind us.  The Windows desktop MeshApp (available in the Flamingo repo) was used at IC for monitoring/logging messages.  It worked fine but needs some tweaking - one need is that tapback support that is tied to a particular received message should be added.
 
 HCRU now considers the mesh system proven/reliable and can be used in an actual rescue at the discretion of the Incident Commander.
+
+## Tutorial Documents
+
+### Basic Radio Operation
+
+This document describes how to install Meshtastic, pair to a radio to a phone, and send channel/direct messages.
+[PDF document] (./doc/FLAMINGO_basic_radio_operation.pdf)
+
