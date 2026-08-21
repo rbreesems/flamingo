@@ -70,7 +70,7 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [Radio Hardware](#radio-hardware)
   - [Mesh deployment in a cave](#mesh-deployment-in-a-cave)
   - [Buzzer Haptic](#buzzer-haptic)
-  - [LORA Speed Mode](#lora-speed-mode)
+  - [LoRa Speed Mode](#lora-speed-mode)
   - [Radio Device Roles](#radio-device-roles)
   - [Incident Command](#incident-command)
 - [Firmware Repo and changes](#firmware-repo-and-changes)
@@ -110,6 +110,14 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [E. Configuring Radio settings](#e-configuring-radio-settings)
     - [E1. The configure_node_2_7.py script](#e1-the-configure_node_2_7py-script)
     - [E2. Creating a spreadsheet of all radio settings with gen_csv.py](#e2-creating-a-spreadsheet-of-all-radio-settings-with-gen_csvpy)
+    - [E3. Configuring long/short radio names](#e3-configuring-longshort-radio-names)
+  - [F. Radio Testing](#f-radio-testing)
+    - [F1. Wireless Testing](#f1-wireless-testing)
+    - [F2. Wired Testing](#f2-wired-testing)
+  - [G. Trace Routes](#g-trace-routes)
+    - [G1. About Trace Routes](#g1-about-trace-routes)
+    - [G2. Sending a Trace Route on iOS](#g2-sending-a-trace-route-on-ios)
+    - [G3. Sending a Trace Route on Android](#g3-sending-a-trace-route-on-android)
 
 # Project Background
 
@@ -138,12 +146,12 @@ We have two channels in our radio YML configuration files, `AdminUse` (channel 0
 We do not use direct messages as radios must know each other's public keys which can be a hassle to manage. For channel messages, a radio only needs the key for the channel.
 Also, direct messages just mean a different tab to watch in the phone app which can be distracting.  We discourage (but obviously cannot prohibit) rescuers from using direct messages for rescue communication.
 
-See the section on [Utility Software](#utility-software) for information on a python utility for easily configuring radio settings -- it is important that all radios have common settings for things like LORA speed mode and channels before deployment.
+See the section on [Utility Software](#utility-software) for information on a python utility for easily configuring radio settings -- it is important that all radios have common settings for things like LoRa speed mode and channels before deployment.
 
 
 ## Radio Hardware
 
-There are dozens of radio types that are compatible with the Meshtastic firmware.  The CPU/radio combination that we use is the RAKwireless RAK4631 module + WisMesh board for expansion.  This has a NR52 series CPU + bluetooth radio + LORA radio.  Its principal advantage is that it is very low power; typically our radios can run for over a week continuously on an 18650 battery.  Its disadvantage is that it is a bit more expensive than some other cpu/radio combinations like the ESP32 CPU.  
+There are dozens of radio types that are compatible with the Meshtastic firmware.  The CPU/radio combination that we use is the RAKwireless RAK4631 module + WisMesh board for expansion.  This has a NR52 series CPU + bluetooth radio + LoRa radio.  Its principal advantage is that it is very low power; typically our radios can run for over a week continuously on an 18650 battery.  Its disadvantage is that it is a bit more expensive than some other cpu/radio combinations like the ESP32 CPU.  
 
 We have tested our Meshtastic forked firmware with CPUs/Radios other than the RAK4631 for curiosity purposes, but all of our deployed radios use the RAK4631 module. We purchase RakWireless products from [Rokland](https://store.rokland.com), based in Florida, USA.
 
@@ -194,7 +202,7 @@ When placing relay nodes, it is __EXTREMELY IMPORTANT__ that the radio used by t
 
 The current buzzer that we use is the [Grove Buzzer] (https://wiki.seeedstudio.com/Grove-Buzzer/) from SeeedStudio.  It is a high true, active buzzer on a small PCB. We just stuff this into our 3D enclosure.  We have also used a low-true active buzzer purchased from Amazon (search for Active Buzzer Module, 5V Piezoelectric Alarm, DIYables store) but prefer the Grove buzzer as it is a smaller form factor.
 
-## LORA Speed Modes
+## LoRa Speed Modes
 
 In our cave testing, we used MEDIUM/SLOW for our mocks/testing through October 2025. However, after the September 2025 Tumbling Rock cave rescue mock, we did some detailed hop latency/range testing (see the dedicated section on this). This resulted in a decision to use SHORT Range/FAST speed going forward in order to reduce latency over a large number of hops and to keep TX contention low. The distance that wireless nodes can practically reach in a cave means that the range difference between MEDIUM and SHORT modes is not that significant, and that we would rather have lower latency/less contention.  Wired segments with bridge nodes can be used to cover long distances with wireless nodes used to bridge gaps or reach vertically if needed.
 
@@ -206,7 +214,7 @@ First, using the `CLIENT` role for all nodes will work, but is not optimal as ex
 
 There are three device roles that we use for cave nodes:
 
-- `ROUTER` - this role is used for relay nodes that form the primary communication chain. The principle reason to use this role is because it has much lower latency when rebroadcasting packets than a role like `CLIENT`.  The following [blog post](https://meshtastic.org/blog/demystifying-router-late/) has a great explanation of how the different roles calculate latency when rebroadcasting packets.  As an example of the latency difference, a seven-node chain of all CLIENT nodes had an end-to-end latency of about 10 seconds for a channel message using LORA SHORT/FAST mode, while the same seven-node chain only had a one to two second latency when all nodes had ROUTER roles.
+- `ROUTER` - this role is used for relay nodes that form the primary communication chain. The principle reason to use this role is because it has much lower latency when rebroadcasting packets than a role like `CLIENT`.  The following [blog post](https://meshtastic.org/blog/demystifying-router-late/) has a great explanation of how the different roles calculate latency when rebroadcasting packets.  As an example of the latency difference, a seven-node chain of all CLIENT nodes had an end-to-end latency of about 10 seconds for a channel message using LoRa SHORT/FAST mode, while the same seven-node chain only had a one to two second latency when all nodes had ROUTER roles.
 
 - `CLIENT` - this can be used for rescuer radios who will be going in and out of range of the primary communication chain or who are extending past the end of the primary communication chain. This role rebroadcasts packets like the `ROUTER` role, but with a longer latency.  By rebroadcasting, these nodes can dynamically extend comms past the primary communication chain.
 
@@ -296,7 +304,7 @@ This is why we ended up using the I2C1_SCL output on the RS485 module connector 
 
 ## RS485 Serial link modification
 
-The `slink` targets in the `platformio.ini` enable the serial link code. This code is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LORA link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
+The `slink` targets in the `platformio.ini` enable the serial link code. This code is meant for a RAK19007 Wisblock base board + RAK4631 module + RAK5802 RS485 module (installed in the IO slot of the Wisblock base board). This firmware modification sends/receives packets out the RS485 port in addition to the LoRa link. This is intended to be used to hard link a pair of radios in a cave where wireless between the two radios is impractical.  The 
 RAK5802 RS485 module uses the RXD1, TXD1 ports, so do not use this software with a board that has something connected to these ports, like the WisMesh Pocket radio that has a built-in GPS connected to this port. 
 
 Our terminology for radio that has the RS485 interface is `bridge node`, as it allows bridging between the wireless/wired worlds (we also call it a `hybrid node`).
@@ -317,15 +325,15 @@ Wire types - gauge, twisted vs non-twisted makes a difference.
   - 1000 ft two wire, 22 AWG solid conductor, non-twisted - works @9600 but not @19200
   - 1000 ft two wire, 23 AWG solid conductor, twisted - works @19200 but not @38400
 
-Any packet received over RS485 RX is echoed over LORA TX; a packet received over RS485 RX is delivered to the firmware stack in the same manner as a packet received by LORA RX. Any packet received over LORA RX that is rebroadcast by the router is also sent over RS485 TX. Packet flow on the RS485 serial link is bidirectional, but does not support full duplex (simultaneous TX and RX).
+Any packet received over RS485 RX is echoed over LoRa TX; a packet received over RS485 RX is delivered to the firmware stack in the same manner as a packet received by LoRa RX. Any packet received over LoRa RX that is rebroadcast by the router is also sent over RS485 TX. Packet flow on the RS485 serial link is bidirectional, but does not support full duplex (simultaneous TX and RX).
 
 Our procedure for testing if the hard link works between a pair of radios is as follows. This test assumes that the only two radios in range are the two hard linked radios that are being tested.
 
 Connect two radios via the hard link, then bluetooth connect to each radio with the phone app, and in the Lora Config section, turn off 'Transmit enabled'.  Then send a direct message to whatever radio is not connected to via phone; if an ack is returned then the message went through the hard link to the destination.  Then, disconnect one of the wires in the hard link, and try sending again - this time the message send will fail with a max retry limit reached as the hard link is not connected.  Connect to each radio again via the phone app, and turn RF transmit back on.  Try sending the direct message again and this time it will succeed even with the hard link broken, as the message will go over RF.
 
-To test RF RX (radio 1)> RS485 TX (radio 1) > RS485 RX (radio 2) > RF TX (radio 2) > RF RX (radio 3), just turn on a third radio in the room, connect your phone to the bridge node that has LORA TX disabled (radio 1), and target radio 3 with a direct message.  The packet will be sent by radio 1 over the wire to the bridge node with LORA TX enabled (radio 2), and which will then send the packet to radio 3 via RF -  you should receive an ACK back from this direct message.
+To test RF RX (radio 1)> RS485 TX (radio 1) > RS485 RX (radio 2) > RF TX (radio 2) > RF RX (radio 3), just turn on a third radio in the room, connect your phone to the bridge node that has LoRa TX disabled (radio 1), and target radio 3 with a direct message.  The packet will be sent by radio 1 over the wire to the bridge node with LoRa TX enabled (radio 2), and which will then send the packet to radio 3 via RF -  you should receive an ACK back from this direct message.
 
-The image below shows early bridge node prototypes: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire") shows three bridge nodes @4800 baud and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  You could also place two more bridge nodes in this system, one each spool connection. The bridge nodes have their LORA TX disabled during testing, this forces packets over the wire.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.  While this may look like a 'multi-hop wire' connection it is not - this is simply a multi-driver RS485 topology (which RS485 supports). Any packet sent by a bridge node over the wire arrives at all connected bridge nodes and counts as one hop. Just think of the wire as being 'air' if that helps.  There will be packet collision on the wire, just like there is packet collision over the air - there is no arbitration mechanism for who is allowed access to the wire. RS485 supports driver contention without damage to the drivers, the packets just get garbled and retries/random backoff are necessary to get packets through (just like via air TX).  It is assumed that cave rescuers will have individual radios with them, and if a rescuer is in range of a bridge node, packets from the rescuer will jump on the wire, and packets arriving at the bridge node will be sent over the air and arrive at the rescuer radio.
+The image below shows early bridge node prototypes: ![Alt text](./img/bridge_nodes_1km.jpg?raw=true "Bridge nodes driving 1 km of wire") shows three bridge nodes @4800 baud and 1 km of wire (spools of 800/800/800/900 ft = 3300 ft). Two bridge nodes are the ends, and a third bridge nodes is spliced in the middle (like a field phone).  You could also place two more bridge nodes in this system, one each spool connection. The bridge nodes have their LoRa TX disabled during testing, this forces packets over the wire.  This shows the power of the RS485 link - you can have as little or as much wire in the system vs wireless as you want.  These bridge nodes are packaged in temporary housing until our 3D printed enclosures are ready.  While this may look like a 'multi-hop wire' connection it is not - this is simply a multi-driver RS485 topology (which RS485 supports). Any packet sent by a bridge node over the wire arrives at all connected bridge nodes and counts as one hop. Just think of the wire as being 'air' if that helps.  There will be packet collision on the wire, just like there is packet collision over the air - there is no arbitration mechanism for who is allowed access to the wire. RS485 supports driver contention without damage to the drivers, the packets just get garbled and retries/random backoff are necessary to get packets through (just like via air TX).  It is assumed that cave rescuers will have individual radios with them, and if a rescuer is in range of a bridge node, packets from the rescuer will jump on the wire, and packets arriving at the bridge node will be sent over the air and arrive at the rescuer radio.
 
 ## RS485 Connection
 
@@ -355,7 +363,7 @@ The image below:
 
 ![Alt text](./doc/rs485_collision_testing.jpg?raw=true "RS485 Collision Testing")
 
-shows the test setup for measuring the effectiveness of the above changes. Four bridge nodes (our HybridV2 nodes, December 2025) were tied to the same RS485 pair, with three nodes sending channel messages at 20 second intervals using the Python Meshtastic CLI. The fourth node (monitor node) was logged, with the log parsed after the test completed to check how many of the channel messages the fourth node received.  All nodes has their LORA TX disabled, the only possible communication was via the RS485 link. The baud rate was 9600 baud. The goal was to create enough traffic on the RS485 link to force collisions if no RX busy checking was done.
+shows the test setup for measuring the effectiveness of the above changes. Four bridge nodes (our HybridV2 nodes, December 2025) were tied to the same RS485 pair, with three nodes sending channel messages at 20 second intervals using the Python Meshtastic CLI. The fourth node (monitor node) was logged, with the log parsed after the test completed to check how many of the channel messages the fourth node received.  All nodes has their LoRa TX disabled, the only possible communication was via the RS485 link. The baud rate was 9600 baud. The goal was to create enough traffic on the RS485 link to force collisions if no RX busy checking was done.
 
 The results are shown below:
 
@@ -469,7 +477,7 @@ We exceeded the goal, we reached about 200m past the `The Big Fall Room` and to 
 
 For the Cave Rescue class scenario, we replicated the previous deployment. We also distributed radios (WisMesh Pockets) to several instructors that were in the cave. The total radio deployment was 20 - seven for instructors (and the IC radio) and the rest for the mesh (this includes the bridge nodes on the wired segments). One instructor had their own T-deck that was programmed with our firmware. The mesh performed flawlessly during the day-long exercise.  A total of 453 text messages were logged by IC (primary channel and DMs to IC) - this did not include DMs between instructors in the cave. The maximum hops logged was 11 - this was at the location of the two patients that were the most remote point of the scenario.
 
-Since the two wired segments were relatively short, one about 300 feet and the other about 700 feet, the bridge nodes used 19200 baud.  LORA mode was Medium Slow for all radios.
+Since the two wired segments were relatively short, one about 300 feet and the other about 700 feet, the bridge nodes used 19200 baud.  LoRa mode was Medium Slow for all radios.
 
 The mesh proved its worth almost immediately when a mistake was made in the placement of two patients - this was discovered and fixed via text messages.  Throughout the day, dynamic adjustments were made to HCRU unit member placement in the cave via text message coordination over the mesh.
 
@@ -544,9 +552,9 @@ __UPDATE__: This date is obsolete as all nodes had `CLIENT` roles.  If the `ROUT
 
 ![Hop Latency over 17 hops](./doc/hop_latency.png)
 
-LORA Mode vs Range is shown below (distances are normalized to the the longest distance in a test). It was interesting that the internal antenna configuration of the 2nd Gen Cave nodes tended to reduce the range differences between modes.  The WisMesh pockets showed a greater range difference between modes, but not enough to rule out using SHORT/FAST as the default mode.  Also, the faster packet transmission time should reduce the number of packet collisions, reducing retries and thus reducing latency.
+LoRa Mode vs Range is shown below (distances are normalized to the the longest distance in a test). It was interesting that the internal antenna configuration of the 2nd Gen Cave nodes tended to reduce the range differences between modes.  The WisMesh pockets showed a greater range difference between modes, but not enough to rule out using SHORT/FAST as the default mode.  Also, the faster packet transmission time should reduce the number of packet collisions, reducing retries and thus reducing latency.
 
-![LORA Mode vs Distance](./doc/range_vs_mode.png)
+![LoRa Mode vs Distance](./doc/range_vs_mode.png)
 
 A TraceRoute will have a round trip time that is double the latency shown in the hop latency table, because the trace route packet has to reach the target and then return.  The Trace Route packet in the Flamingo 2.7 firmware was modified to support a maximum of 19 hops (trace route data for this fits in one packet) - 19 hops was tested and confirmed as working as shown in the photo below. The 2.5/2.6 Flamingo firmware versions only support 8 hops.
 
@@ -560,7 +568,7 @@ __UPDATE__: Trace Route has been very reliable since these changes and the chang
 
 ## Traceroute/External Antenna on Cave Nodes Testing, December 2025
 
-A trip was made to Tumbling Rock in December 2025 to test the fixes to trace route and to use second generation cave nodes that were converted to an external antenna configuration (the cave nodes used in the September mock had internal antennas). During node placement, we ensured that the same type of radio was used to listen for range test packets as those used to implement the relay chain during radio placement so as to avoid the mistakes made during the September mock. Seven radios were placed (no wired segments) using SNR as the placement criteria and SHORT/FAST as the LORA mode.  The placement went smoothly, and the chain functioned as expected. The new trace route code was tested, and it functioned as expected except for one case where the Android App log showed a repeated segment of the log (we will keep an eye on this going forward).
+A trip was made to Tumbling Rock in December 2025 to test the fixes to trace route and to use second generation cave nodes that were converted to an external antenna configuration (the cave nodes used in the September mock had internal antennas). During node placement, we ensured that the same type of radio was used to listen for range test packets as those used to implement the relay chain during radio placement so as to avoid the mistakes made during the September mock. Seven radios were placed (no wired segments) using SNR as the placement criteria and SHORT/FAST as the LoRa mode.  The placement went smoothly, and the chain functioned as expected. The new trace route code was tested, and it functioned as expected except for one case where the Android App log showed a repeated segment of the log (we will keep an eye on this going forward).
 
 ## Firmware 2.7.15 testing, January 2026
 
@@ -586,7 +594,7 @@ The following is a timeline (credit: J. Cole) of the radio placement. Some issue
 
 The comms were generally flawless during the test. We had to do some remote IT work for the two members at IC as the laptop used for logging decided to reboot for a Windows update.  Here is the ![complete log](./doc/trock_j23_26_parsed_log.txt) of the messages recorded at IC. The reboot happened between 15:29 and 15:41.  The log does not include outgoing tapbacks from the IC to the comms team to acknowledge messages.
 
-Latency was about one minute over the 15 hop chain (LoRa mode SHORT/FAST). Below is a trace route (forward direction shown) sent from the Christmas tree.
+Latency was about one minute over the 15 hop chain (LoRa mode SHORT/FAST) with radios using `CLIENT` mode (this was before we discovered that `ROUTER` mode would greatly decrease the latency). Below is a trace route (forward direction shown) sent from the Christmas tree.
 
 ![Trace route (15 hops) from Christmas Tree](./doc/trace_route1_xtree.PNG)
 
@@ -619,7 +627,7 @@ The remaining sections are for the person(s) who are responsible for configuring
 ### A. Basic Radio Operation
 
 This [PDF document](./doc/FLAMINGO_basic_radio_operation.pdf)
- describes how to install Meshtastic, pair to a radio to a phone, and send channel/direct messages. The app screenshots uses our old channel names.
+ describes how to install Meshtastic, pair to a radio to a phone, and send channel/direct messages. The app screenshots use our old channel names.
 
 ### B. Installing the Python Command Line Interface for Meshtastic
 
@@ -633,21 +641,20 @@ These steps assume a Windows operating system. If you are running a Linux operat
 2. Run the installer
  - Choose `Customize Installation`
  - On the next window labeled as `Optional Features`, leave anything already checked as checked and continue
- - On the next window labeled as `Advanced Options`, check the boxes that have `install for all users`, `precompile standard library`, `Add Python to environment variables`. In the `Customize install location` typein file, use `C:\Python314` (or whatever version you downloaded)
+ - On the next window labeled as `Advanced Options`, check the boxes that have `install for all users`, `precompile standard library`, `Add Python to environment variables`. In the `Customize install location` line edit for install location, use `C:\Python314` (or whatever version you downloaded)
  - At this point, you can click the `Install` button to complete the installation.
 
 #### B.2 Install the Python Meshtastic package
 
 1. Open a command window (in the search bar at the bottom of the window, type`command` and then choose `Command Prompt`) - you may be able to just type `command` followed by enter.  This opens a command prompt window
 
-2. Type `python` followed by the `enter` key (shorthand notation is `python<enter>`). You should get a welcome message from Python displaying the version, this simply verifies that you installed python correctly.  Exit Python by typing `exit()<enter>`.  If you get `python is not recognized as an internal or external command` then either Python was not installed correctly or it did not get placed on the system path variable, so revist the `Install Python` section.
+2. Type `python` followed by the `enter` key (shorthand notation is `python<enter>`). You should get a welcome message from Python displaying the version, this simply verifies that you installed python correctly.  Exit Python by typing `exit()<enter>`.  If you get `python is not recognized as an internal or external command` then either Python was not installed correctly or it did not get placed on the system path variable, so revisit the `Install Python` section.
 
-2. In the command window, type `pip install meshtastic` (from now on `enter` is assumed typed after all command line prompts).  You will get a bunch of messages about `Collecting` various packages and the end result is that Meshtastic python interface will be installed.
-
+2. In the command window, type `pip install meshtastic` (from now on `enter` is assumed typed after all command line prompts).  You will get a bunch of messages about `Collecting` various packages and the end result is that the Meshtastic python interface will be installed.
 
 #### B.3 Testing the Python Meshtastic package
 
-1. Open a command window, and type `meshtastic --info` . You should get back information listing all of the supported command line options.  If you get `meshtastic is not recognized as an internal or external command` then the installion of the Python Meshtastic package failed in some way, revisit that section.
+1. Open a command window, and type `meshtastic --info` . You should get back information listing all of the supported command line options.  If you get `meshtastic is not recognized as an internal or external command` then the installation of the Python Meshtastic package failed in some way, revisit that section.
 
 2. To program a radio with new firmware or settings, the radio must be on and plugged into your PC via a USB-cable (the radios have a USB-C port).
 
@@ -666,7 +673,7 @@ If successful, the `meshtastic --info` command returns a lot of information abou
 
 ### C. Installing Git and Cloning the Flamingo Repo
 
-Programming the radio with our setup utilities/configuration files or firmware files assume that the Flamingo repo files have been `cloned` to your local file system.
+Programming the radio with our setup utilities/configuration files or firmware files assumes that the Flamingo repo files have been `cloned` to your local file system.
 
 #### C.1 Git Installation
 The `git` program is used to `clone` a repo (copy a repo) to the local filesystem.
@@ -685,24 +692,24 @@ cd myrepos
 git clone https://github.com/rbreesems/flamingo.git
 ```
 
-2. The above steps make a new folder (directory) named `C:\myrepos`, and then uses git to clone the Flamingo repo into that folder. The end result is that there will be a new folder named `C:\myrepos\flamingo` that contains all of the files from the Flamingo repo.
+2. The above steps make a new folder (directory) named `C:\myrepos`, and then use `git` to clone the Flamingo repo into that folder. The end result is that there will be a new folder named `C:\myrepos\flamingo` that contains all of the files from the Flamingo repo.
 
 2. The advantage of cloning the Flamingo Github repo is that you can update your local files with our latest changes by executing the following in a command prompt window:
 ```
 cd C:\myrepos\flamingo
 git pull
 ```
-2. The output of the `git pull` command will be `Already up to date.` if your local files match the remote files, or else there will be notifications of changed/new files being downloaded/updated.   You are probably used to phone Apps that automatically update themselves.  There is no automated update of the Github Flamingo repo files on your local filesystem unless you execute `git pull`. So, if you have not updated the repo in few weeks, always do a `git pull` to ensure that you have the latest files.
+2. The output of the `git pull` command will be `Already up to date.` if your local files match the remote files, or else there will be notifications of changed/new files being downloaded/updated.   You are probably used to phone Apps that automatically update themselves.  There is no automated update of the Github Flamingo repo files on your local filesystem unless you execute `git pull`. So, if you have not updated the repo in a few weeks, always do a `git pull` to ensure that you have the latest files.
 
 ### D. Installing new firmware to a radio
 
-Firmware is the program that is loaded into the radio and performs all of the radio functions. It is specific to the radio CPU and radio model - do not load new firmware unless you are certain the firmware file is compatible with the target radio. If you load incompatible firmware it may __BRICK__ the radio and render it unusable. 
+Firmware is the program that is loaded into the radio and performs all of the radio functions. It is specific to the radio CPU and radio model - do not load new firmware unless you are certain the firmware file is compatible with the target radio. If you load incompatible firmware it may __BRICK__ the radio and render it unusable. That being said, any firmware file on our repo marked with `rak4631` will not brick a RAK 4631-based radio.  If the hybrid node firmware is programmed into a WisMesh pocket (a 4631 radio) by mistake, the WisMesh pocket will still work, but it will be doing extra work trying to send packets out of an RS485 interface that it does not have.
 
-Before you do this, ensure that you have read the secion on [Pre-Built Firmware files](#pre-built-firmware-files) and know what firmware file you wish to upload into a radio.
+Before you do this, ensure that you have read the section on [Pre-Built Firmware files](#pre-built-firmware-files) and know what firmware file you wish to upload into a radio.
 
-First, when do you need to update firmware?  If your phone IOS/Android apps are playing well with the current radio firmware, then there is no need to update. However, if a user complains that their phone App updated and can no longer talk to a radio, then this may indicate the need for a firware update.  The Meshtastic IOS/Android apps are constantly updated in order to stay abreast of IOS/Android operating system updates.  The Meshtastic firmware itself is constantly being tweaked to add new features/bug fixes, of which 99% are not really necessary for run-of-the-mill communication.  So, updates like going from `2.7.25` to `2.7.26`, would not be needed.  However, a update like going from `2.7.xx` to `2.8.xx` may require radio firmware to be updated to `2.8.xx` to stay compatible with phone Apps. If your firmware is currently at `2.7.xx` and the latest meshtastic firmware is at `3.y.xx` (a major version change) then this almost surely means that you need to update your firmware.
+First, when do you need to update firmware?  If your phone iOS/Android apps are playing well with the current radio firmware, then there is no need to update. However, if a user complains that their phone App updated and can no longer talk to a radio, then this may indicate the need for a firmware update.  The Meshtastic iOS/Android apps are constantly updated in order to stay abreast of iOS/Android operating system updates.  The Meshtastic firmware itself is constantly being tweaked to add new features/bug fixes, of which 99% are not really necessary for run-of-the-mill communication.  So, updates like going from `2.7.25` to `2.7.26`, would not be needed.  However, a update like going from `2.7.xx` to `2.8.xx` may require radio firmware to be updated to `2.8.xx` to stay compatible with phone Apps. If your firmware is currently at `2.7.xx` and the latest Meshtastic firmware is at `3.y.xx` (a major version change) then this almost surely means that you need to update your firmware.
 
-Whoever is responsible for maintaining the unit radios should check every 1-3 months that IOS/Android apps can still talk to the radios.  You can also check the Flamingo repo readme for the firmware that we are currently using to determine if you need to update.
+Whoever is responsible for maintaining the unit radios should check every three months or so that iOS/Android apps can still talk to the radios.  You can also check the Flamingo repo readme for the firmware that we are currently using to determine if you need to update.
 
 This section uses the Python Meshtastic command line interface to install firmware. The official Meshtastic docs will point you to a web-based firmware flasher - do not use this as it is not as flexible as the command line (and I am not sure how well it would work offline or with our firmware files).
 
@@ -713,7 +720,7 @@ To update the firmware on a radio, follow these steps:
 
 ![Alt text](./doc/tutorial_firmware_selection.png?raw=true "Firmware directory")
 
-3.  Enter the command `meshtastic --enter-dfu` in the command prompt window. This will pop-up the UF2 upload window as shown in the screenshot below. There will also be some INFO/WARNINGs printed in the command prompt window, ignore these.
+3.  Enter the command `meshtastic --enter-dfu` in the command prompt window. This will open the UF2 upload window as shown in the screenshot below. There will also be some INFO/WARNINGs printed in the command prompt window, ignore these.
 
 
 ![Alt text](./doc/tutorial_firmware_upload_window.png?raw=true "Firmware Upload Window")
@@ -722,10 +729,11 @@ To update the firmware on a radio, follow these steps:
 
 5. Move the mouse to the `Firmware Upload Window`, left click to select it, and then right-click and choose `Paste` to paste the copied firmware to the radio. At this point you may get a progress bar that shows programming that closes when programming is complete. You may also get an error window pop-up as shown below. If this happens, select `skip` and the progress bar will appear and programming will complete.
 
-
 ![Alt text](./doc/tutorial_firmware_upload_error.png?raw=true "Firmware Upload Error popup")
 
-6. To check if the firmware was uploaded, type `meshtastic --info` and look at first few lines as shown in the screenshot below. The firwmare version should have a name that matchs the version number (in this case `2.7.25`) and the Git commit value (in this case `9e7fbf63`) that appear in the firmware file name.
+You can also do a drag from Firmware directory window and a drop into the Firmware upload window, but I have had drag/drop quit on me or act buggy in Windows - the copy/paste technique always works.
+
+6. To check if the firmware was uploaded, type `meshtastic --info` and look at the first few lines as shown in the screenshot below. The firmware version should have a name that matches the version number (in this case `2.7.25`) and the Git commit value (in this case `9e7fbf63`) that appears in the firmware file name.
 
 
 ![Alt text](./doc/tutorial_firmware_verification.png?raw=true "Firmware Verification")
@@ -737,17 +745,17 @@ To update the firmware on a radio, follow these steps:
 
 You can configure radio settings from the phone app, but this is slow and error-prone. There are a few cases where you may want to use a phone app to configure a setting, like the radio long name or to change a radio device role (like from ROUTER to CLIENT).
 
-This [link https://meshtastic.org/docs/configuration/radio/](https://meshtastic.org/docs/configuration/radio/) describes the dozens of configuration settings that are available and how they can programmed using the Meshtastic command line interface. Fortunately, you don't need to know/understand all of these settings - we have identified 22 settings that we use in our configuration file and leave the rest at their default values.
+This [link https://meshtastic.org/docs/configuration/radio/](https://meshtastic.org/docs/configuration/radio/) describes the dozens of configuration settings that are available and how they can be programmed using the Meshtastic command line interface. Fortunately, you don't need to know/understand all of these settings - we have identified 22 settings that we use in our configuration file and leave the rest at their default values.
 
-It is important that all of your radios share the same settings for things like LORA mode and Channel configuration so that they can talk with each other.
+It is important that all of your radios share the same settings for things like LoRa mode and Channel configuration so that they can talk with each other.
 
 To make it quicker and less error prone to configure radios, there is a `utils/configurator/configure_node_2.7.py` Python script that can be used with a `.yml` file that contains configuration settings (see [utils/configurator/configs/HCRU/cave_node_aug26_router.yml](./utils/configurator/configs/HCRU/cave_node_aug26_router.yml) for an example).  This contains all of the settings we want to program for any radios that we want to use the `ROUTER` device role. The file [utils/configurator/configs/HCRU/cave_node_aug26_client.yml](./utils/configurator/configs/HCRU/cave_node_aug26_client.yml) is the same as the previous file except that it has a `DEVICE_ROLE` of `CLIENT` and the `range_test` setting is disabled (this radio will not see range test packets)
 
-See the screenshot below for an example execution of this configuration python script - in this example, the script is executed from the `./utils/configurator` directory because I want the `infofiles` directory that is created as side-effect to be in this directory.
+See the screenshot below for an example execution of this configuration python script - in this example, the script is executed from the `./utils/configurator` directory because I want the `infofiles` directory that is created as a side-effect to be in this directory.
 
 ![Alt text](./doc/tutorial_configurator_set.png?raw=true "Configurator Utility")
 
-The `configure_node_2.7.py` requires the first argument to be the name of the settings file.  The `--set` option says to program the radio with these settings.  If you did not include the `--set` it would just compare the radio settings and tell you what is different.
+The `configure_node_2.7.py` script requires the first argument to be the name of the settings file.  The `--set` option says to program the radio with these settings.  If you did not include the `--set` it would just compare the radio settings and tell you what is different.
 
 When programming the options, the current radio settings are first read and compared against the settings file.  Only settings that need to be changed are then written to the radio. The same is done for channels. After programming, the radio settings are read again and checked to ensure they were written correctly - if not, then another programming round is done.  After a second check, if there is still a settings mis-match an error is printed and programming is stopped.
 
@@ -766,10 +774,68 @@ A screenshot of a part of the generated `nodes.csv` for our radios is below - I 
 
 ![Alt text](./doc/node_csv_file.png?raw=true "nodes.csv")
 
-The first argument to the `gen_csv.py` is a YML file that describes how settings are mapped to spreadsheet column headers - you can look at the details of this file and script if you want to make changes.
+The first argument to the `gen_csv.py` is a `YML` file that describes how settings are mapped to spreadsheet column headers - you can look at the details of this file and script if you want to make changes.
+
+#### E3. Configuring long/short radio names
+
+Each radio has two names - the short name which should be exactly 4 characters and a long name which can be up to 39 characters. An example of using the python meshtastic command interface to program these names is shown below (``-set-owner` is for the long name, `set-owner-short` is for the short name).
+
+```
+meshtastic --set-owner BobReese --set-owner-short WP01
+```
+
+You should pick a short naming scheme that perhaps gives a hint of the radio function and/or type. For example, `HR01` may be a short name for a hybrid node (`H`) that is intended for the relay chain (`R`). You want to keep the short name the same once set, and add some sort of glued waterproof marker or tag to the radio so you can quickly identify the short name of the radio when deploying. As mentioned before, radios in the relay chain should be deployed in some sort of short name numerical ordering so that you can more easily identify weak links in the chain when examining trace routes.
+
+The long name can be anything and is typically changed to something meaningful when a radio is assigned to a rescuer.  Radios used in the relay chain may have names like `Relay01` and these are kept the same (but could be changed if needed).
+
+Both the long name and short name can be changed via the phone App, and it may be worthwhile showing users how to do this so that they can change the long name themselves once a radio is assigned to them.
+
+### F. Radio Testing
+
+As a reminder, Flamingo radio packets have a different header than stock Meshtastic packets. This means that stock Meshtastic radios in range of Flamingo radios will reject Flamingo packets, and Flamingo radios will reject stock Meshtastic packets.  This makes it easier to test knowing that stock Meshtastic radios will not interfere with Flamingo radio testing.
+
+#### F1. Wireless Testing
+
+Use two radios, A and B, for simple wireless testing.  It is assumed the two radios are either `ROUTER` or `CLIENT` device roles and not `CLIENT_MUTE`. It is important that no other Flamingo radios are turned on or in range of radios A and B.
+
+1. Turn on radio A, and pair the phone app to the radio. Send a `hello` text to one of the channels. What should happen is that you will get a `sending` indication but after a few seconds this will change to `Failed to deliver to mesh` (iOS). For Android, it will be a small error mark with `Max retransmits reached` if clicked.  This happens because radio A does not hear a neighboring node rebroadcast the packet, which means the radio is out of range of other Flamingo radios.
+
+2. Now turn on radio B, and send the `hello` text again using radio A. This time, you should see a `Delivered to mesh` indication (iOS). For Android, there will be a cloud icon with checkmark and the message status will also be `Delivered to mesh`. This means that radio A heard radio B rebroadcast the packet once it received it.  A phone App connected to radio B would have seen the `hello` message in the appropriate channel.
+
+If radio B had a device role of `CLIENT_MUTE`, then radio A in step 2 would have seen a `Failed to deliver to mesh` message even though radio B was on. This is because the `CLIENT_MUTE` device role prevents packet rebroadcasting.  A phone App connected to radio B would have seen the `hello` message received in the appropriate channel. 
+
+#### F2. Wired Testing
+
+Testing the wired connection (RS485 interface) between two Hybrid nodes uses a similar approach as in the previous section.
+Use two radios, A and B, and it is assumed the two radios are either `ROUTER` or `CLIENT` device roles and not `CLIENT_MUTE`.  It is important that no other Flamingo radios are turned on or in range of radios A and B.
+
+1. Power on both radios. Using a phone App, connect to each radio and in the Radio Configuration LoRa settings, disable transmit. In iOS, this setting is named `Transmit Enabled` and is found in `Settings | LoRa (Radio Configuration group)` (use the `Save` popup after the setting is changed).  In Android, look in `Settings`, and under `Radio Configuration`, open `LoRa`. The setting is named `Transmit Enabled`; scroll to the bottom after changing the setting and use the `Save` button.
+
+2. Connect a phone App to radio A.  Send `hello` in a channel; you should get a `Failed to deliver to mesh` because LoRa transmit is disabled on the radio and the radio does not hear the packet rebroadcast.
+
+3. Take a two conductor wire (preferably red/black) and connect the red alligator clips on both radios to the red wire, and black alligator clips to the black wire. Or skip the wire, and connect the black alligator clips on each radio together and also the red alligator clips together. Polarity matters - connecting red to black causes wired transmission to fail.
+
+4. Send `hello` again in a channel; this time you will get a `Delivered to mesh` indication and a phone app connected to radio B will see the `hello` message in the appropriate channel. This works because the RS485 serial link is used for the messaging. This actually tests the RS485 serial link in both directions. Radio A sends the packet over the serial link to radio B, and then radio B rebroadcasts the packet over the serial link which radio A receives.  So, this verifies functionality of the RS485 interface on both radios.
+
+5. Use the phone app to enable LoRa transmit on both radios and confirm they receive channel messages ok after the alligator clips are disconnected.  You do not want to forget and leave LoRa transmit disabled after you are finished testing.
 
 
+### G. Trace Routes
 
+#### G1. About Trace Routes
+A `trace route` sends a packet to a destination node recording each node that it encounters and the SNR (signal-to-noise ratio) of the received packet.  When the trace route packet hits the destination node, it is sent back to the originating node, recording the same information about the backwards path. The final trace route packet that returns to the originating node has both the forward and reverse paths, which are displayed when the trace route log is examined.
 
+The trace route below was taken during one of our last Tumbling Rock tests, from the Christmas Tree formation deep in the cave to Incident Command outside the cave. The screenshot shows the forward direction from the originating node (`Rigging-WP03`) to the destination node (`IncidentCommand`). The SNR value shown is the SNR for the received packet from the previous radio. So the `WiredBridge14 (11.5dB)` means the packet sent by `Rigging-WP03` to `WiredBridge14` had an SNR of `11.4dB` when `WiredBridge14` received the packet. Any nodes labeled as `WiredBridge` and next to each other in the chain were connected by a wire, like `WiredBridge14` and `WiredBridge13`.  The packets received over the wired connection have an SNR of 0 as SNR for wire is meaningless, hence the `WiredBridge13 (0.0dB)`.  Any negative SNR values, such as `HCRU-A08 (-7.25DB)` are concerning and may indicate a weak link between `HCRU-A09` and `HCRU-A08`.  However, SNR values tend to bounce around a bit, and a subsequent trace route may have an acceptable SNR value for this link. In this case, we did not notice any consistent communication problems back to Incident Command that would have indicated a problem link.
 
+![Trace route (15 hops) from Christmas Tree to Incident Command outside of cave](./doc/trace_route1_xtree.PNG)
+
+If you are having communication problems back to Incident Command, try sending a trace route to a node about halfway down the relay chain and check the SNR values. If the trace route does not return, then there is a problem between you and the target node, send another trace route that targets a node about 1/4 down the chain and keep doing this until you can identify the problem node (if it is a hard fail).  If it is just a weak link (sometimes you can get a trace route to IC to return, and sometimes not), send trace routes to IC until you have 3 or 4 successes, and then examine the trace route logs and determine if you can spot a link that has a consistently negative SNR.  You could then put an intermediate radio to bridge the link or shift the positions of the two radios involved in the weak link.
+
+#### G2. Sending a Trace Route on iOS
+
+To send a trace route on iOS, press on the `nodes` icon at the bottom of the screen, then long press on the target node until a pop-up menu appears and select `Trace Route`.  It may take a while for the trace route to return but you will get a pop up notification when it does return. To examine the trace route log, press on the `nodes` icon, then press on the target node - this will take you to a screen with detailed information on the target node. Scroll down until you find `Trace Route Log` - open that, and you find a list of all trace route logs to that node. Click on any log to examine the detailed data.
+
+#### G3. Sending a Trace Route on Android
+
+To send a trace route on iOS, press on the icon at the bottom of the screen that is second from the left and looks like little circles connected together - this opens the `Nodes` page. Long press on the target node until a pop-up menu appears and select `Trace Route`.   It may take a while for the trace route to return but you will get a pop up notification when it does return. To examine the trace route log, press on the `nodes` icon, then press on the target node - this will take you to a screen with detailed information on the target node. Scroll down until you see the `Telemetry` section, and one the `TraceRoute` line, click on the second icon from the right (a wiggly line indicating a route). This will bring up the detailed trace route logs.
 
