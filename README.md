@@ -731,7 +731,7 @@ To update the firmware on a radio, follow these steps:
 
 ![Alt text](./doc/tutorial_firmware_upload_error.png?raw=true "Firmware Upload Error popup")
 
-You can also do a drag from Firmware directory window and a drop into the Firmware upload window, but I have had drag/drop quit on me or act buggy in Windows - the copy/paste technique always works.
+You can also do a drag from the Firmware directory window and a drop into the Firmware upload window, but I have had drag/drop quit on me or act buggy in Windows - the copy/paste technique always works.
 
 6. To check if the firmware was uploaded, type `meshtastic --info` and look at the first few lines as shown in the screenshot below. The firmware version should have a name that matches the version number (in this case `2.7.25`) and the Git commit value (in this case `9e7fbf63`) that appears in the firmware file name.
 
