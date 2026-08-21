@@ -655,14 +655,14 @@ These steps assume a Windows operating system. If you are running a Linux operat
 
 - If there is only one `Status for device COMxx` line, proceed on, the `COMxx` value is not important.
 - If there are no lines that contain `Status for device COMxx` when the radio is turned on and connected, it means your USB port is defective or the radio is defective.
-- If there is more than one `Status for device COMxx` line, turn the radio off and execute `mode` again, to determine which `Status for device COMxx` line disappeared.  Record the `COMMxx` value that appears when the radio is turned on.
+- If there is more than one `Status for device COMxx` line, turn the radio off and execute `mode` again, to determine which `Status for device COMxx` line disappeared.  Record the `COMxx` value that appears when the radio is turned on.
 
 4. Ensure the radio is turned on and connected to the PC via a USB-C cable.
 - If there was only one `Status for device COMxx` line, type `meshtastic --info`
 - If there were multiple `Status for device COMxx` lines, type `meshtastic --info --port COMxx`, i.e. `meshtastic --info --port COM21` , where the `COMxx` is the port corresponding to the connected radio.
 
 
-If successful, the `meshtastic --info` command returns a lot of information about the internal settings of the radio, you can ignore this. The goal of begin able to talk to the radio via the python meshtastic command line interface has been reached!
+If successful, the `meshtastic --info` command returns a lot of information about the internal settings of the radio, you can ignore this. The goal of being able to talk to the radio via the python meshtastic command line interface has been reached!
 
 ### C. Installing Git and Cloning the Flamingo Repo
 
