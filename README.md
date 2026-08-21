@@ -98,7 +98,18 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [Tumbling Rock Cave Preserve test, March 20/2026](#tumbling-rock-cave-preserve-test-march-202026)
   - [HCRU Cave Rescue Class / Hughes Cave and Guffey Cave / Alabama /US --  August 1/2, 2026](#hcru-cave-rescue-class--hughes-cave-and-guffey-cave--alabama-us-----august-12-2026)
 - [Tutorial Documents](#tutorial-documents)
-  - [Basic Radio Operation](#basic-radio-operation)
+  - [A. Basic Radio Operation](#a-basic-radio-operation)
+  - [B. Installing the Python Command Line Interface for Meshtastic](#b-installing-the-python-command-line-interface-for-meshtastic)
+    - [B.1 Install Python](#b1-install-python)
+    - [B.2 Install the Python Meshtastic package](#b2-install-the-python-meshtastic-package)
+    - [B.3 Testing the Python Meshtastic package](#b3-testing-the-python-meshtastic-package)
+  - [C. Installing Git and Cloning the Flamingo Repo](#c-installing-git-and-cloning-the-flamingo-repo)
+    - [C.1 Git Installation](#c1-git-installation)
+    - [C.2 Cloning the Flamingo Repo](#c2-cloning-the-flamingo-repo)
+  - [D. Installing new firmware to a radio](#d-installing-new-firmware-to-a-radio)
+  - [E. Configuring Radio settings](#e-configuring-radio-settings)
+    - [E1. The configure_node_2_7.py script](#e1-the-configure_node_2_7py-script)
+    - [E2. Creating a spreadsheet of all radio settings with gen_csv.py](#e2-creating-a-spreadsheet-of-all-radio-settings-with-gen_csvpy)
 
 # Project Background
 
@@ -601,8 +612,164 @@ HCRU now considers the mesh system proven/reliable and can be used in an actual 
 
 ## Tutorial Documents
 
-### Basic Radio Operation
+The basic radio operation tutorial is for any user who will be using a Meshtatic radio for cave communications.
 
-This document describes how to install Meshtastic, pair to a radio to a phone, and send channel/direct messages.
-[PDF document] (./doc/FLAMINGO_basic_radio_operation.pdf)
+The remaining sections are for the person(s) who are responsible for configuring radios with new settings or updating radio firmware. The directions are written for someone using a Windows operating system. For a Linux operating system, you will need to visit the official Meshtastic documentation hub.
+
+### A. Basic Radio Operation
+
+This [PDF document](./doc/FLAMINGO_basic_radio_operation.pdf)
+ describes how to install Meshtastic, pair to a radio to a phone, and send channel/direct messages. The app screenshots uses our old channel names.
+
+### B. Installing the Python Command Line Interface for Meshtastic
+
+This is a must-have capability if you plan to update radio firmware and/or settings.  
+The python command line interface allows you to update radio firmware and settings from the command line, which is the method that we recommend. The follow on instructions for updating firmware or applying radio settings assume these steps have been followed.
+
+These steps assume a Windows operating system. If you are running a Linux operating system, please look at the official [Meshtastic docs](https://meshtastic.org/docs/software/python/cli/installation/).
+
+#### B.1 Install Python
+1. Go to the [Windows Python downloads page](https://www.python.org/downloads/windows/) and download the installer for Python 3.14 or later.
+2. Run the installer
+ - Choose `Customize Installation`
+ - On the next window labeled as `Optional Features`, leave anything already checked as checked and continue
+ - On the next window labeled as `Advanced Options`, check the boxes that have `install for all users`, `precompile standard library`, `Add Python to environment variables`. In the `Customize install location` typein file, use `C:\Python314` (or whatever version you downloaded)
+ - At this point, you can click the `Install` button to complete the installation.
+
+#### B.2 Install the Python Meshtastic package
+
+1. Open a command window (in the search bar at the bottom of the window, type`command` and then choose `Command Prompt`) - you may be able to just type `command` followed by enter.  This opens a command prompt window
+
+2. Type `python` followed by the `enter` key (shorthand notation is `python<enter>`). You should get a welcome message from Python displaying the version, this simply verifies that you installed python correctly.  Exit Python by typing `exit()<enter>`.  If you get `python is not recognized as an internal or external command` then either Python was not installed correctly or it did not get placed on the system path variable, so revist the `Install Python` section.
+
+2. In the command window, type `pip install meshtastic` (from now on `enter` is assumed typed after all command line prompts).  You will get a bunch of messages about `Collecting` various packages and the end result is that Meshtastic python interface will be installed.
+
+
+#### B.3 Testing the Python Meshtastic package
+
+1. Open a command window, and type `meshtastic --info` . You should get back information listing all of the supported command line options.  If you get `meshtastic is not recognized as an internal or external command` then the installion of the Python Meshtastic package failed in some way, revisit that section.
+
+2. To program a radio with new firmware or settings, the radio must be on and plugged into your PC via a USB-cable (the radios have a USB-C port).
+
+3. Connect a radio via a USB-C cable to your PC and turn the radio on.  In a command prompt window, type `mode`.  You should get back several lines of information - at least one line will have `Status for device COMxx`, where `COMxx` is the comm port number (i.e, COM21). The `COMxx` is only important if there was more than one of these as you will need to pass this parameter to the `meshtastic` program.  
+
+- If there is only one `Status for device COMxx` line, proceed on, the `COMxx` value is not important.
+- If there are no lines that contain `Status for device COMxx` when the radio is turned on and connected, it means your USB port is defective or the radio is defective.
+- If there is more than one `Status for device COMxx` line, turn the radio off and execute `mode` again, to determine which `Status for device COMxx` line disappeared.  Record the `COMMxx` value that appears when the radio is turned on.
+
+4. Ensure the radio is turned on and connected to the PC via a USB-C cable.
+- If there was only one `Status for device COMxx` line, type `meshtastic --info`
+- If there were multiple `Status for device COMxx` lines, type `meshtastic --info --port COMxx`, i.e. `meshtastic --info --port COM21` , where the `COMxx` is the port corresponding to the connected radio.
+
+
+If successful, the `meshtastic --info` command returns a lot of information about the internal settings of the radio, you can ignore this. The goal of begin able to talk to the radio via the python meshtastic command line interface has been reached!
+
+### C. Installing Git and Cloning the Flamingo Repo
+
+Programming the radio with our setup utilities/configuration files or firmware files assume that the Flamingo repo files have been `cloned` to your local file system.
+
+#### C.1 Git Installation
+The `git` program is used to `clone` a repo (copy a repo) to the local filesystem.
+
+1. To install `git` on Windows 10 or later, open a command prompt window and type `winget install --id Git.Git -e --source winget`.   This will install the `git` program.
+2. To test, type `git --help` in a command prompt window and you should get back information on the command line flags for `git`.
+
+#### C.2 Cloning the Flamingo Repo
+
+To clone the repo, follow these steps (this uses the command prompt).
+1.  Open a command prompt window and execute the following commands in sequence:
+```
+cd C:\
+mkdir myrepos
+cd myrepos
+git clone https://github.com/rbreesems/flamingo.git
+```
+
+2. The above steps make a new folder (directory) named `C:\myrepos`, and then uses git to clone the Flamingo repo into that folder. The end result is that there will be a new folder named `C:\myrepos\flamingo` that contains all of the files from the Flamingo repo.
+
+2. The advantage of cloning the Flamingo Github repo is that you can update your local files with our latest changes by executing the following in a command prompt window:
+```
+cd C:\myrepos\flamingo
+git pull
+```
+2. The output of the `git pull` command will be `Already up to date.` if your local files match the remote files, or else there will be notifications of changed/new files being downloaded/updated.   You are probably used to phone Apps that automatically update themselves.  There is no automated update of the Github Flamingo repo files on your local filesystem unless you execute `git pull`. So, if you have not updated the repo in few weeks, always do a `git pull` to ensure that you have the latest files.
+
+### D. Installing new firmware to a radio
+
+Firmware is the program that is loaded into the radio and performs all of the radio functions. It is specific to the radio CPU and radio model - do not load new firmware unless you are certain the firmware file is compatible with the target radio. If you load incompatible firmware it may __BRICK__ the radio and render it unusable. 
+
+Before you do this, ensure that you have read the secion on [Pre-Built Firmware files](#pre-built-firmware-files) and know what firmware file you wish to upload into a radio.
+
+First, when do you need to update firmware?  If your phone IOS/Android apps are playing well with the current radio firmware, then there is no need to update. However, if a user complains that their phone App updated and can no longer talk to a radio, then this may indicate the need for a firware update.  The Meshtastic IOS/Android apps are constantly updated in order to stay abreast of IOS/Android operating system updates.  The Meshtastic firmware itself is constantly being tweaked to add new features/bug fixes, of which 99% are not really necessary for run-of-the-mill communication.  So, updates like going from `2.7.25` to `2.7.26`, would not be needed.  However, a update like going from `2.7.xx` to `2.8.xx` may require radio firmware to be updated to `2.8.xx` to stay compatible with phone Apps. If your firmware is currently at `2.7.xx` and the latest meshtastic firmware is at `3.y.xx` (a major version change) then this almost surely means that you need to update your firmware.
+
+Whoever is responsible for maintaining the unit radios should check every 1-3 months that IOS/Android apps can still talk to the radios.  You can also check the Flamingo repo readme for the firmware that we are currently using to determine if you need to update.
+
+This section uses the Python Meshtastic command line interface to install firmware. The official Meshtastic docs will point you to a web-based firmware flasher - do not use this as it is not as flexible as the command line (and I am not sure how well it would work offline or with our firmware files).
+
+To update the firmware on a radio, follow these steps:
+
+1. Ensure the radio is turned on and plugged into the PC via a USB-C cable, and that `meshtastic --info` typed in a command prompt returns radio information.
+2. Open an Explorer window to the folder that contains the `.uf2` firmware file that you wish to update (like in the screenshot below):
+
+![Alt text](./doc/tutorial_firmware_selection.png?raw=true "Firmware directory")
+
+3.  Enter the command `meshtastic --enter-dfu` in the command prompt window. This will pop-up the UF2 upload window as shown in the screenshot below. There will also be some INFO/WARNINGs printed in the command prompt window, ignore these.
+
+
+![Alt text](./doc/tutorial_firmware_upload_window.png?raw=true "Firmware Upload Window")
+
+4. In the Firmware directory window, left click on the firmware file to use to select it, then right-click and select `Copy` from the pop-up menu.
+
+5. Move the mouse to the `Firmware Upload Window`, left click to select it, and then right-click and choose `Paste` to paste the copied firmware to the radio. At this point you may get a progress bar that shows programming that closes when programming is complete. You may also get an error window pop-up as shown below. If this happens, select `skip` and the progress bar will appear and programming will complete.
+
+
+![Alt text](./doc/tutorial_firmware_upload_error.png?raw=true "Firmware Upload Error popup")
+
+6. To check if the firmware was uploaded, type `meshtastic --info` and look at first few lines as shown in the screenshot below. The firwmare version should have a name that matchs the version number (in this case `2.7.25`) and the Git commit value (in this case `9e7fbf63`) that appear in the firmware file name.
+
+
+![Alt text](./doc/tutorial_firmware_verification.png?raw=true "Firmware Verification")
+
+
+### E. Configuring Radio settings
+
+#### E1. The configure_node_2_7.py script
+
+You can configure radio settings from the phone app, but this is slow and error-prone. There are a few cases where you may want to use a phone app to configure a setting, like the radio long name or to change a radio device role (like from ROUTER to CLIENT).
+
+This [link https://meshtastic.org/docs/configuration/radio/](https://meshtastic.org/docs/configuration/radio/) describes the dozens of configuration settings that are available and how they can programmed using the Meshtastic command line interface. Fortunately, you don't need to know/understand all of these settings - we have identified 22 settings that we use in our configuration file and leave the rest at their default values.
+
+It is important that all of your radios share the same settings for things like LORA mode and Channel configuration so that they can talk with each other.
+
+To make it quicker and less error prone to configure radios, there is a `utils/configurator/configure_node_2.7.py` Python script that can be used with a `.yml` file that contains configuration settings (see [utils/configurator/configs/HCRU/cave_node_aug26_router.yml](./utils/configurator/configs/HCRU/cave_node_aug26_router.yml) for an example).  This contains all of the settings we want to program for any radios that we want to use the `ROUTER` device role. The file [utils/configurator/configs/HCRU/cave_node_aug26_client.yml](./utils/configurator/configs/HCRU/cave_node_aug26_client.yml) is the same as the previous file except that it has a `DEVICE_ROLE` of `CLIENT` and the `range_test` setting is disabled (this radio will not see range test packets)
+
+See the screenshot below for an example execution of this configuration python script - in this example, the script is executed from the `./utils/configurator` directory because I want the `infofiles` directory that is created as side-effect to be in this directory.
+
+![Alt text](./doc/tutorial_configurator_set.png?raw=true "Configurator Utility")
+
+The `configure_node_2.7.py` requires the first argument to be the name of the settings file.  The `--set` option says to program the radio with these settings.  If you did not include the `--set` it would just compare the radio settings and tell you what is different.
+
+When programming the options, the current radio settings are first read and compared against the settings file.  Only settings that need to be changed are then written to the radio. The same is done for channels. After programming, the radio settings are read again and checked to ensure they were written correctly - if not, then another programming round is done.  After a second check, if there is still a settings mis-match an error is printed and programming is stopped.
+
+At the end, once the settings have been programmed, a sub-folder named `infofiles` is created and the settings for this radio is written out, with the file name being the short name.  This will be useful later on when trying to examine all the radio settings for the radios in the `infofiles` directory.
+
+#### E2. Creating a spreadsheet of all radio settings with gen_csv.py
+
+Perhaps you have just updated the firmware for all 20 unit radios, and now you want to check if you missed anything.
+You can create an Excel .csv file named `nodes.csv` that contains a summary of the settings found for all radios in the `infofiles` directory by executing the following in a command prompt window from the `flamingo\utils\configurator` directory:
+
+```
+python ..\gen_csv.py ..\node_csvspec.yml
+```
+
+A screenshot of a part of the generated `nodes.csv` for our radios is below - I recently did this for our 30+ radios and I wanted to ensure two things: that the firmware version matched and the channels matched as this is what changed -- the other settings had been stable for several configuration iterations.
+
+![Alt text](./doc/node_csv_file.png?raw=true "nodes.csv")
+
+The first argument to the `gen_csv.py` is a YML file that describes how settings are mapped to spreadsheet column headers - you can look at the details of this file and script if you want to make changes.
+
+
+
+
+
 
