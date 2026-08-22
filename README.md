@@ -118,6 +118,9 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
     - [G1. About Trace Routes](#g1-about-trace-routes)
     - [G2. Sending a Trace Route on iOS](#g2-sending-a-trace-route-on-ios)
     - [G3. Sending a Trace Route on Android](#g3-sending-a-trace-route-on-android)
+  - [H. Using Range Test](#h-using-range-test)
+  - [I. Checking Radio Battery Levels](#i-checking-radio-battery-levels)
+  - [J. Mesh Communications Checklist](#j-mesh-communications-checklist)
 
 # Project Background
 
@@ -838,4 +841,52 @@ To send a trace route on iOS, press on the `nodes` icon at the bottom of the scr
 #### G3. Sending a Trace Route on Android
 
 To send a trace route on iOS, press on the icon at the bottom of the screen that is second from the left and looks like little circles connected together - this opens the `Nodes` page. Long press on the target node until a pop-up menu appears and select `Trace Route`.   It may take a while for the trace route to return but you will get a pop up notification when it does return. To examine the trace route log, press on the `nodes` icon, then press on the target node - this will take you to a screen with detailed information on the target node. Scroll down until you see the `Telemetry` section, and one the `TraceRoute` line, click on the second icon from the right (a wiggly line indicating a route). This will bring up the detailed trace route logs.
+
+### H. Using Range Test
+
+Because using range test is crucial for placing wireless nodes in the cave mesh, you should familiarize yourself with its operation.
+
+Use two radios -- let us assume short names of `HR01` and `HR02` and that both have device roles of either `ROUTER` or `CLIENT`. In these instructions, replace the example short names with the short names of your radios.
+
+1. Turn on both radios, and use the phone App to verify that range test is enabled in the settings. For iOS, enter settings, scroll down to the `Module Configuration` section, and click on the `Range Test` entry, and ensure that the `Enabled` button is turned on.  For Android, enter settings, open the `Module configuration` page, click on `Range Test`, and ensure that the `Range test enabled` button is on. In our `YML` configuration files, this setting is `range_test.enabled` with a value of `"True"` or `"False"`.
+
+2. Connect a phone app to `HR01`, and in a channel, send the message `adrt on hr02` (capitalization is not important). After a few seconds, you will begin receiving range test packets in channel 0, that show values of `RSSI`, `SNR`, and `SNR_AVG` (running average of the last three packets).
+
+3. Move away from radio `HR02` and observe how `RSSI` changes (will become increasingly negative). The `SNR` value will also decrease, eventually turning negative if you get far enough away.
+
+4. You can change the delay between range packet by sending `adrt delay value`, (ie., `adrt delay 30`) to a channel. Only 5, 10, 15, 30, and 60 are accepted for delay values. 
+
+5. To turn off range test, send `adrt off` to a channel.
+
+### I. Checking Radio Battery Levels
+
+Our DIY radios use an internal 18650 battery.  The battery is physically disconnected from the RAK4631 when the power is off. This means that if you want to charge it via the USB port, you need to turn the radio ON before plugging in the USB-C cable in order to actually charge the battery. WishMesh pocket radios use an internal lithium battery packet and they also must be turned when connected to a USB-C port in order to charge.
+
+Web wisdom is that an 18650 battery will retain 80% to 90% of its charge for at least six months.  I like to check the battery levels about every four months and recharge a radio if it reports its battery status as below 75%.
+
+The easiest way to check battery status is to use the MeshApp in the Flamingo repo. 
+
+Take out all the radios that you want to check battery status and have them powered off. 
+
+1. Start the MeshApp, connect one radio to the PC so that the MeshApp can talk to other radios. Ensure that the MeshApp successfully connects to the radio plugged in via USB-C.
+2. Select the `Nodes` tab, and check on the `Hide old nodes` checkbox. This will hide all nodes not seen in the last 24 hours.  The node list will only contain the node connected to the MeshApp.
+3. Turn on all of the other radios and wait a least 5 minutes.  You should see the node list populate with the powered-on nodes as they send out their wake up `Node information` packet. They will also send out an initial telemetry packet containing battery voltage after the node information packet.
+4. If you expand on one of the nodes by clicking on it, a battery level will be shown. That will be the current battery status.
+5. You can also explcitly request telemetry by left clicking on the node to select it, the right click to pop up a menu and select `Request Telemetry`. After a short delay the status bar will indicate that telemetry has been received.
+
+Warning: The battery level is checked by a simple resistor-divider to measure the voltage, and based on this voltage measurement, the battery level is estimate as `xx%` charged. This value can fluctuate a bit between successive telemetry requests so do not agonize if it reports as 80% one time and 85% the next.  Be satisfied if all radios report as near 75% or better in terms of charge level.
+
+You can also use a phone App that is connected to a radio, and use the node information list in the phone App to check the battery status of a listed node.  The problem with the phone app is that there is not a handy way to filter old nodes and you will have to scroll through the node list to find the nodes that you are interested in.
+
+### J. Mesh Communications Checklist
+
+So, you are ready to set up a mesh in a cave! Here is a checklist of some points to consider.
+
+1. Do all radios have common settings? (besides the device role of `ROUTER`/`CLIENT`/`CLIENT_MUTE` as that will depend on how the radio is used).
+2. Have you planned which sections in the cave will need wired connections and which are suitable for wireless? For each distinct wired section, you will need to carry in at least one separate wire spool for each section as you do not want to be chopping up your comm phone wire.
+3. Are all of your comm spools marked for polarity at each end? (we use red/blue tape on our spools to mark polarity at both ends of the wire)
+4. Does the radio used by the comms team leader for listening to range test packets have the same antenna configuration as the relay radios being placed? (ie., both external or both internal antennas)
+5. Is the maximum wire length used compatible with the baud rate setting for the hybrid nodes? (our `YML` files have a value of 9600 bits per second which accommodates 2400 feet maximum length, or three of our 800 foot spools)
+6. If using an external Incident Command that is remote from the cave entrance, can the radio at the cave entrance reach the Incident Command location or are intermediate relay nodes needed?
+6. If using an external Incident Command, will you be using a laptop running the Flamingo Meshapp to log messages? If yes, has the Meshapp been installed on the laptop and operation verified, and do you have a power source for the laptop?
 
