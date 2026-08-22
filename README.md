@@ -122,6 +122,7 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [I. Checking Radio Battery Levels](#i-checking-radio-battery-levels)
   - [J. Mesh Communications Checklist](#j-mesh-communications-checklist)
   - [K. Using Field Phones with Hybrid radios](#k-using-field-phones-with-hybrid-radios)
+  - [L. Can a Hybrid radio be patched into the middle of a comm wire?](#l-can-a-hybrid-radio-be-patched-into-the-middle-of-a-comm-wire)
 
 # Project Background
 
@@ -905,3 +906,17 @@ We have considered putting some protection circuitry on our hybrid radios, but t
 
 At the current time we have no plans to do this - either you use field phones or you use mesh radios - both have their place. We have both field phones and mesh radios on our equipment trailer, and depending on the situation, the Incident Commander decides which to deploy.  
 
+### L. Can a Hybrid radio be patched into the middle of a comm wire?
+
+Can a Hybrid radio be patched into the middle of a comm wire like field phones are able to do? 
+
+Yes, but it requires a bit more work. This assumes your phone App is tied to the hybrid radio that is being patched into the comm wire.
+
+1. Use your phone app to disable the LoRa transmit mode on the hybrid radio to force transmissions to go over the RS485 interface.
+1. Patch the hybrid radio into the comm wire - because the comm wire is only polarity marked at the ends, you have a 50% chance of getting the polarity correct (getting the polarity wrong does no electrical damage, but it does prevent communication on that comm wire)
+2. Send a test message - if you get a 'Delivered to Mesh' or an ack from somebody, then it worked. If you get a 'Max Retransmission' failure or no response at all to the message, reverse the connection and try again.
+3. Once the radio is successfully patched in, use your Phone App to enable the LoRa transmit. This allows the hybrid radio to rebroadcast packets it sees over the wire to the local area.
+
+You may need to patch in a hybrid radio if the comm wire is very long and you need communication in the middle, where you are out of wireless range from either end of the comm wire.
+
+The reason for disabling the LoRa transmit mode before patching is that the radio might actually be in wireless range of one of the comm wire ends, and you may think that communication is working over the wire when in fact communication is occurring over the air.
