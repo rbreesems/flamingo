@@ -121,6 +121,7 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [H. Using Range Test](#h-using-range-test)
   - [I. Checking Radio Battery Levels](#i-checking-radio-battery-levels)
   - [J. Mesh Communications Checklist](#j-mesh-communications-checklist)
+  - [K. Using Field Phones with Hybrid radios](#k-using-field-phones-with-hybrid-radios)
 
 # Project Background
 
@@ -874,7 +875,7 @@ Take out all the radios that you want to check battery status and have them powe
 4. If you expand on one of the nodes by clicking on it, a battery level will be shown. That will be the current battery status.
 5. You can also explcitly request telemetry by left clicking on the node to select it, the right click to pop up a menu and select `Request Telemetry`. After a short delay the status bar will indicate that telemetry has been received.
 
-Warning: The battery level is checked by a simple resistor-divider to measure the voltage, and based on this voltage measurement, the battery level is estimate as `xx%` charged. This value can fluctuate a bit between successive telemetry requests so do not agonize if it reports as 80% one time and 85% the next.  Be satisfied if all radios report as near 75% or better in terms of charge level.
+Warning: The battery level is checked by a simple resistor-divider to measure the voltage, and based on this voltage measurement, the battery level is estimated as `xx%` charged. This value can fluctuate a bit between successive telemetry requests so do not agonize if it reports as 80% one time and 85% the next.  Be satisfied if all radios report as near 75% or better in terms of charge level.
 
 You can also use a phone App that is connected to a radio, and use the node information list in the phone App to check the battery status of a listed node.  The problem with the phone app is that there is not a handy way to filter old nodes and you will have to scroll through the node list to find the nodes that you are interested in.
 
@@ -889,4 +890,12 @@ So, you are ready to set up a mesh in a cave! Here is a checklist of some points
 5. Is the maximum wire length used compatible with the baud rate setting for the hybrid nodes? (our `YML` files have a value of 9600 bits per second which accommodates 2400 feet maximum length, or three of our 800 foot spools)
 6. If using an external Incident Command that is remote from the cave entrance, can the radio at the cave entrance reach the Incident Command location or are intermediate relay nodes needed?
 6. If using an external Incident Command, will you be using a laptop running the Flamingo Meshapp to log messages? If yes, has the Meshapp been installed on the laptop and operation verified, and do you have a power source for the laptop?
+
+### K. Using Field Phones with Hybrid radios
+
+A question that is often asked is "Can a field phone be used on the same wire as one of our hybrid mesh radios". The answer is __NO__. The high ringer voltage sent by a field phone will damage the hybrid radio.
+
+We have considered putting some protection circuitry on our hybrid radios, but this violates our 'build everything from off-the-shelf parts' philosophy which makes our DIY radios easy to purchase/assemble/use.  We would have to design a small printed circuit board ourselves with the appropriate protection circuitry, and build and test this piece ourselves, and then integrate this into our packaging.
+
+At the current time we have no plans to do this - either you use field phones or you use mesh radios - both have their place. We have both field phones and mesh radios on our equipment trailer, and depending on the situation, the Incident Commander decides which to deploy.  
 
