@@ -97,7 +97,7 @@ If you are new to radios or Meshtastic, take a look at the specs below, otherwis
   - [Tumbling Rock Cave Preserve test, January 23/2026](#tumbling-rock-cave-preserve-test-january-232026)
   - [Tumbling Rock Cave Preserve test, March 20/2026](#tumbling-rock-cave-preserve-test-march-202026)
   - [HCRU Cave Rescue Class / Hughes Cave and Guffey Cave / Alabama /US --  August 1/2, 2026](#hcru-cave-rescue-class--hughes-cave-and-guffey-cave--alabama-us-----august-12-2026)
-- [Tutorial Documents](#tutorial-documents)
+- [Tutorial Documents/Wiki](#tutorial-documentswiki)
   - [A. Basic Radio Operation](#a-basic-radio-operation)
   - [B. Installing the Python Command Line Interface for Meshtastic](#b-installing-the-python-command-line-interface-for-meshtastic)
     - [B.1 Install Python](#b1-install-python)
@@ -623,7 +623,7 @@ Approximately 300 texts were exchanged during the Mock on Sunday. The firmware u
 
 HCRU now considers the mesh system proven/reliable and can be used in an actual rescue at the discretion of the Incident Commander.
 
-## Tutorial Documents
+## Tutorial Documents/Wiki
 
 The basic radio operation tutorial is for any user who will be using a Meshtatic radio for cave communications.
 
