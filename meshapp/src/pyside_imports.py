@@ -15,6 +15,7 @@ from PySide6.QtCore import QAbstractItemModel
 from PySide6.QtCore import QAbstractTableModel
 from PySide6.QtCore import QRect
 from PySide6.QtCore import QPoint
+from PySide6.QtCore import QSize
 
 
 
@@ -49,6 +50,7 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtGui import QPageSize
 from PySide6.QtGui import QTextCursor
 from PySide6.QtGui import QTextCharFormat
+from PySide6.QtGui import QTextDocument
 
 
 
@@ -110,3 +112,4 @@ from PySide6.QtWidgets import QLineEdit
 from PySide6.QtWidgets import QTableWidgetSelectionRange
 from PySide6.QtWidgets import QTextEdit
 from PySide6.QtWidgets import QToolButton
+from PySide6.QtWidgets import QStyledItemDelegate, QStyle

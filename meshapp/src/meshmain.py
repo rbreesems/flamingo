@@ -26,7 +26,7 @@ import qtawesome as qta
 from emoji_data_python import emoji_data
 
 
-BuildNumber = 2.1
+BuildNumber = 2.2
 
 if sys.platform.lower().startswith('win'):
     #code that is specific to the Windows platform.
@@ -62,10 +62,6 @@ else:
     def showConsole():
         pass
 
-def treeWidgetResized(logical_index, old_size, new_size, w=None):
-    if w:
-        w.scheduleDelayedItemsLayout()
-    print(f"Logical_index: {logical_index}, old_size:{old_size}, new_size:{new_size}")
 
 
 def getStatusFontSize(textEdit):
@@ -94,6 +90,87 @@ class MenuWithToolTips(QMenu):
         self.addMenu(newMenu)
         return newMenu
 
+class WordWrapDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def paint_old(self, painter: QPainter, option: QStyleOptionViewItem, index):
+        # Initialize style options for the item
+        self.initStyleOption(option, index)
+
+        painter.save()
+
+        # Render background and focus effects
+        style = option.widget.style() if option.widget else QApplication.style()
+        style.drawControl(style.ControlElement.CE_ItemViewItem, option, painter, option.widget)
+        # Use QTextDocument to handle the word wrapping calculations
+        doc = QTextDocument()
+        doc.setPlainText(option.text)
+        doc.setDefaultFont(option.font)
+        # Constrain document width to the current column width minus padding
+        doc.setTextWidth(option.rect.width() - 10)
+
+        # Translate painter to item position and draw text
+        painter.translate(option.rect.left() + 5, option.rect.top())
+        doc.drawContents(painter)
+
+        painter.restore()
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
+        self.initStyleOption(option, index)
+
+        painter.save()
+
+        # 1. Clear out the text property so the style engine doesn't draw it
+        text_to_draw = option.text
+        option.text = ""  
+
+        # 2. Render ONLY the background highlights, focus boxes, and selections
+        style = option.widget.style() if option.widget else QApplication.style()
+        style.drawControl(style.ControlElement.CE_ItemViewItem, option, painter, option.widget)
+
+        # 3. Handle selection text color states properly
+        doc = QTextDocument()
+        doc.setPlainText(text_to_draw)
+        doc.setDefaultFont(option.font)
+        doc.setTextWidth(option.rect.width() - 10)
+
+        # Ensure text color switches (e.g., white text when row is highlighted blue)
+        color = option.palette.color(
+            option.palette.ColorGroup.Active 
+            if option.state & QStyle.StateFlag.State_HasFocus 
+            else option.palette.ColorGroup.Inactive,
+            option.palette.ColorRole.HighlightedText 
+            if option.state & QStyle.StateFlag.State_Selected 
+            else option.palette.ColorRole.Text
+        )
+        doc.setDefaultStyleSheet(f"body {{ color: {color.name()}; }}")
+
+        # 4. Translate painter and render the custom wrapped layout
+        painter.translate(option.rect.left() + 5, option.rect.top())
+        doc.drawContents(painter)
+
+        painter.restore()
+
+    def sizeHint(self, option: QStyleOptionViewItem, index) -> QSize:
+        self.initStyleOption(option, index)
+
+        doc = QTextDocument()
+        doc.setPlainText(option.text)
+        doc.setDefaultFont(option.font)
+        
+        # Determine current column width from the view
+        view = option.widget
+        if isinstance(view, QTreeWidget):
+            column = index.column()
+            width = view.columnWidth(column)
+        else:
+            width = option.rect.width()
+
+        doc.setTextWidth(width - 10)
+        
+        # Return calculated dynamic size
+        return QSize(int(doc.idealWidth()), int(doc.size().height()))
 
 class StreamToLogger(object):
     """
@@ -401,6 +478,8 @@ class MessagePage(object):
         self.treeWidget.resizeColumnToContents(0)
         self.treeWidget.resizeColumnToContents(1)
         return messageData
+
+
     
 
 class MeshMainWindow(QMainWindow, Ui_MainWindow):
@@ -453,10 +532,10 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.messagesByPacketId = {}  # out messages key'ed by packet ID, used for replies
 
         metrics = QFontMetrics(self.ch0TreeWidget.font())
-        self.messagesColumn0Width = metrics.horizontalAdvance("Acknowledge ")
+        self.messagesColumn0Width = metrics.horizontalAdvance("xxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.messagesIndentation = metrics.horizontalAdvance("xxxxx")
-        initDefaultTreeWidgetAttributes(self.ch0TreeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
-        #self.ch0TreeWidget.header().sectionResized.connect(treeWidgetResized)
+        self.initDefaultTreeWidgetAttributes(self.ch0TreeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation, wrapDelegate=WordWrapDelegate(self.ch0TreeWidget))
+        #self.ch0TreeWidget.header().sectionResized.connect(self.handle_section_resized)
 
         # populate widget scaling
         for value in ['1.0','1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8','1.9','2.0']:
@@ -566,6 +645,11 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         self.menus = {}
         self.menubar.clear()
         self.menubar.addMenu(self.createMenu('Actions',self.actionsMenuData))
+
+    def handle_section_resized(self, logical_index, old_size, new_size):
+        # Force the tree viewport to recalculate geometry geometries immediately
+        self.ch0TreeWidget.scheduleDelayedItemsLayout()
+
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.KeyPress:
@@ -1179,16 +1263,16 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
         if errorReason == 'NONE':
             if messageData.toId and messageData.toId != fromId:
                 # this was DM to node messageData.toId but the ACK packet is from another ode
-                statusText = "Ack by other"
+                statusText = "Delivered"
             else:
-                statusText = "Acknowledged"
+                statusText = "Delivered"
                 messageData.ignoreAck = True
         elif errorReason == 'MAX_RETRANSMIT':
-            statusText = "Max retransmit "
+            statusText = "Max Xmit"
             statusColor = "red"
             messageData.ignoreAck = True
         elif errorReason == 'NO_CHANNEL':
-            statusText = "No channel"
+            statusText = "NoChannel"
             statusColor = "red"
             messageData.ignoreAck = True
         else:
@@ -1296,7 +1380,7 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
 
     def addDirectMessageTab(self, tabName):
         treeWidget = MyTreeWidget()
-        initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
+        self.initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation, wrapDelegate=WordWrapDelegate(treeWidget))
         self.messagesTabWidget.addTab(treeWidget, tabName)
         messagePage = MessagePage(treeWidget)
         messagePage.name = tabName
@@ -1333,12 +1417,28 @@ class MeshMainWindow(QMainWindow, Ui_MainWindow):
                     return  # this tab already exists
             # add this tab with a text edit
             treeWidget = MyTreeWidget()
-            initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation)
+            self.initDefaultTreeWidgetAttributes(treeWidget, self.messagesColumn0Width, indentation=self.messagesIndentation,wrapDelegate=WordWrapDelegate(treeWidget))
             self.messagesTabWidget.addTab(treeWidget, name)
             self.channelMessagePages[channel] = MessagePage(treeWidget)
         messagePage = self.channelMessagePages[channel]
         messagePage.name = name
         return
+
+    def initDefaultTreeWidgetAttributes(self, treeWidget, col0Width, indentation=None, wrapDelegate=None):
+        treeWidget.setHeaderHidden(True)
+        treeWidget.setMouseTracking(True)
+        treeWidget.setFocusPolicy(QtCore.Qt.StrongFocus)
+        treeWidget.setColumnCount(2)
+        #treeWidget.setColumnWidth(0, col0Width)
+        treeWidget.setUniformRowHeights(False)
+        treeWidget.setWordWrap(True)
+        treeWidget.installEventFilter(self)
+        if indentation:
+            treeWidget.setIndentation(indentation)
+        treeWidget.header().setMinimumSectionSize(col0Width)
+        if wrapDelegate:
+            treeWidget.setItemDelegate(wrapDelegate)
+        treeWidget.header().sectionResized.connect(self.handle_section_resized)
     
     def handleMessage(self, packet):
         decoded = packet.get('decoded', None)
