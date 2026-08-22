@@ -782,7 +782,7 @@ The first argument to the `gen_csv.py` is a `YML` file that describes how settin
 
 #### E3. Configuring long/short radio names
 
-Each radio has two names - the short name which should be exactly 4 characters and a long name which can be up to 39 characters. An example of using the python meshtastic command interface to program these names is shown below (``-set-owner` is for the long name, `set-owner-short` is for the short name).
+Each radio has two names - the short name which should be exactly 4 characters and a long name which can be up to 39 characters. An example of using the python meshtastic command interface to program these names is shown below (`--set-owner` is for the long name, `--set-owner-short` is for the short name).
 
 ```
 meshtastic --set-owner BobReese --set-owner-short WP01
@@ -793,6 +793,12 @@ You should pick a short naming scheme that perhaps gives a hint of the radio fun
 The long name can be anything and is typically changed to something meaningful when a radio is assigned to a rescuer.  Radios used in the relay chain may have names like `Relay01` and these are kept the same (but could be changed if needed).
 
 Both the long name and short name can be changed via the phone App, and it may be worthwhile showing users how to do this so that they can change the long name themselves once a radio is assigned to them.
+
+  - iOS:  To configure the long name, open settings, scroll down to `Device Configuration` and open `User`.  Long-press on the `long name` field, enter the new long name, and use the save pop-up to save the new name.
+
+  - Android: To configure the long name, open settings, and under `Radio Configuration`, select `User` and enter the new long name in the `long name` field. Scroll down and use the `save` button to save the new settings.
+
+  Changing the long name causes the device to reboot so that it can send out a node information packet with the new long name. If someone complains that they are seeing your radio with the old long name, power cycle your radio which forces it to send out a new node information packet.
 
 ### F. Radio Testing
 
@@ -855,13 +861,13 @@ Use two radios -- let us assume short names of `HR01` and `HR02` and that both h
 
 3. Move away from radio `HR02` and observe how `RSSI` changes (will become increasingly negative). The `SNR` value will also decrease, eventually turning negative if you get far enough away.
 
-4. You can change the delay between range packet by sending `adrt delay value`, (ie., `adrt delay 30`) to a channel. Only 5, 10, 15, 30, and 60 are accepted for delay values. 
+4. You can change the delay between range packets by sending `adrt delay value`, (ie., `adrt delay 30`) to a channel. Only 5, 10, 15, 30, and 60 are accepted for delay values. 
 
 5. To turn off range test, send `adrt off` to a channel.
 
 ### I. Checking Radio Battery Levels
 
-Our DIY radios use an internal 18650 battery.  The battery is physically disconnected from the RAK4631 when the power is off. This means that if you want to charge it via the USB port, you need to turn the radio ON before plugging in the USB-C cable in order to actually charge the battery. WishMesh pocket radios use an internal lithium battery packet and they also must be turned when connected to a USB-C port in order to charge.
+Our DIY radios use an internal 18650 battery.  The battery is physically disconnected from the RAK4631 when the power is off. This means that if you want to charge it via the USB port, you need to turn the radio ON before plugging in the USB-C cable in order to actually charge the battery. WisMesh pocket radios use an internal lithium battery packet and they also must be turned when connected to a USB-C port in order to charge.
 
 Web wisdom is that an 18650 battery will retain 80% to 90% of its charge for at least six months.  I like to check the battery levels about every four months and recharge a radio if it reports its battery status as below 75%.
 
