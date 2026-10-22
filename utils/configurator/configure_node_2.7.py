@@ -355,8 +355,9 @@ def checkFirmwareVersion(info_output):
                 metadata = json.loads(json_str)
                 FW_version = metadata['firmwareVersion']
                 print(f"Firmware: {FW_version}")
-
-                major, minor, build, hash = FW_version.split(".")
+                words = FW_version.split(".")
+                major = words[0]
+                minor = words[1]
                 float_FW = float(f"{major}.{minor}")
                 if firmware_versions[0] <= float_FW <= firmware_versions[1]:
                     print("firmware acceptable")

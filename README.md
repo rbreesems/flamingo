@@ -642,7 +642,7 @@ The python command line interface allows you to update radio firmware and settin
 These steps assume a Windows operating system. If you are running a Linux operating system, please look at the official [Meshtastic docs](https://meshtastic.org/docs/software/python/cli/installation/).
 
 #### B.1 Install Python
-1. Go to the [Windows Python downloads page](https://www.python.org/downloads/windows/) and download the installer for Python 3.14 or later.
+1. Go to the [Windows Python downloads page](https://www.python.org/downloads/windows/) and download the installer for Python 3.14 (DO NOT USE A LATER VERSION - Python 3.15 seems to have trouble installing the meshtastic package).
 2. Run the installer
  - Choose `Customize Installation`
  - On the next window labeled as `Optional Features`, leave anything already checked as checked and continue
